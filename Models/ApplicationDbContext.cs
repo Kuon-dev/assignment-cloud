@@ -1,21 +1,20 @@
+
 // ApplicationDbContext.cs
 using Microsoft.EntityFrameworkCore;
-using Cloud.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
-namespace Cloud.Data
+namespace Cloud.Models
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext<UserModel>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
         }
 
-        public DbSet<UserModel>? Users { get; set; }
         public DbSet<TenantModel>? Tenants { get; set; }
         public DbSet<OwnerModel>? Owners { get; set; }
         public DbSet<AdminModel>? Admins { get; set; }
-        /*public DbSet<MaintenanceStaffModel>? MaintenanceStaff { get; set; }*/
         public DbSet<PropertyModel>? Properties { get; set; }
         public DbSet<UnitModel>? Units { get; set; }
         public DbSet<ListingModel>? Listings { get; set; }
@@ -30,7 +29,6 @@ namespace Cloud.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure unique constraints
             modelBuilder.Entity<UserModel>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
@@ -39,7 +37,6 @@ namespace Cloud.Data
                 .HasIndex(sc => sc.StripeCustomerId)
                 .IsUnique();
 
-            // Configure one-to-one relationships
             modelBuilder.Entity<UserModel>()
                 .HasOne(u => u.Tenant)
                 .WithOne(t => t!.User)
@@ -55,12 +52,6 @@ namespace Cloud.Data
                 .WithOne(a => a!.User)
                 .HasForeignKey<AdminModel>(a => a.UserId);
 
-            /*modelBuilder.Entity<UserModel>()*/
-            /*    .HasOne(u => u.MaintenanceStaff)*/
-            /*    .WithOne(ms => ms!.User)*/
-            /*    .HasForeignKey<MaintenanceStaffModel>(ms => ms.UserId);*/
-
-            // Configure cascade delete for related entities
             modelBuilder.Entity<PropertyModel>()
                 .HasMany(p => p.Units)
                 .WithOne(u => u!.Property)
@@ -70,8 +61,6 @@ namespace Cloud.Data
                 .HasMany(p => p.Listings)
                 .WithOne(l => l!.Property)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            // Add any additional configurations here
         }
     }
 }

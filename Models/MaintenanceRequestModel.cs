@@ -4,43 +4,44 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Cloud.Models {
-
-public class MaintenanceRequestModel
+namespace Cloud.Models
 {
-    [Key]
-    public Guid Id { get; set; }
 
-    [Required]
-    public Guid TenantId { get; set; }
+    public class MaintenanceRequestModel
+    {
+        [Key]
+        public Guid Id { get; set; }
 
-    [ForeignKey("TenantId")]
-    public TenantModel? Tenant { get; set; }
+        [Required]
+        public Guid TenantId { get; set; }
 
-    [Required]
-    public Guid PropertyId { get; set; }
+        [ForeignKey("TenantId")]
+        public TenantModel? Tenant { get; set; }
 
-    [ForeignKey("PropertyId")]
-    public PropertyModel? Property { get; set; }
+        [Required]
+        public Guid PropertyId { get; set; }
 
-    [Required]
-    public string Description { get; set; } = string.Empty;
+        [ForeignKey("PropertyId")]
+        public PropertyModel? Property { get; set; }
 
-    public MaintenanceStatus Status { get; set; }
+        [Required]
+        public string Description { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; set; }
+        public MaintenanceStatus Status { get; set; }
 
-    public DateTime UpdatedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
 
-    // Navigation properties
-      public ICollection<MaintenanceTaskModel>? MaintenanceTasks { get; set; }
-  }
+        public DateTime UpdatedAt { get; set; }
 
-  public enum MaintenanceStatus
-  {
-      Pending,
-      InProgress,
-      Completed,
-      Cancelled
-  }
+        // Navigation properties
+        public ICollection<MaintenanceTaskModel>? MaintenanceTasks { get; set; }
+    }
+
+    public enum MaintenanceStatus
+    {
+        Pending,
+        InProgress,
+        Completed,
+        Cancelled
+    }
 }

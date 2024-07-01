@@ -4,14 +4,15 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Cloud.Models {
-  public class OwnerModel
-  {
-      [Key]
-      public Guid Id { get; set; }
+namespace Cloud.Models
+{
+    public class OwnerModel
+    {
+        [Key]
+        public Guid Id { get; set; }
 
         [Required]
-        public Guid UserId { get; set; }
+        public String UserId { get; set; }
 
         [ForeignKey("UserId")]
         public UserModel? User { get; set; }

@@ -1,49 +1,36 @@
 // UserModel.cs
-using System;
+using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
-namespace Cloud.Models {
-  public class UserModel
-  {
-      [Key]
-      public Guid Id { get; set; }
+namespace Cloud.Models
+{
+    public class UserModel : IdentityUser
+    {
+        [Required]
+        public string FirstName { get; set; } = string.Empty;
 
-      [Required]
-      [EmailAddress]
-      public string Email { get; set; } = string.Empty;
+        [Required]
+        public string LastName { get; set; } = string.Empty;
 
-      [Required]
-      public string Password { get; set; } = string.Empty;
+        public UserRole Role { get; set; }
 
-      [Required]
-      public string FirstName { get; set; } = string.Empty;
+        public bool IsVerified { get; set; }
 
-      [Required]
-      public string LastName { get; set; } = string.Empty;
+        public bool IsBanned { get; set; }
 
-      public string? PhoneNumber { get; set; }
+        public string? BanReason { get; set; }
 
-      public UserRole Role { get; set; }
+        public DateTime CreatedAt { get; set; }
 
-      public bool IsVerified { get; set; }
+        public DateTime UpdatedAt { get; set; }
 
-      public bool IsBanned { get; set; }
+        public DateTime? DeletedAt { get; set; }
 
-      public string? BanReason { get; set; }
-
-      public DateTime CreatedAt { get; set; }
-
-      public DateTime UpdatedAt { get; set; }
-
-      public DateTime? DeletedAt { get; set; }
-
-      // Navigation properties
-      public TenantModel? Tenant { get; set; }
-      public OwnerModel? Owner { get; set; }
-      public AdminModel? Admin { get; set; }
-      /*public MaintenanceStaffModel? MaintenanceStaff { get; set; }*/
-      public StripeCustomerModel? StripeCustomer { get; set; }
-  }
+        // Navigation properties
+        public TenantModel? Tenant { get; set; }
+        public OwnerModel? Owner { get; set; }
+        public AdminModel? Admin { get; set; }
+        public StripeCustomerModel? StripeCustomer { get; set; }
+    }
 }
-
 

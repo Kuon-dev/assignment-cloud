@@ -3,6 +3,8 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+namespace Cloud.Models {
+
 public class LeaseModel
 {
     [Key]
@@ -27,12 +29,13 @@ public class LeaseModel
     [Column(TypeName = "decimal(18,2)")]
     public decimal RentAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal SecurityDeposit { get; set; }
+      [Column(TypeName = "decimal(18,2)")]
+      public decimal SecurityDeposit { get; set; }
 
-    public bool IsActive { get; set; }
+      public bool IsActive { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+      public DateTime CreatedAt { get; set; }
 
-    public DateTime UpdatedAt { get; set; }
+      public DateTime UpdatedAt { get; set; }
+  }
 }

@@ -4,44 +4,45 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 
-namespace Cloud.Models {
-
-public class MaintenanceTaskModel
+namespace Cloud.Models
 {
-    [Key]
-    public Guid Id { get; set; }
 
-    [Required]
-    public Guid RequestId { get; set; }
+    public class MaintenanceTaskModel
+    {
+        [Key]
+        public Guid Id { get; set; }
 
-    [ForeignKey("RequestId")]
-    public MaintenanceRequestModel? Request { get; set; }
+        [Required]
+        public Guid RequestId { get; set; }
 
-    [Required]
-    public Guid StaffId { get; set; }
+        [ForeignKey("RequestId")]
+        public MaintenanceRequestModel? Request { get; set; }
 
-    [Required]
-    public string Description { get; set; } = string.Empty;
+        [Required]
+        public Guid StaffId { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal? EstimatedCost { get; set; }
+        [Required]
+        public string Description { get; set; } = string.Empty;
 
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal? ActualCost { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? EstimatedCost { get; set; }
 
-    public DateTime? StartDate { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? ActualCost { get; set; }
 
-    public DateTime? CompletionDate { get; set; }
+        public DateTime? StartDate { get; set; }
 
-    public TaskStatus Status { get; set; }
-  }
+        public DateTime? CompletionDate { get; set; }
+
+        public TaskStatus Status { get; set; }
+    }
 
 
-  public enum TaskStatus
-  {
-      Pending,
-      InProgress,
-      Completed,
-      Cancelled
-  }
+    public enum TaskStatus
+    {
+        Pending,
+        InProgress,
+        Completed,
+        Cancelled
+    }
 }
