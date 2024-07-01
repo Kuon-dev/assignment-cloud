@@ -1,6 +1,8 @@
+// ApplicationDbContext.cs
 using Microsoft.EntityFrameworkCore;
+using Cloud.Models;
 
-namespace Cloud.Models
+namespace Cloud.Data
 {
     public class ApplicationDbContext : DbContext
     {
@@ -9,38 +11,68 @@ namespace Cloud.Models
         {
         }
 
-        public DbSet<User> Users { get; set; }
-        public DbSet<Profile> Profiles { get; set; }
+        public DbSet<UserModel>? Users { get; set; }
+        public DbSet<TenantModel>? Tenants { get; set; }
+        public DbSet<OwnerModel>? Owners { get; set; }
+        public DbSet<AdminModel>? Admins { get; set; }
+        /*public DbSet<MaintenanceStaffModel>? MaintenanceStaff { get; set; }*/
+        public DbSet<PropertyModel>? Properties { get; set; }
+        public DbSet<UnitModel>? Units { get; set; }
+        public DbSet<ListingModel>? Listings { get; set; }
+        public DbSet<RentalApplicationModel>? RentalApplications { get; set; }
+        public DbSet<LeaseModel>? Leases { get; set; }
+        public DbSet<RentPaymentModel>? RentPayments { get; set; }
+        public DbSet<StripeCustomerModel>? StripeCustomers { get; set; }
+        public DbSet<MaintenanceRequestModel>? MaintenanceRequests { get; set; }
+        public DbSet<MaintenanceTaskModel>? MaintenanceTasks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<User>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
-                entity.HasIndex(e => e.Email).IsUnique();
-                entity.Property(e => e.PasswordHash).IsRequired();
-                entity.Property(e => e.EmailVerified).HasDefaultValue(false);
-                entity.Property(e => e.BannedUntil).IsRequired(false);
+            base.OnModelCreating(modelBuilder);
 
-                entity.HasOne(e => e.Profile)
-                      .WithOne(p => p.User)
-                      .HasForeignKey<Profile>(p => p.UserId)
-                      .IsRequired();
-            });
+            // Configure unique constraints
+            modelBuilder.Entity<UserModel>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
 
-            modelBuilder.Entity<Profile>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.ProfileImg).HasMaxLength(255);
-                entity.Property(e => e.Name).HasMaxLength(255);
-                entity.Property(e => e.PhoneNumber).HasMaxLength(15);
+            modelBuilder.Entity<StripeCustomerModel>()
+                .HasIndex(sc => sc.StripeCustomerId)
+                .IsUnique();
 
-                entity.HasOne(p => p.User)
-                      .WithOne(u => u.Profile)
-                      .HasForeignKey<Profile>(p => p.UserId)
-                      .IsRequired();
-            });
+            // Configure one-to-one relationships
+            modelBuilder.Entity<UserModel>()
+                .HasOne(u => u.Tenant)
+                .WithOne(t => t!.User)
+                .HasForeignKey<TenantModel>(t => t.UserId);
+
+            modelBuilder.Entity<UserModel>()
+                .HasOne(u => u.Owner)
+                .WithOne(o => o!.User)
+                .HasForeignKey<OwnerModel>(o => o.UserId);
+
+            modelBuilder.Entity<UserModel>()
+                .HasOne(u => u.Admin)
+                .WithOne(a => a!.User)
+                .HasForeignKey<AdminModel>(a => a.UserId);
+
+            /*modelBuilder.Entity<UserModel>()*/
+            /*    .HasOne(u => u.MaintenanceStaff)*/
+            /*    .WithOne(ms => ms!.User)*/
+            /*    .HasForeignKey<MaintenanceStaffModel>(ms => ms.UserId);*/
+
+            // Configure cascade delete for related entities
+            modelBuilder.Entity<PropertyModel>()
+                .HasMany(p => p.Units)
+                .WithOne(u => u!.Property)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PropertyModel>()
+                .HasMany(p => p.Listings)
+                .WithOne(l => l!.Property)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Add any additional configurations here
         }
     }
 }
+
