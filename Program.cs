@@ -51,7 +51,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Register EmailService
 
 
-builder.Services.AddIdentity<UserModel, IdentityRole>(options => {
+builder.Services.AddIdentity<UserModel, IdentityRole>(options =>
+{
     // Configure identity options here if needed
     options.SignIn.RequireConfirmedAccount = true;
     options.Password.RequireDigit = true;

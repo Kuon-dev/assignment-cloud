@@ -3,39 +3,40 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Cloud.Models {
-
-public class LeaseModel
+namespace Cloud.Models
 {
-    [Key]
-    public Guid Id { get; set; }
 
-    [Required]
-    public Guid TenantId { get; set; }
+    public class LeaseModel
+    {
+        [Key]
+        public Guid Id { get; set; }
 
-    [ForeignKey("TenantId")]
-    public TenantModel? Tenant { get; set; }
+        [Required]
+        public Guid TenantId { get; set; }
 
-    [Required]
-    public Guid UnitId { get; set; }
+        [ForeignKey("TenantId")]
+        public TenantModel? Tenant { get; set; }
 
-    [ForeignKey("UnitId")]
-    public UnitModel? Unit { get; set; }
+        [Required]
+        public Guid UnitId { get; set; }
 
-    public DateTime StartDate { get; set; }
+        [ForeignKey("UnitId")]
+        public UnitModel? Unit { get; set; }
 
-    public DateTime EndDate { get; set; }
+        public DateTime StartDate { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal RentAmount { get; set; }
+        public DateTime EndDate { get; set; }
 
-      [Column(TypeName = "decimal(18,2)")]
-      public decimal SecurityDeposit { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal RentAmount { get; set; }
 
-      public bool IsActive { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal SecurityDeposit { get; set; }
 
-      public DateTime CreatedAt { get; set; }
+        public bool IsActive { get; set; }
 
-      public DateTime UpdatedAt { get; set; }
-  }
+        public DateTime CreatedAt { get; set; }
+
+        public DateTime UpdatedAt { get; set; }
+    }
 }
