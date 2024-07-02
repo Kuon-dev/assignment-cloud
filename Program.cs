@@ -81,6 +81,7 @@ builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddScoped<IListingService, ListingService>();
 builder.Services.AddScoped<IRentalApplicationService, RentalApplicationService>();
 builder.Services.AddScoped<ApiExceptionFilter>();
+builder.Services.AddScoped<ILeaseService, LeaseService>();
 
 var app = builder.Build();
 
