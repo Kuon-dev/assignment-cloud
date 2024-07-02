@@ -68,6 +68,7 @@ builder.Services.AddIdentity<UserModel, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSingleton<S3Service>();
 
 var app = builder.Build();
 
