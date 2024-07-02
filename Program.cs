@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using Swashbuckle.AspNetCore.SwaggerGen;
+/*using Microsoft.OpenApi.Models;*/
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +19,7 @@ Env.Load();
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-/*builder.Services.AddSwaggerGen();*/
+builder.Services.AddSwaggerGen();
 
 // Configure Entity Framework Core with PostgreSQL
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL");
@@ -69,11 +72,11 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-/*if (app.Environment.IsDevelopment())*/
-/*{*/
-/*    app.UseSwagger();*/
-/*    app.UseSwaggerUI();*/
-/*}*/
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
 
