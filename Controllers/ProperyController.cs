@@ -27,7 +27,7 @@ namespace Cloud.Controllers
         /// </summary>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<Cloud.Models.DTO.PaginatedResult<PropertyModel>>> GetProperties([FromQuery] PaginationParams paginationParams)
+        public async Task<ActionResult<Cloud.Models.DTO.CustomPaginatedResult<PropertyModel>>> GetProperties([FromQuery] PaginationParams paginationParams)
         {
             var query = _context.Properties.AsNoTracking();
             var totalCount = await query.CountAsync();
@@ -37,7 +37,7 @@ namespace Cloud.Controllers
                 .Take(paginationParams.Size)
                 .ToListAsync();
 
-            var paginatedResult = new Cloud.Models.DTO.PaginatedResult<PropertyModel>
+            var paginatedResult = new Cloud.Models.DTO.CustomPaginatedResult<PropertyModel>
             {
                 Items = properties,
                 TotalCount = totalCount,
@@ -171,7 +171,7 @@ namespace Cloud.Controllers
         /// </summary>
         [HttpGet("search")]
         [AllowAnonymous]
-        public async Task<ActionResult<Cloud.Models.DTO.PaginatedResult<PropertyModel>>> SearchProperties([FromQuery] SearchPropertyParams searchParams, [FromQuery] PaginationParams paginationParams)
+        public async Task<ActionResult<Cloud.Models.DTO.CustomPaginatedResult<PropertyModel>>> SearchProperties([FromQuery] SearchPropertyParams searchParams, [FromQuery] PaginationParams paginationParams)
         {
             var paginatedSearchResults = await _propertyService.SearchPropertiesAsync(
                 searchParams.Location,
@@ -186,7 +186,7 @@ namespace Cloud.Controllers
         /// </summary>
         [HttpGet("{id}/tenants")]
         [Authorize(Roles = "Admin,PropertyManager")]
-        public async Task<ActionResult<Cloud.Models.DTO.PaginatedResult<TenantModel>>> GetPropertyTenants(Guid id, [FromQuery] PaginationParams paginationParams)
+        public async Task<ActionResult<Cloud.Models.DTO.CustomPaginatedResult<TenantModel>>> GetPropertyTenants(Guid id, [FromQuery] PaginationParams paginationParams)
         {
             var property = await _context.Properties.FindAsync(id);
             if (property == null)
@@ -203,7 +203,7 @@ namespace Cloud.Controllers
         /// </summary>
         [HttpGet("{id}/units")]
         [AllowAnonymous]
-        public async Task<ActionResult<Cloud.Models.DTO.PaginatedResult<UnitModel>>> GetPropertyUnits(Guid id, [FromQuery] PaginationParams paginationParams)
+        public async Task<ActionResult<Cloud.Models.DTO.CustomPaginatedResult<UnitModel>>> GetPropertyUnits(Guid id, [FromQuery] PaginationParams paginationParams)
         {
             var query = _context.Units.Where(u => u.PropertyId == id);
             var totalCount = await query.CountAsync();
@@ -213,7 +213,7 @@ namespace Cloud.Controllers
                 .Take(paginationParams.Size)
                 .ToListAsync();
 
-            var paginatedResult = new Cloud.Models.DTO.PaginatedResult<UnitModel>
+            var paginatedResult = new Cloud.Models.DTO.CustomPaginatedResult<UnitModel>
             {
                 Items = units,
                 TotalCount = totalCount,
