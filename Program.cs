@@ -2,14 +2,12 @@
 using DotNetEnv;
 using Cloud.Models;
 using Cloud.Services;
+using Cloud.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.DependencyInjection;
-using Swashbuckle.AspNetCore.SwaggerGen;
-/*using Microsoft.OpenApi.Models;*/
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +33,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
 var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+
+if (string.IsNullOrEmpty(jwtSecret) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
+{
+    throw new InvalidOperationException("JWT configuration not found.");
+}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -69,6 +72,8 @@ builder.Services.AddIdentity<UserModel, IdentityRole>(options =>
 
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSingleton<S3Service>();
+builder.Services.AddScoped<ValidationFilter>();
+
 
 var app = builder.Build();
 
