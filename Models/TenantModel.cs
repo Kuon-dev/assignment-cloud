@@ -18,6 +18,8 @@ namespace Cloud.Models
         // Add this property to reference the current property
         public Guid? CurrentPropertyId { get; set; }
 
+        public Guid? PropertyId { get; set; }
+
         [ForeignKey("CurrentPropertyId")]
         public PropertyModel? CurrentProperty { get; set; }
 

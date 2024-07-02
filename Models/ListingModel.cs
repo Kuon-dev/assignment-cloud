@@ -1,7 +1,4 @@
-
 // ListingModel.cs
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -29,13 +26,20 @@ namespace Cloud.Models
 
         public DateTime StartDate { get; set; }
 
+        public string Location { get; set; } = string.Empty;
+
         public DateTime? EndDate { get; set; }
 
         public bool IsActive { get; set; }
 
         public DateTime CreatedAt { get; set; }
+        public string Amenities { get; set; } = string.Empty;
 
         public DateTime UpdatedAt { get; set; }
+        public int Bedrooms { get; set; }
+        public int Views { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
 
         // Navigation properties
         public ICollection<RentalApplicationModel>? Applications { get; set; }
