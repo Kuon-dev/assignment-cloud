@@ -95,7 +95,7 @@ namespace Cloud.Controllers
 
             return BadRequest(new { message = "User registration failed.", errors = result.Errors });
 
-          }
+        }
         /// <summary>
         /// Authenticates a user and returns a JWT token upon successful login.
         /// </summary>
