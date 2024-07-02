@@ -28,7 +28,7 @@ namespace Cloud.Controllers
         // GET: api/listings
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<Cloud.Models.DTO.PaginatedResult<ListingModel>>> GetListings([FromQuery] Cloud.Models.DTO.PaginationParams paginationParams)
+        public async Task<ActionResult<Cloud.Models.DTO.CustomPaginatedResult<ListingModel>>> GetListings([FromQuery] Cloud.Models.DTO.PaginationParams paginationParams)
         {
             _logger.LogInformation("Getting listings with pagination parameters: {@PaginationParams}", paginationParams);
             var listings = await _listingService.GetListingsAsync(paginationParams);

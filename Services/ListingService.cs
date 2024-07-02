@@ -19,12 +19,12 @@ namespace Cloud.Services
             _logger = logger;
         }
 
-        public async Task<Cloud.Models.DTO.PaginatedResult<ListingModel>> GetListingsAsync(PaginationParams paginationParams)
+        public async Task<Cloud.Models.DTO.CustomPaginatedResult<ListingModel>> GetListingsAsync(PaginationParams paginationParams)
         {
             var query = _context.Listings?.AsNoTracking().Where(l => !l.IsDeleted);
             if (query == null)
             {
-                return new Cloud.Models.DTO.PaginatedResult<ListingModel>
+                return new Cloud.Models.DTO.CustomPaginatedResult<ListingModel>
                 {
                     Items = new List<ListingModel>(),
                     TotalCount = 0,
@@ -36,7 +36,7 @@ namespace Cloud.Services
 
             if (totalCount == 0)
             {
-                return new Cloud.Models.DTO.PaginatedResult<ListingModel>
+                return new Cloud.Models.DTO.CustomPaginatedResult<ListingModel>
                 {
                     Items = new List<ListingModel>(),
                     TotalCount = 0,
@@ -50,7 +50,7 @@ namespace Cloud.Services
                 .Take(paginationParams.PageSize)
                 .ToListAsync() ?? new List<ListingModel>();
 
-            return new Cloud.Models.DTO.PaginatedResult<ListingModel>
+            return new Cloud.Models.DTO.CustomPaginatedResult<ListingModel>
             {
                 Items = items,
                 TotalCount = totalCount,

@@ -5,7 +5,7 @@ namespace Cloud.Services
 {
     public interface IListingService
     {
-        Task<Cloud.Models.DTO.PaginatedResult<ListingModel>> GetListingsAsync(PaginationParams paginationParams);
+        Task<Cloud.Models.DTO.CustomPaginatedResult<ListingModel>> GetListingsAsync(PaginationParams paginationParams);
         Task<ListingModel> GetListingByIdAsync(Guid id);
         Task<ListingModel> CreateListingAsync(CreateListingDto listingDto);
         Task<bool> UpdateListingAsync(Guid id, UpdateListingDto listingDto);

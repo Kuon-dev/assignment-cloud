@@ -9,7 +9,7 @@ namespace Cloud.Services
     {
         Task<IEnumerable<PropertyModel>> SearchPropertiesAsync(string? location, string? priceRange, int? bedrooms, List<string>? amenities);
         /*Task<IEnumerable<TenantModel>> GetPropertyTenantsAsync(Guid propertyId, int page, int size);*/
-        Task<Cloud.Models.DTO.PaginatedResult<TenantModel>> GetPropertyTenantsAsync(Guid propertyId, int page, int size);
+        Task<Cloud.Models.DTO.CustomPaginatedResult<TenantModel>> GetPropertyTenantsAsync(Guid propertyId, int page, int size);
     }
 }
 
@@ -57,7 +57,7 @@ namespace Cloud.Services
             return await query.ToListAsync();
         }
 
-        public async Task<Cloud.Models.DTO.PaginatedResult<TenantModel>> GetPropertyTenantsAsync(Guid propertyId, int page, int size)
+        public async Task<Cloud.Models.DTO.CustomPaginatedResult<TenantModel>> GetPropertyTenantsAsync(Guid propertyId, int page, int size)
         {
             var query = _context.Tenants.Where(t => t.PropertyId == propertyId);
             var totalCount = await query.CountAsync();
@@ -67,7 +67,7 @@ namespace Cloud.Services
                 .Take(size)
                 .ToListAsync();
 
-            return new Cloud.Models.DTO.PaginatedResult<TenantModel>
+            return new Cloud.Models.DTO.CustomPaginatedResult<TenantModel>
             {
                 Items = tenants,
                 TotalCount = totalCount,

@@ -79,6 +79,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSingleton<S3Service>();
 builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddScoped<IListingService, ListingService>();
+builder.Services.AddScoped<IRentalApplicationService, RentalApplicationService>();
 builder.Services.AddScoped<ApiExceptionFilter>();
 
 var app = builder.Build();

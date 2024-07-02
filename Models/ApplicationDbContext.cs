@@ -24,6 +24,7 @@ namespace Cloud.Models
         public DbSet<StripeCustomerModel>? StripeCustomers { get; set; }
         public DbSet<MaintenanceRequestModel>? MaintenanceRequests { get; set; }
         public DbSet<MaintenanceTaskModel>? MaintenanceTasks { get; set; }
+        public DbSet<ApplicationDocumentModel>? ApplicationDocuments { get; set; }
 
         public DbSet<ListingModel> Listings { get; set; }
         public DbSet<RentalApplicationModel> RentalApplications { get; set; }
@@ -64,6 +65,8 @@ namespace Cloud.Models
                 .HasMany(p => p.Listings)
                 .WithOne(l => l!.Property)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            /*modelBuilder.Entity<ApplicationDocumentModel>().*/
         }
     }
 }
