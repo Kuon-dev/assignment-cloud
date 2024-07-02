@@ -26,6 +26,8 @@ namespace Cloud.Models
 
         public DateTime? DeletedAt { get; set; }
 
+        public string? ProfilePictureUrl { get; set; } = string.Empty;
+
         // Navigation properties
         public TenantModel? Tenant { get; set; }
         public OwnerModel? Owner { get; set; }

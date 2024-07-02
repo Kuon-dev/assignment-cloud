@@ -20,17 +20,20 @@ namespace Cloud.Controllers
         private readonly IEmailService _emailService;
         private readonly UserManager<UserModel> _userManager;
         private readonly SignInManager<UserModel> _signInManager;
+        private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             ApplicationDbContext context,
             IEmailService emailService,
             UserManager<UserModel> userManager,
-            SignInManager<UserModel> signInManager)
+            SignInManager<UserModel> signInManager,
+            ILogger<AuthController> logger)
         {
             _context = context;
             _emailService = emailService;
             _userManager = userManager;
             _signInManager = signInManager;
+            _logger = logger;
         }
 
         /// <summary>
@@ -55,6 +58,7 @@ namespace Cloud.Controllers
 
             var user = new UserModel
             {
+                UserName = model.Email,
                 Email = model.Email,
                 FirstName = model.FirstName,
                 LastName = model.LastName,
@@ -110,12 +114,13 @@ namespace Cloud.Controllers
                 return Unauthorized("Invalid email or password.");
             }
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
+            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, true, false);
             if (result.Succeeded)
             {
                 var token = GenerateJwtToken(user);
                 return Ok(new { Token = token });
             }
+            _logger.LogError(result.ToString());
 
             return Unauthorized("Invalid email or password.");
         }

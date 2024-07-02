@@ -2,14 +2,12 @@
 using DotNetEnv;
 using Cloud.Models;
 using Cloud.Services;
+using Cloud.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.DependencyInjection;
-using Swashbuckle.AspNetCore.SwaggerGen;
-/*using Microsoft.OpenApi.Models;*/
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +34,11 @@ var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
 var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
 
+if (string.IsNullOrEmpty(jwtSecret) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
+{
+    throw new InvalidOperationException("JWT configuration not found.");
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -57,7 +60,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddIdentity<UserModel, IdentityRole>(options =>
 {
     // Configure identity options here if needed
-    options.SignIn.RequireConfirmedAccount = true;
+    options.SignIn.RequireConfirmedAccount = false;
+    options.SignIn.RequireConfirmedPhoneNumber = false;
+
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
@@ -67,7 +72,14 @@ builder.Services.AddIdentity<UserModel, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+// add logger
+builder.Services.AddLogging();
+
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSingleton<S3Service>();
+builder.Services.AddScoped<ValidationFilter>();
+builder.Services.AddScoped<IListingService, ListingService>();
+builder.Services.AddScoped<ApiExceptionFilter>();
 
 var app = builder.Build();
 
