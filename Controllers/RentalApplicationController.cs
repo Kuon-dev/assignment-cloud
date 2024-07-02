@@ -117,7 +117,7 @@ namespace Cloud.Controllers
         [HttpGet("status/{status}")]
         [Authorize(Roles = "Admin,PropertyManager")]
         public async Task<ActionResult<CustomPaginatedResult<RentalApplicationModel>>> GetApplicationsByStatus(
-            string status, 
+            string status,
             [FromQuery] PaginationParams paginationParams)
         {
             if (!Enum.TryParse<ApplicationStatus>(status, true, out var applicationStatus))

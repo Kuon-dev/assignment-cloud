@@ -1,4 +1,5 @@
-namespace Cloud.Models.DTO {
+namespace Cloud.Models.DTO
+{
     public class CreateRentalApplicationDto
     {
         public Guid TenantId { get; set; }

@@ -1,5 +1,6 @@
 // media type model
-namespace Cloud.Models{
+namespace Cloud.Models
+{
     public class ApplicationDocumentModel
     {
         public Guid Id { get; set; }
