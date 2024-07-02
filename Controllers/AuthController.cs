@@ -2,6 +2,7 @@
 // Controllers/AuthController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -32,6 +33,11 @@ namespace Cloud.Controllers
             _signInManager = signInManager;
         }
 
+        /// <summary>
+        /// Registers a new user with the specified role.
+        /// </summary>
+        /// <param name="model">The registration model containing user details.</param>
+        /// <returns>An IActionResult indicating the result of the registration process.</returns>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
@@ -40,28 +46,61 @@ namespace Cloud.Controllers
                 return BadRequest(ModelState);
             }
 
+            // Validate the role
+            // Validate the role
+            if (model.Role != UserRole.Tenant && model.Role != UserRole.Owner)
+            {
+                return BadRequest(new { message = "Invalid role. Must be either Tenant or Owner." });
+            }
+
             var user = new UserModel
             {
                 Email = model.Email,
                 FirstName = model.FirstName,
-                LastName = model.LastName
+                LastName = model.LastName,
+                Role = model.Role // Set the role from the model
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (result.Succeeded)
             {
+                // Create the role-specific model
+                if (user.Role == UserRole.Tenant)
+                {
+                    var tenant = new TenantModel
+                    {
+                        UserId = user.Id
+                    };
+                    await _context.Tenants.AddAsync(tenant);
+                }
+                else if (user.Role == UserRole.Owner)
+                {
+                    var owner = new OwnerModel
+                    {
+                        UserId = user.Id
+                    };
+                    await _context.Owners.AddAsync(owner);
+                }
+
+                await _context.SaveChangesAsync();
+
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 var confirmationLink = Url.Action("ConfirmEmail", "Auth", new { userId = user.Id, token = token }, Request.Scheme);
 
                 _emailService.SendEmail(user.Email, "Confirm your email", $"Please confirm your account by clicking this link: {confirmationLink}");
 
-                return Ok(new { message = "User created successfully. Please check your email to confirm your account." });
+                return Ok(new { message = $"User created successfully as {user.Role}. Please check your email to confirm your account." });
             }
 
-            return BadRequest(result.Errors);
-        }
+            return BadRequest(new { message = "User registration failed.", errors = result.Errors });
 
+          }
+        /// <summary>
+        /// Authenticates a user and returns a JWT token upon successful login.
+        /// </summary>
+        /// <param name="model">The login model containing user credentials.</param>
+        /// <returns>An IActionResult with the JWT token or an error message.</returns>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
@@ -81,6 +120,10 @@ namespace Cloud.Controllers
             return Unauthorized("Invalid email or password.");
         }
 
+        /// <summary>
+        /// Logs out the current user.
+        /// </summary>
+        /// <returns>An IActionResult indicating successful logout.</returns>
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
@@ -88,6 +131,11 @@ namespace Cloud.Controllers
             return Ok(new { message = "Logged out successfully." });
         }
 
+        /// <summary>
+        /// Refreshes the JWT token for an authenticated user.
+        /// </summary>
+        /// <param name="model">The refresh token model containing the expired token.</param>
+        /// <returns>An IActionResult with a new JWT token or an error message.</returns>
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenModel model)
         {
@@ -104,6 +152,11 @@ namespace Cloud.Controllers
             return Ok(new { Token = newToken });
         }
 
+        /// <summary>
+        /// Initiates the password reset process for a user.
+        /// </summary>
+        /// <param name="model">The forgot password model containing the user's email.</param>
+        /// <returns>An IActionResult indicating that a reset link has been sent if the email exists.</returns>
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordModel model)
         {
@@ -122,6 +175,11 @@ namespace Cloud.Controllers
             return Ok(new { message = "If your email is registered, you will receive a password reset link." });
         }
 
+        /// <summary>
+        /// Resets the user's password using the provided token.
+        /// </summary>
+        /// <param name="model">The reset password model containing the new password and reset token.</param>
+        /// <returns>An IActionResult indicating the success or failure of the password reset.</returns>
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordModel model)
         {
@@ -140,6 +198,12 @@ namespace Cloud.Controllers
             return BadRequest(result.Errors);
         }
 
+        /// <summary>
+        /// Confirms a user's email address using the provided token.
+        /// </summary>
+        /// <param name="userId">The ID of the user confirming their email.</param>
+        /// <param name="token">The email confirmation token.</param>
+        /// <returns>An IActionResult indicating the success or failure of the email confirmation.</returns>
         [HttpGet("confirm-email")]
         public async Task<IActionResult> ConfirmEmail(string userId, string token)
         {
@@ -163,12 +227,18 @@ namespace Cloud.Controllers
             return BadRequest("Email confirmation failed.");
         }
 
+        /// <summary>
+        /// Generates a JWT token for the specified user.
+        /// </summary>
+        /// <param name="user">The user model for which to generate the token.</param>
+        /// <returns>A string containing the JWT token.</returns>
         private string GenerateJwtToken(UserModel user)
         {
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
 
@@ -187,6 +257,11 @@ namespace Cloud.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        /// <summary>
+        /// Extracts the ClaimsPrincipal from an expired JWT token.
+        /// </summary>
+        /// <param name="token">The expired JWT token.</param>
+        /// <returns>A ClaimsPrincipal object extracted from the token.</returns>
         private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
         {
             var tokenValidationParameters = new TokenValidationParameters
@@ -207,34 +282,109 @@ namespace Cloud.Controllers
         }
     }
 
-    public class RegisterModel
-    {
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-    }
-
+    /// <summary>
+    /// Represents the model for user login.
+    /// </summary>
     public class LoginModel
     {
+        /// <summary>
+        /// Gets or sets the email address of the user.
+        /// </summary>
+        [Required]
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the password for the user account.
+        /// </summary>
+        [Required]
         public string Password { get; set; } = string.Empty;
     }
 
+    /// <summary>
+    /// Represents the model for refreshing a JWT token.
+    /// </summary>
     public class RefreshTokenModel
     {
+        /// <summary>
+        /// Gets or sets the expired JWT token.
+        /// </summary>
+        [Required]
         public string Token { get; set; } = string.Empty;
     }
 
+
+    public class RegisterModel
+    {
+        /// <summary>
+        /// Gets or sets the email address of the user.
+        /// </summary>
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the password for the user account.
+        /// </summary>
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
+        public string Password { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the first name of the user.
+        /// </summary>
+        [Required]
+        public string FirstName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the last name of the user.
+        /// </summary>
+        [Required]
+        public string LastName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the role of the user. Must be either "Tenant" or "Owner".
+        /// </summary>
+        [Required]
+        public UserRole Role { get; set; } = UserRole.Tenant;
+    }
+
+    /// <summary>
+    /// Represents the model for initiating a password reset.
+    /// </summary>
     public class ForgotPasswordModel
     {
+        /// <summary>
+        /// Gets or sets the email address of the user requesting a password reset.
+        /// </summary>
+        [Required]
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
     }
 
+    /// <summary>
+    /// Represents the model for resetting a user's password.
+    /// </summary>
     public class ResetPasswordModel
     {
+        /// <summary>
+        /// Gets or sets the email address of the user resetting their password.
+        /// </summary>
+        [Required]
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the password reset token.
+        /// </summary>
+        [Required]
         public string Token { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the new password for the user account.
+        /// </summary>
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
         public string NewPassword { get; set; } = string.Empty;
     }
 }
