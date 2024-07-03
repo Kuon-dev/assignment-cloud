@@ -3,14 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Cloud.Models;
 using Cloud.Services;
-using Cloud.Filters;
+/*using Cloud.Filters;*/
 using System.ComponentModel.DataAnnotations;
 
 namespace Cloud.Controllers {
   [ApiController]
   [Route("api/[controller]")]
   [Authorize] // Requires authentication for all endpoints
-  public class PropertyController: ControllerBase {
+  public class PropertyController : ControllerBase {
 	private readonly ApplicationDbContext _context;
 	private readonly IPropertyService _propertyService;
 
@@ -63,7 +63,7 @@ namespace Cloud.Controllers {
 	/// </summary>
 	[HttpPost]
 	[Authorize(Roles = "Admin, Owner")] // Only allows Admin or Owner roles
-	[ServiceFilter(typeof(ValidationFilter))] // Custom filter for model validation
+	/*[ServiceFilter(typeof(ValidationFilter))] // Custom filter for model validation*/
 	public async Task<ActionResult<PropertyModel>> CreateProperty(CreatePropertyModel model) {
 	  var property = new PropertyModel {
 		OwnerId = model.OwnerId,
@@ -93,7 +93,7 @@ namespace Cloud.Controllers {
 	/// </summary>
 	[HttpPut("{id}")]
 	[Authorize(Roles = "Admin,Owner")]
-	[ServiceFilter(typeof(ValidationFilter))]
+	/*[ServiceFilter(typeof(ValidationFilter))]*/
 	public async Task<IActionResult> UpdateProperty(Guid id, UpdatePropertyModel model) {
 	  var property = await _context.Properties.FindAsync(id);
 
