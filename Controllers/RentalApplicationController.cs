@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Cloud.Models;
 using Cloud.Models.DTO;
 using Cloud.Services;
@@ -9,7 +10,7 @@ using Cloud.Filters;
 namespace Cloud.Controllers {
   [ApiController]
   [Route("api/[controller]")]
-  [Authorize] // Requires authentication for all endpoints
+  [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
   public class ApplicationsController : ControllerBase {
 	private readonly IRentalApplicationService _rentalApplicationService;
 	private readonly ILogger<ApplicationsController> _logger;
@@ -23,7 +24,7 @@ namespace Cloud.Controllers {
 	/// Get all rental applications with pagination
 	/// </summary>
 	[HttpGet]
-	[Authorize(Roles = "Admin,PropertyManager")]
+	[Authorize(Roles = "Admin,Owner")]
 	public async Task<ActionResult<CustomPaginatedResult<RentalApplicationModel>>> GetApplications([FromQuery] PaginationParams paginationParams) {
 	  var applications = await _rentalApplicationService.GetApplicationsAsync(paginationParams.Page, paginationParams.Size);
 	  return Ok(applications);
@@ -33,7 +34,7 @@ namespace Cloud.Controllers {
 	/// Get a specific rental application by ID
 	/// </summary>
 	[HttpGet("{id}")]
-	[Authorize(Roles = "Admin,PropertyManager,Tenant")]
+	[Authorize(Roles = "Admin,Owner,Tenant")]
 	public async Task<ActionResult<RentalApplicationModel>> GetApplication(Guid id) {
 	  var application = await _rentalApplicationService.GetApplicationByIdAsync(id);
 	  if (application == null) {
@@ -57,7 +58,7 @@ namespace Cloud.Controllers {
 	/// Update an existing rental application
 	/// </summary>
 	[HttpPut("{id}")]
-	[Authorize(Roles = "Admin,PropertyManager")]
+	[Authorize(Roles = "Admin,Owner")]
 	[ServiceFilter(typeof(ValidationFilter))]
 	public async Task<IActionResult> UpdateApplication(Guid id, UpdateRentalApplicationDto applicationDto) {
 	  var result = await _rentalApplicationService.UpdateApplicationAsync(id, applicationDto);
@@ -101,7 +102,7 @@ namespace Cloud.Controllers {
 	/// Get rental applications by status with pagination
 	/// </summary>
 	[HttpGet("status/{status}")]
-	[Authorize(Roles = "Admin,PropertyManager")]
+	[Authorize(Roles = "Admin,Owner")]
 	public async Task<ActionResult<CustomPaginatedResult<RentalApplicationModel>>> GetApplicationsByStatus(
 		string status,
 		[FromQuery] PaginationParams paginationParams) {

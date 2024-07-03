@@ -66,8 +66,8 @@ namespace Cloud.Controllers {
 	/// Create a new property
 	/// </summary>
 	[HttpPost]
-	/*[Authorize(Roles = "Admin,Owner")] // Only allows Admin or Owner roles*/
-	/*[ServiceFilter(typeof(ValidationFilter))] // Custom filter for model validation*/
+	[Authorize(Roles = "Admin,Owner")] // Only allows Admin or Owner roles
+	[ServiceFilter(typeof(ValidationFilter))] // Custom filter for model validation
 	public async Task<ActionResult<PropertyModel>> CreateProperty(CreatePropertyModel model) {
 	  var property = new PropertyModel {
 		OwnerId = model.OwnerId,
@@ -96,8 +96,8 @@ namespace Cloud.Controllers {
 	/// Update an existing property
 	/// </summary>
 	[HttpPut("{id}")]
-	/*[Authorize(Roles = "Admin,Owner")]*/
-	/*[ServiceFilter(typeof(ValidationFilter))]*/
+	[Authorize(Roles = "Admin,Owner")]
+	[ServiceFilter(typeof(ValidationFilter))]
 	public async Task<IActionResult> UpdateProperty(Guid id, UpdatePropertyModel model) {
 	  var property = await _context.Properties.FindAsync(id);
 

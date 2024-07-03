@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Cloud.Models;
 using Cloud.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace Cloud.Controllers {
   /// <summary>
@@ -10,7 +11,7 @@ namespace Cloud.Controllers {
   /// </summary>
   [ApiController]
   [Route("api/[controller]")]
-  [Authorize] // Add authorization middleware
+  [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
   public class LeaseController : ControllerBase {
 	private readonly ILeaseService _leaseService;
 

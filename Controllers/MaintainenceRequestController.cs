@@ -2,10 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Cloud.Models;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace Cloud.Controllers {
   [ApiController]
   [Route("api/maintenance-requests")]
+  [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
   public class MaintenanceRequestController : ControllerBase {
 	private readonly ApplicationDbContext _context;
 

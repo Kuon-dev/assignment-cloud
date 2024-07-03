@@ -2,14 +2,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Cloud.Models;
 using Cloud.Services;
-using System.Net;
+/*using System.Net;*/
 
 namespace Cloud.Controllers {
   [ApiController]
   [Route("api/users")]
-  [Authorize] // Ensure only authenticated users can access these routes
+  [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
   public class UserController : ControllerBase {
 	private readonly ApplicationDbContext _context;
 	private readonly IUserService _userService;
