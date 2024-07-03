@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Cloud.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Cloud.Filters;
 using Cloud.Services;
 /*using Cloud.Filters;*/
 using System.ComponentModel.DataAnnotations;
@@ -9,7 +11,9 @@ using System.ComponentModel.DataAnnotations;
 namespace Cloud.Controllers {
   [ApiController]
   [Route("api/[controller]")]
-  [Authorize] // Requires authentication for all endpoints
+  [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+  [ServiceFilter(typeof(ApiExceptionFilter))]
+  /*[Authorize] // Requires authentication for all endpoints*/
   public class PropertyController : ControllerBase {
 	private readonly ApplicationDbContext _context;
 	private readonly IPropertyService _propertyService;
@@ -62,7 +66,7 @@ namespace Cloud.Controllers {
 	/// Create a new property
 	/// </summary>
 	[HttpPost]
-	[Authorize(Roles = "Admin, Owner")] // Only allows Admin or Owner roles
+	/*[Authorize(Roles = "Admin,Owner")] // Only allows Admin or Owner roles*/
 	/*[ServiceFilter(typeof(ValidationFilter))] // Custom filter for model validation*/
 	public async Task<ActionResult<PropertyModel>> CreateProperty(CreatePropertyModel model) {
 	  var property = new PropertyModel {
@@ -92,7 +96,7 @@ namespace Cloud.Controllers {
 	/// Update an existing property
 	/// </summary>
 	[HttpPut("{id}")]
-	[Authorize(Roles = "Admin,Owner")]
+	/*[Authorize(Roles = "Admin,Owner")]*/
 	/*[ServiceFilter(typeof(ValidationFilter))]*/
 	public async Task<IActionResult> UpdateProperty(Guid id, UpdatePropertyModel model) {
 	  var property = await _context.Properties.FindAsync(id);
