@@ -70,12 +70,14 @@ builder.Services.AddIdentity<UserModel, IdentityRole>(options => {
 // add logger
 builder.Services.AddLogging();
 
-builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSingleton<S3Service>();
 builder.Services.AddScoped<ValidationFilter>();
+builder.Services.AddScoped<ApiExceptionFilter>();
+
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IListingService, ListingService>();
 builder.Services.AddScoped<IRentalApplicationService, RentalApplicationService>();
-builder.Services.AddScoped<ApiExceptionFilter>();
+builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<ILeaseService, LeaseService>();
 
 var app = builder.Build();

@@ -10,11 +10,11 @@ namespace Cloud.Controllers {
   [ApiController]
   [Route("api/[controller]")]
   [Authorize] // Requires authentication for all endpoints
-  public class PropertiesController : ControllerBase {
+  public class PropertyController: ControllerBase {
 	private readonly ApplicationDbContext _context;
 	private readonly IPropertyService _propertyService;
 
-	public PropertiesController(ApplicationDbContext context, IPropertyService propertyService) {
+	public PropertyController(ApplicationDbContext context, IPropertyService propertyService) {
 	  _context = context;
 	  _propertyService = propertyService;
 	}
