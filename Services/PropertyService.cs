@@ -12,7 +12,6 @@ namespace Cloud.Services {
 }
 
 
-
 namespace Cloud.Services {
   public class PropertyService : IPropertyService {
 	private readonly ApplicationDbContext _context;

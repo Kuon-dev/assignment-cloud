@@ -20,8 +20,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Configure Entity Framework Core with PostgreSQL
-/*var connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL");*/
-var connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON");
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL");
+/*var connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON");*/
 if (string.IsNullOrEmpty(connectionString)) {
   throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
 }
@@ -80,6 +80,8 @@ builder.Services.AddScoped<IListingService, ListingService>();
 builder.Services.AddScoped<IRentalApplicationService, RentalApplicationService>();
 builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<ILeaseService, LeaseService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IMaintenanceTaskService, MaintenanceTaskService>();
 
 var app = builder.Build();
 
