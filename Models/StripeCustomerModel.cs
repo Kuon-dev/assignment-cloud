@@ -4,25 +4,23 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Cloud.Models
-{
+namespace Cloud.Models {
 
-    public class StripeCustomerModel
-    {
-        [Key]
-        public Guid Id { get; set; }
+  public class StripeCustomerModel {
+	[Key]
+	public Guid Id { get; set; }
 
-        [Required]
-        public String UserId { get; set; }
+	[Required]
+	public String UserId { get; set; }
 
-        [ForeignKey("UserId")]
-        public UserModel? User { get; set; }
+	[ForeignKey("UserId")]
+	public UserModel? User { get; set; }
 
-        [Required]
-        public string StripeCustomerId { get; set; } = string.Empty;
+	[Required]
+	public string StripeCustomerId { get; set; } = string.Empty;
 
-        public DateTime CreatedAt { get; set; }
+	public DateTime CreatedAt { get; set; }
 
-        public DateTime UpdatedAt { get; set; }
-    }
+	public DateTime UpdatedAt { get; set; }
+  }
 }

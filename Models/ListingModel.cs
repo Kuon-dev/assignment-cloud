@@ -2,46 +2,36 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Cloud.Models
-{
+namespace Cloud.Models {
 
-    public class ListingModel
-    {
-        [Key]
-        public Guid Id { get; set; }
+  public class ListingModel {
+	[Key]
+	public Guid Id { get; set; }
 
-        [Required]
-        public Guid PropertyId { get; set; }
+	[Required]
+	public Guid PropertyId { get; set; }
 
-        [ForeignKey("PropertyId")]
-        public PropertyModel? Property { get; set; }
+	[ForeignKey("PropertyId")]
+	public PropertyModel? Property { get; set; }
 
-        [Required]
-        public string Title { get; set; } = string.Empty;
+	[Required]
+	public string Title { get; set; } = string.Empty;
+	public string? Description { get; set; }
+	[Column(TypeName = "decimal(18,2)")]
+	public decimal Price { get; set; }
 
-        public string? Description { get; set; }
+	public DateTime StartDate { get; set; }
+	public DateTime? EndDate { get; set; }
 
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal Price { get; set; }
+	public bool IsActive { get; set; }
+	public DateTime CreatedAt { get; set; }
+	public DateTime UpdatedAt { get; set; }
 
-        public DateTime StartDate { get; set; }
+	public int Views { get; set; }
+	public bool IsDeleted { get; set; }
+	public DateTime? DeletedAt { get; set; }
 
-        public string Location { get; set; } = string.Empty;
-
-        public DateTime? EndDate { get; set; }
-
-        public bool IsActive { get; set; }
-
-        public DateTime CreatedAt { get; set; }
-        public string Amenities { get; set; } = string.Empty;
-
-        public DateTime UpdatedAt { get; set; }
-        public int Bedrooms { get; set; }
-        public int Views { get; set; }
-        public bool IsDeleted { get; set; }
-        public DateTime? DeletedAt { get; set; }
-
-        // Navigation properties
-        public ICollection<RentalApplicationModel>? Applications { get; set; }
-    }
+	// Navigation properties
+	public ICollection<RentalApplicationModel>? Applications { get; set; }
+  }
 }
