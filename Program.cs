@@ -24,15 +24,13 @@ builder.Services.AddSwaggerGen();
 // Configure Entity Framework Core with PostgreSQL
 string connectionString;
 
-if (environment == "Development")
-{
-    connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL") 
-        ?? throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
+if (environment == "Development") {
+  connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL")
+	  ?? throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
 }
-else
-{
-    connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON") 
-        ?? throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
+else {
+  connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON")
+	  ?? throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
 }
 
 // Add JWT configuration
