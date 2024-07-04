@@ -1,26 +1,18 @@
-
 // StripeCustomerModel.cs
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cloud.Models.Data;
 
 namespace Cloud.Models {
 
-  public class StripeCustomerModel {
-	[Key]
-	public Guid Id { get; set; }
-
+  public class StripeCustomerModel : BaseEntity {
 	[Required]
-	public String UserId { get; set; }
+	public String UserId { get; set; } = null!;
 
 	[ForeignKey("UserId")]
 	public UserModel? User { get; set; }
 
 	[Required]
 	public string StripeCustomerId { get; set; } = string.Empty;
-
-	public DateTime CreatedAt { get; set; }
-
-	public DateTime UpdatedAt { get; set; }
   }
 }

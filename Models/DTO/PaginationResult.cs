@@ -1,4 +1,3 @@
-
 namespace Cloud.Models.DTO {
   public class CustomPaginatedResult<T> {
 	public IEnumerable<T> Items { get; set; } = new List<T>();

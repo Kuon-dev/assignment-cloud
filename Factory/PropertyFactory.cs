@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Cloud.Models;
+﻿using Cloud.Models;
 using Bogus;
-using Microsoft.EntityFrameworkCore;
 
 public class PropertyFactory {
   private readonly ApplicationDbContext _context;
@@ -49,7 +45,6 @@ public class PropertyFactory {
   // Method to create actual property data from user input
   public async Task<PropertyModel> CreatePropertyAsync(Guid ownerId, string address, string city, string state, string zipCode, PropertyType propertyType, int bedrooms, int bathrooms, decimal rentAmount, string? description, List<string>? amenities, bool isAvailable, RoomType roomType) {
 	var property = new PropertyModel {
-	  Id = Guid.NewGuid(),
 	  OwnerId = ownerId,
 	  Address = address,
 	  City = city,
@@ -62,10 +57,10 @@ public class PropertyFactory {
 	  Description = description,
 	  Amenities = amenities,
 	  IsAvailable = isAvailable,
-	  CreatedAt = DateTime.UtcNow,
-	  UpdatedAt = DateTime.UtcNow,
 	  RoomType = roomType
 	};
+
+	property.UpdateCreationProperties(DateTime.UtcNow);
 
 	await _context.Properties.AddAsync(property);
 	await _context.SaveChangesAsync();

@@ -84,8 +84,7 @@ namespace Cloud.Services {
 	  if (listing == null)
 		return false;
 
-	  listing.IsDeleted = true;
-	  listing.DeletedAt = DateTime.UtcNow;
+	  listing.UpdateIsDeleted(DateTime.UtcNow, true);
 
 	  await _context.SaveChangesAsync();
 	  return true;

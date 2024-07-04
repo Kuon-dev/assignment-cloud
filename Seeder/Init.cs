@@ -1,7 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Cloud.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,13 +16,17 @@ public class DataSeeder {
 	  var userFactory = new UserFactory(userManager, dbContext);
 	  var propertyFactory = new PropertyFactory(dbContext);
 
+	  if (dbContext == null) {
+		throw new InvalidOperationException("Database context is not initialized.");
+	  }
+
 	  // Seed Users if table is empty
 	  if (!await dbContext.Users.AnyAsync()) {
-		await SeedUsersAsync(userFactory, 50);
+		await userFactory.SeedUsersAsync(50);
 	  }
 
 	  // Seed Properties if table is empty
-	  if (!await dbContext.Properties.AnyAsync()) {
+	  if (!await dbContext.Properties?.AnyAsync()) {
 		var owners = await dbContext.Users.Include(u => u.Owner)
 										  .Where(u => u.Role == UserRole.Owner)
 										  .Select(u => u.Owner)
@@ -42,17 +42,6 @@ public class DataSeeder {
 	  }
 
 	  // Add more seeding methods for other models here
-	}
-  }
-
-  private async Task SeedUsersAsync(UserFactory userFactory, int count) {
-	for (int i = 0; i < count; i++) {
-	  try {
-		await userFactory.CreateFakeUserAsync();
-	  }
-	  catch (Exception ex) {
-		Console.WriteLine($"Error creating user: {ex.Message}");
-	  }
 	}
   }
 

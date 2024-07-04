@@ -1,16 +1,12 @@
 // AdminModel.cs
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cloud.Models.Data;
 
 namespace Cloud.Models {
-
-  public class AdminModel {
-	[Key]
-	public Guid Id { get; set; }
-
+  public class AdminModel : BaseEntity {
 	[Required]
-	public String UserId { get; set; }
+	public string UserId { get; set; } = null!;
 
 	[ForeignKey("UserId")]
 	public UserModel? User { get; set; }

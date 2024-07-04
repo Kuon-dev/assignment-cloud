@@ -82,8 +82,6 @@ namespace Cloud.Controllers {
 		Description = model.Description,
 		Amenities = model.Amenities,
 		IsAvailable = model.IsAvailable,
-		CreatedAt = DateTime.UtcNow,
-		UpdatedAt = DateTime.UtcNow
 	  };
 
 	  _context.Properties.Add(property);
@@ -117,7 +115,8 @@ namespace Cloud.Controllers {
 	  property.Description = model.Description ?? property.Description;
 	  property.Amenities = model.Amenities ?? property.Amenities;
 	  property.IsAvailable = model.IsAvailable ?? property.IsAvailable;
-	  property.UpdatedAt = DateTime.UtcNow;
+
+	  property.UpdateModifiedProperties(DateTime.UtcNow);
 
 	  try {
 		await _context.SaveChangesAsync();
@@ -145,7 +144,7 @@ namespace Cloud.Controllers {
 		return NotFound();
 	  }
 
-	  property.DeletedAt = DateTime.UtcNow;
+	  property.UpdateIsDeleted(DateTime.UtcNow, true);
 	  await _context.SaveChangesAsync();
 
 	  return NoContent();

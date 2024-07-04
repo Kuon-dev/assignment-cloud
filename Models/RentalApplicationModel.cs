@@ -2,13 +2,11 @@
 /*using System;*/
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cloud.Models.Data;
 
 /*namespace Cloud.Models*/
 namespace Cloud.Models {
-  public class RentalApplicationModel {
-	[Key]
-	public Guid Id { get; set; }
-
+  public class RentalApplicationModel : BaseEntity {
 	[Required]
 	public Guid TenantId { get; set; }
 

@@ -1,14 +1,11 @@
 // RentPaymentModel.cs
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cloud.Models.Data;
 
 namespace Cloud.Models {
 
-  public class RentPaymentModel {
-	[Key]
-	public Guid Id { get; set; }
-
+  public class RentPaymentModel : BaseEntity {
 	[Required]
 	public Guid TenantId { get; set; }
 
@@ -26,10 +23,6 @@ namespace Cloud.Models {
 	public string? PaymentMethodId { get; set; }
 
 	public PaymentStatus Status { get; set; }
-
-	public DateTime CreatedAt { get; set; }
-
-	public DateTime UpdatedAt { get; set; }
   }
 
   // PaymentStatusModel.cs

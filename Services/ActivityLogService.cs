@@ -27,7 +27,6 @@ namespace Cloud.Services {
 	}
 
 	public async Task<ActivityLogModel> CreateActivityAsync(ActivityLogModel activity) {
-	  activity.Id = Guid.NewGuid();
 	  activity.Timestamp = DateTime.UtcNow;
 
 	  await _context.ActivityLogs.AddAsync(activity);

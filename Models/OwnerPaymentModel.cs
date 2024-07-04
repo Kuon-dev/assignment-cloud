@@ -1,23 +1,22 @@
 // OwnerPaymentModel.cs
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cloud.Models.Data;
 
 namespace Cloud.Models {
-  public class OwnerPaymentModel {
-	[Key]
-	public Guid Id { get; set; }
+  public class OwnerPaymentModel : BaseEntity {
 
 	[Required]
 	public Guid OwnerId { get; set; }
 
 	[ForeignKey("OwnerId")]
-	public OwnerModel Owner { get; set; }
+	public OwnerModel Owner { get; set; } = null!;
 
 	[Required]
 	public Guid PropertyId { get; set; }
 
 	[ForeignKey("PropertyId")]
-	public PropertyModel Property { get; set; }
+	public PropertyModel Property { get; set; } = null!;
 
 	[Required]
 	[Column(TypeName = "decimal(18,2)")]
@@ -38,7 +37,8 @@ namespace Cloud.Models {
 	[Column(TypeName = "decimal(18,2)")]
 	public decimal MaintenanceCost { get; set; }
 
-	public string StripePaymentIntentId { get; set; }
+	[Required]
+	public string StripePaymentIntentId { get; set; } = null!;
 
 	[Required]
 	public OwnerPaymentStatus Status { get; set; }

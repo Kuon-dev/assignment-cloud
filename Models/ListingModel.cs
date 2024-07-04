@@ -1,12 +1,11 @@
 // ListingModel.cs
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cloud.Models.Data;
 
 namespace Cloud.Models {
 
-  public class ListingModel {
-	[Key]
-	public Guid Id { get; set; }
+  public class ListingModel : BaseEntity {
 
 	[Required]
 	public Guid PropertyId { get; set; }
@@ -24,13 +23,7 @@ namespace Cloud.Models {
 	public DateTime? EndDate { get; set; }
 
 	public bool IsActive { get; set; }
-	public DateTime CreatedAt { get; set; }
-	public DateTime UpdatedAt { get; set; }
-
 	public int Views { get; set; }
-	public bool IsDeleted { get; set; }
-	public DateTime? DeletedAt { get; set; }
-
 	// Navigation properties
 	public ICollection<RentalApplicationModel>? Applications { get; set; }
   }

@@ -21,6 +21,8 @@ namespace Cloud.Services {
 	}
 
 	public async Task<IEnumerable<PropertyModel>> SearchPropertiesAsync(string? location, string? priceRange, int? bedrooms, List<string>? amenities) {
+	  if (_context.Properties == null)
+		throw new InvalidOperationException("Properties table is not available.");
 	  var query = _context.Properties.AsQueryable();
 
 	  if (!string.IsNullOrEmpty(location)) {
@@ -46,7 +48,10 @@ namespace Cloud.Services {
 	}
 
 	public async Task<Cloud.Models.DTO.CustomPaginatedResult<TenantModel>> GetPropertyTenantsAsync(Guid propertyId, int page, int size) {
-	  var query = _context.Tenants.Where(t => t.PropertyId == propertyId);
+	  if (_context.Tenants == null) {
+		throw new InvalidOperationException("Tenants table is not available.");
+	  }
+	  var query = _context.Tenants.Where(t => t.CurrentPropertyId == propertyId);
 	  var totalCount = await query.CountAsync();
 
 	  var tenants = await query

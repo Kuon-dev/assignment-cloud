@@ -5,11 +5,77 @@ using Stripe;
 
 namespace Cloud.Services {
   /// <summary>
+  /// Interface for payment-related operations.
+  /// </summary>
+  public interface IPaymentService {
+	/// <summary>
+	/// Get all payments with pagination.
+	/// </summary>
+	/// <param name="page">The page number.</param>
+	/// <param name="size">The number of items per page.</param>
+	/// <returns>A paginated list of payments.</returns>
+	Task<(IEnumerable<RentPaymentModel> Payments, int TotalCount)> GetAllPaymentsAsync(int page, int size);
+
+	/// <summary>
+	/// Get a specific payment by ID.
+	/// </summary>
+	/// <param name="id">The ID of the payment.</param>
+	/// <returns>The payment if found, null otherwise.</returns>
+	Task<RentPaymentModel?> GetPaymentByIdAsync(Guid id);
+
+	/// <summary>
+	/// Create a new payment.
+	/// </summary>
+	/// <param name="payment">The payment to create.</param>
+	/// <returns>The created payment.</returns>
+	Task<RentPaymentModel> CreatePaymentAsync(RentPaymentModel payment, String userId);
+
+	/// <summary>
+	/// Update an existing payment.
+	/// </summary>
+	/// <param name="id">The ID of the payment to update.</param>
+	/// <param name="payment">The updated payment information.</param>
+	/// <returns>The updated payment if found, null otherwise.</returns>
+	Task<RentPaymentModel?> UpdatePaymentAsync(Guid id, RentPaymentModel payment);
+
+	/// <summary>
+	/// Delete a payment.
+	/// </summary>
+	/// <param name="id">The ID of the payment to delete.</param>
+	/// <returns>True if the payment was deleted, false otherwise.</returns>
+	Task<bool> DeletePaymentAsync(Guid id);
+
+	/// <summary>
+	/// Get all payments for a specific user with pagination.
+	/// </summary>
+	/// <param name="userId">The ID of the user.</param>
+	/// <param name="page">The page number.</param>
+	/// <param name="size">The number of items per page.</param>
+	/// <returns>A paginated list of payments for the specified user.</returns>
+	Task<(IEnumerable<RentPaymentModel> Payments, int TotalCount)> GetPaymentsByUserIdAsync(string userId, int page, int size);
+
+	/// <summary>
+	/// Get all payments for a specific property with pagination.
+	/// </summary>
+	/// <param name="propertyId">The ID of the property.</param>
+	/// <param name="page">The page number.</param>
+	/// <param name="size">The number of items per page.</param>
+	/// <returns>A paginated list of payments for the specified property.</returns>
+	Task<(IEnumerable<RentPaymentModel> Payments, int TotalCount)> GetPaymentsByPropertyIdAsync(Guid propertyId, int page, int size);
+
+	/// <summary>
+	/// Handle Stripe webhook events.
+	/// </summary>
+	/// <param name="json">The JSON payload from Stripe.</param>
+	/// <param name="signature">The Stripe signature header.</param>
+	/// <returns>A task representing the asynchronous operation.</returns>
+	/*Task HandleStripeWebhookAsync(string json, string signature);*/
+  }
+  /// <summary>
   /// Service for handling payment-related operations.
   /// </summary>
   public class PaymentService : IPaymentService {
 	private readonly ApplicationDbContext _context;
-	private readonly string _stripeWebhookSecret;
 
 	/// <summary>
 	/// Initializes a new instance of the PaymentService class.
@@ -18,7 +84,6 @@ namespace Cloud.Services {
 	/// <param name="configuration">The configuration to get Stripe settings.</param>
 	public PaymentService(ApplicationDbContext context, IConfiguration configuration) {
 	  _context = context;
-	  _stripeWebhookSecret = configuration["Stripe:WebhookSecret"];
 	}
 
 	/// <inheritdoc />
@@ -38,10 +103,8 @@ namespace Cloud.Services {
 	}
 
 	/// <inheritdoc />
-	public async Task<RentPaymentModel> CreatePaymentAsync(RentPaymentModel payment) {
-	  payment.Id = Guid.NewGuid();
-	  payment.CreatedAt = DateTime.UtcNow;
-	  payment.UpdatedAt = DateTime.UtcNow;
+	public async Task<RentPaymentModel> CreatePaymentAsync(RentPaymentModel payment, string createdBy) {
+	  payment.UpdateCreationProperties(DateTime.UtcNow);
 
 	  _context.RentPayments.Add(payment);
 	  await _context.SaveChangesAsync();
@@ -62,7 +125,7 @@ namespace Cloud.Services {
 	  existingPayment.PaymentIntentId = payment.PaymentIntentId;
 	  existingPayment.PaymentMethodId = payment.PaymentMethodId;
 	  existingPayment.Status = payment.Status;
-	  existingPayment.UpdatedAt = DateTime.UtcNow;
+	  existingPayment.UpdateModifiedProperties(DateTime.UtcNow);
 
 	  await _context.SaveChangesAsync();
 
@@ -77,7 +140,7 @@ namespace Cloud.Services {
 		return false;
 	  }
 
-	  _context.RentPayments.Remove(payment);
+	  payment.UpdateIsDeleted(DateTime.UtcNow, true);
 	  await _context.SaveChangesAsync();
 
 	  return true;
@@ -111,32 +174,13 @@ namespace Cloud.Services {
 	  return (payments, totalCount);
 	}
 
-	/// <inheritdoc />
-	public async Task HandleStripeWebhookAsync(string json, string signature) {
-	  try {
-		var stripeEvent = EventUtility.ConstructEvent(json, signature, _stripeWebhookSecret);
-
-		switch (stripeEvent.Type) {
-		  case Events.PaymentIntentSucceeded:
-			var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
-			await HandlePaymentIntentSucceededAsync(paymentIntent);
-			break;
-			// Add more cases for other event types as needed
-		}
-	  }
-	  catch (StripeException e) {
-		// Handle exception (e.g., log error, send notification)
-		throw;
-	  }
-	}
-
 	private async Task HandlePaymentIntentSucceededAsync(PaymentIntent paymentIntent) {
 	  var payment = await _context.RentPayments
 		  .FirstOrDefaultAsync(p => p.PaymentIntentId == paymentIntent.Id);
 
 	  if (payment != null) {
 		payment.Status = PaymentStatus.Succeeded;
-		payment.UpdatedAt = DateTime.UtcNow;
+		payment.UpdateModifiedProperties(DateTime.UtcNow);
 		await _context.SaveChangesAsync();
 	  }
 	}

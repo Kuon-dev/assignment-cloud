@@ -31,7 +31,14 @@ namespace Cloud.Services {
 	}
 
 	public async Task<OwnerPaymentModel> GetPaymentByIdAsync(Guid id) {
-	  return await _context.OwnerPayments.FindAsync(id);
+	  if (!OwnerPaymentExists(id)) {
+		throw new KeyNotFoundException();
+	  }
+
+	  if (_context.OwnerPayments == null)
+		throw new InvalidOperationException();
+
+	  return await _context.OwnerPayments.FindAsync(id) ?? throw new KeyNotFoundException();
 	}
 
 	public async Task<OwnerPaymentModel> CreatePaymentAsync(OwnerPaymentModel payment) {
@@ -42,7 +49,7 @@ namespace Cloud.Services {
 
 	public async Task<OwnerPaymentModel> UpdatePaymentAsync(Guid id, OwnerPaymentModel payment) {
 	  if (id != payment.Id) {
-		return null;
+		throw new ArgumentException();
 	  }
 
 	  _context.Entry(payment).State = EntityState.Modified;
@@ -52,7 +59,7 @@ namespace Cloud.Services {
 	  }
 	  catch (DbUpdateConcurrencyException) {
 		if (!OwnerPaymentExists(id)) {
-		  return null;
+		  throw new KeyNotFoundException();
 		}
 		else {
 		  throw;
@@ -93,7 +100,7 @@ namespace Cloud.Services {
 	public async Task<OwnerPaymentModel> ProcessStripePaymentAsync(Guid paymentId) {
 	  var payment = await _context.OwnerPayments.FindAsync(paymentId);
 	  if (payment == null) {
-		return null;
+		throw new KeyNotFoundException();
 	  }
 
 	  var options = new PaymentIntentCreateOptions {

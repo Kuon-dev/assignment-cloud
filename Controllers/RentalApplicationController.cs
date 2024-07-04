@@ -85,7 +85,7 @@ namespace Cloud.Controllers {
 	/// Upload documents for a rental application
 	/// </summary>
 	[HttpPost("{id}/documents")]
-	[Authorize(Roles = "Tenant")]
+	[Authorize(Roles = "Admin,Tenant")]
 	public async Task<IActionResult> UploadDocuments(Guid id, [FromForm] IFormFileCollection files) {
 	  if (files == null || files.Count == 0) {
 		return BadRequest("No files were uploaded.");
