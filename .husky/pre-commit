@@ -1,1 +1,2 @@
 dotnet format --verbosity diag
+git add './**/*.cs'
