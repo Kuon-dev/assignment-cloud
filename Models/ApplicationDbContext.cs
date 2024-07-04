@@ -24,6 +24,7 @@ namespace Cloud.Models {
 	public DbSet<MaintenanceRequestModel>? MaintenanceRequests { get; set; }
 	public DbSet<MaintenanceTaskModel>? MaintenanceTasks { get; set; }
 	public DbSet<ApplicationDocumentModel>? ApplicationDocuments { get; set; }
+	public DbSet<ActivityLogModel>? ActivityLogs { get; set; }
 
 	public DbSet<ListingModel> Listings { get; set; }
 	public DbSet<RentalApplicationModel> RentalApplications { get; set; }

@@ -94,6 +94,8 @@ builder.Services.AddScoped<ILeaseService, LeaseService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IMaintenanceTaskService, MaintenanceTaskService>();
 builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+
 builder.Services.AddScoped<PaymentIntentService>();
 
 StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ?? throw new InvalidOperationException("Stripe secret key not found.");

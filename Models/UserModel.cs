@@ -31,5 +31,6 @@ namespace Cloud.Models {
 	public OwnerModel? Owner { get; set; }
 	public AdminModel? Admin { get; set; }
 	public StripeCustomerModel? StripeCustomer { get; set; }
+
   }
 }
