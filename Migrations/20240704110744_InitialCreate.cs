@@ -11,6 +11,19 @@ namespace Cloud.Migrations {
 	/// <inheritdoc />
 	protected override void Up(MigrationBuilder migrationBuilder) {
 	  migrationBuilder.CreateTable(
+		  name: "ApplicationDocuments",
+		  columns: table => new {
+			Id = table.Column<Guid>(type: "uuid", nullable: false),
+			RentalApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
+			FileName = table.Column<string>(type: "text", nullable: false),
+			FilePath = table.Column<string>(type: "text", nullable: false),
+			UploadedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+		  },
+		  constraints: table => {
+			table.PrimaryKey("PK_ApplicationDocuments", x => x.Id);
+		  });
+
+	  migrationBuilder.CreateTable(
 		  name: "AspNetRoles",
 		  columns: table => new {
 			Id = table.Column<string>(type: "text", nullable: false),
@@ -35,6 +48,7 @@ namespace Cloud.Migrations {
 			CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
 			UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
 			DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+			ProfilePictureUrl = table.Column<string>(type: "text", nullable: true),
 			UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
 			NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
 			Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -202,22 +216,6 @@ namespace Cloud.Migrations {
 		  });
 
 	  migrationBuilder.CreateTable(
-		  name: "Tenants",
-		  columns: table => new {
-			Id = table.Column<Guid>(type: "uuid", nullable: false),
-			UserId = table.Column<string>(type: "text", nullable: false)
-		  },
-		  constraints: table => {
-			table.PrimaryKey("PK_Tenants", x => x.Id);
-			table.ForeignKey(
-					  name: "FK_Tenants_AspNetUsers_UserId",
-					  column: x => x.UserId,
-					  principalTable: "AspNetUsers",
-					  principalColumn: "Id",
-					  onDelete: ReferentialAction.Cascade);
-		  });
-
-	  migrationBuilder.CreateTable(
 		  name: "Properties",
 		  columns: table => new {
 			Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -229,14 +227,14 @@ namespace Cloud.Migrations {
 			PropertyType = table.Column<int>(type: "integer", nullable: false),
 			Bedrooms = table.Column<int>(type: "integer", nullable: false),
 			Bathrooms = table.Column<int>(type: "integer", nullable: false),
-			SquareFootage = table.Column<float>(type: "real", nullable: false),
 			RentAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
 			Description = table.Column<string>(type: "text", nullable: true),
 			Amenities = table.Column<List<string>>(type: "text[]", nullable: true),
 			IsAvailable = table.Column<bool>(type: "boolean", nullable: false),
 			CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
 			UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-			DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+			DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+			RoomType = table.Column<int>(type: "integer", nullable: false)
 		  },
 		  constraints: table => {
 			table.PrimaryKey("PK_Properties", x => x.Id);
@@ -244,29 +242,6 @@ namespace Cloud.Migrations {
 					  name: "FK_Properties_Owners_OwnerId",
 					  column: x => x.OwnerId,
 					  principalTable: "Owners",
-					  principalColumn: "Id",
-					  onDelete: ReferentialAction.Cascade);
-		  });
-
-	  migrationBuilder.CreateTable(
-		  name: "RentPayments",
-		  columns: table => new {
-			Id = table.Column<Guid>(type: "uuid", nullable: false),
-			TenantId = table.Column<Guid>(type: "uuid", nullable: false),
-			Amount = table.Column<int>(type: "integer", nullable: false),
-			Currency = table.Column<string>(type: "text", nullable: false),
-			PaymentIntentId = table.Column<string>(type: "text", nullable: false),
-			PaymentMethodId = table.Column<string>(type: "text", nullable: true),
-			Status = table.Column<int>(type: "integer", nullable: false),
-			CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-			UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-		  },
-		  constraints: table => {
-			table.PrimaryKey("PK_RentPayments", x => x.Id);
-			table.ForeignKey(
-					  name: "FK_RentPayments_Tenants_TenantId",
-					  column: x => x.TenantId,
-					  principalTable: "Tenants",
 					  principalColumn: "Id",
 					  onDelete: ReferentialAction.Cascade);
 		  });
@@ -283,7 +258,11 @@ namespace Cloud.Migrations {
 			EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
 			IsActive = table.Column<bool>(type: "boolean", nullable: false),
 			CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-			UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+			UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+			Views = table.Column<int>(type: "integer", nullable: false),
+			IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+			DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+			PropertyModelId = table.Column<Guid>(type: "uuid", nullable: true)
 		  },
 		  constraints: table => {
 			table.PrimaryKey("PK_Listings", x => x.Id);
@@ -291,6 +270,58 @@ namespace Cloud.Migrations {
 					  name: "FK_Listings_Properties_PropertyId",
 					  column: x => x.PropertyId,
 					  principalTable: "Properties",
+					  principalColumn: "Id",
+					  onDelete: ReferentialAction.Restrict);
+			table.ForeignKey(
+					  name: "FK_Listings_Properties_PropertyModelId",
+					  column: x => x.PropertyModelId,
+					  principalTable: "Properties",
+					  principalColumn: "Id");
+		  });
+
+	  migrationBuilder.CreateTable(
+		  name: "Tenants",
+		  columns: table => new {
+			Id = table.Column<Guid>(type: "uuid", nullable: false),
+			UserId = table.Column<string>(type: "text", nullable: false),
+			CurrentPropertyId = table.Column<Guid>(type: "uuid", nullable: true),
+			PropertyId = table.Column<Guid>(type: "uuid", nullable: true)
+		  },
+		  constraints: table => {
+			table.PrimaryKey("PK_Tenants", x => x.Id);
+			table.ForeignKey(
+					  name: "FK_Tenants_AspNetUsers_UserId",
+					  column: x => x.UserId,
+					  principalTable: "AspNetUsers",
+					  principalColumn: "Id",
+					  onDelete: ReferentialAction.Cascade);
+			table.ForeignKey(
+					  name: "FK_Tenants_Properties_CurrentPropertyId",
+					  column: x => x.CurrentPropertyId,
+					  principalTable: "Properties",
+					  principalColumn: "Id");
+		  });
+
+	  migrationBuilder.CreateTable(
+		  name: "Leases",
+		  columns: table => new {
+			Id = table.Column<Guid>(type: "uuid", nullable: false),
+			TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+			UnitId = table.Column<Guid>(type: "uuid", nullable: false),
+			StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+			EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+			RentAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+			SecurityDeposit = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+			IsActive = table.Column<bool>(type: "boolean", nullable: false),
+			CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+			UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+		  },
+		  constraints: table => {
+			table.PrimaryKey("PK_Leases", x => x.Id);
+			table.ForeignKey(
+					  name: "FK_Leases_Tenants_TenantId",
+					  column: x => x.TenantId,
+					  principalTable: "Tenants",
 					  principalColumn: "Id",
 					  onDelete: ReferentialAction.Cascade);
 		  });
@@ -318,24 +349,6 @@ namespace Cloud.Migrations {
 					  name: "FK_MaintenanceRequests_Tenants_TenantId",
 					  column: x => x.TenantId,
 					  principalTable: "Tenants",
-					  principalColumn: "Id",
-					  onDelete: ReferentialAction.Cascade);
-		  });
-
-	  migrationBuilder.CreateTable(
-		  name: "Units",
-		  columns: table => new {
-			Id = table.Column<Guid>(type: "uuid", nullable: false),
-			PropertyId = table.Column<Guid>(type: "uuid", nullable: false),
-			UnitNumber = table.Column<string>(type: "text", nullable: false),
-			IsAvailable = table.Column<bool>(type: "boolean", nullable: false)
-		  },
-		  constraints: table => {
-			table.PrimaryKey("PK_Units", x => x.Id);
-			table.ForeignKey(
-					  name: "FK_Units_Properties_PropertyId",
-					  column: x => x.PropertyId,
-					  principalTable: "Properties",
 					  principalColumn: "Id",
 					  onDelete: ReferentialAction.Cascade);
 		  });
@@ -369,6 +382,29 @@ namespace Cloud.Migrations {
 		  });
 
 	  migrationBuilder.CreateTable(
+		  name: "RentPayments",
+		  columns: table => new {
+			Id = table.Column<Guid>(type: "uuid", nullable: false),
+			TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+			Amount = table.Column<int>(type: "integer", nullable: false),
+			Currency = table.Column<string>(type: "text", nullable: false),
+			PaymentIntentId = table.Column<string>(type: "text", nullable: false),
+			PaymentMethodId = table.Column<string>(type: "text", nullable: true),
+			Status = table.Column<int>(type: "integer", nullable: false),
+			CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+			UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+		  },
+		  constraints: table => {
+			table.PrimaryKey("PK_RentPayments", x => x.Id);
+			table.ForeignKey(
+					  name: "FK_RentPayments_Tenants_TenantId",
+					  column: x => x.TenantId,
+					  principalTable: "Tenants",
+					  principalColumn: "Id",
+					  onDelete: ReferentialAction.Cascade);
+		  });
+
+	  migrationBuilder.CreateTable(
 		  name: "MaintenanceTasks",
 		  columns: table => new {
 			Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -387,36 +423,6 @@ namespace Cloud.Migrations {
 					  name: "FK_MaintenanceTasks_MaintenanceRequests_RequestId",
 					  column: x => x.RequestId,
 					  principalTable: "MaintenanceRequests",
-					  principalColumn: "Id",
-					  onDelete: ReferentialAction.Cascade);
-		  });
-
-	  migrationBuilder.CreateTable(
-		  name: "Leases",
-		  columns: table => new {
-			Id = table.Column<Guid>(type: "uuid", nullable: false),
-			TenantId = table.Column<Guid>(type: "uuid", nullable: false),
-			UnitId = table.Column<Guid>(type: "uuid", nullable: false),
-			StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-			EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-			RentAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-			SecurityDeposit = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-			IsActive = table.Column<bool>(type: "boolean", nullable: false),
-			CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-			UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-		  },
-		  constraints: table => {
-			table.PrimaryKey("PK_Leases", x => x.Id);
-			table.ForeignKey(
-					  name: "FK_Leases_Tenants_TenantId",
-					  column: x => x.TenantId,
-					  principalTable: "Tenants",
-					  principalColumn: "Id",
-					  onDelete: ReferentialAction.Cascade);
-			table.ForeignKey(
-					  name: "FK_Leases_Units_UnitId",
-					  column: x => x.UnitId,
-					  principalTable: "Units",
 					  principalColumn: "Id",
 					  onDelete: ReferentialAction.Cascade);
 		  });
@@ -476,14 +482,14 @@ namespace Cloud.Migrations {
 		  column: "TenantId");
 
 	  migrationBuilder.CreateIndex(
-		  name: "IX_Leases_UnitId",
-		  table: "Leases",
-		  column: "UnitId");
-
-	  migrationBuilder.CreateIndex(
 		  name: "IX_Listings_PropertyId",
 		  table: "Listings",
 		  column: "PropertyId");
+
+	  migrationBuilder.CreateIndex(
+		  name: "IX_Listings_PropertyModelId",
+		  table: "Listings",
+		  column: "PropertyModelId");
 
 	  migrationBuilder.CreateIndex(
 		  name: "IX_MaintenanceRequests_PropertyId",
@@ -539,21 +545,24 @@ namespace Cloud.Migrations {
 		  unique: true);
 
 	  migrationBuilder.CreateIndex(
+		  name: "IX_Tenants_CurrentPropertyId",
+		  table: "Tenants",
+		  column: "CurrentPropertyId");
+
+	  migrationBuilder.CreateIndex(
 		  name: "IX_Tenants_UserId",
 		  table: "Tenants",
 		  column: "UserId",
 		  unique: true);
-
-	  migrationBuilder.CreateIndex(
-		  name: "IX_Units_PropertyId",
-		  table: "Units",
-		  column: "PropertyId");
 	}
 
 	/// <inheritdoc />
 	protected override void Down(MigrationBuilder migrationBuilder) {
 	  migrationBuilder.DropTable(
 		  name: "Admins");
+
+	  migrationBuilder.DropTable(
+		  name: "ApplicationDocuments");
 
 	  migrationBuilder.DropTable(
 		  name: "AspNetRoleClaims");
@@ -587,9 +596,6 @@ namespace Cloud.Migrations {
 
 	  migrationBuilder.DropTable(
 		  name: "AspNetRoles");
-
-	  migrationBuilder.DropTable(
-		  name: "Units");
 
 	  migrationBuilder.DropTable(
 		  name: "MaintenanceRequests");

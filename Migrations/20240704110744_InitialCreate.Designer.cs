@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cloud.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240702140924_Initial")]
-    partial class Initial
+    [Migration("20240704110744_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -139,6 +139,9 @@ namespace Cloud.Migrations
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("PropertyModelId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -155,6 +158,8 @@ namespace Cloud.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PropertyId");
+
+                    b.HasIndex("PropertyModelId");
 
                     b.ToTable("Listings");
                 });
@@ -702,10 +707,14 @@ namespace Cloud.Migrations
             modelBuilder.Entity("Cloud.Models.ListingModel", b =>
                 {
                     b.HasOne("Cloud.Models.PropertyModel", "Property")
-                        .WithMany("Listings")
+                        .WithMany()
                         .HasForeignKey("PropertyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Cloud.Models.PropertyModel", null)
+                        .WithMany("Listings")
+                        .HasForeignKey("PropertyModelId");
 
                     b.Navigation("Property");
                 });
