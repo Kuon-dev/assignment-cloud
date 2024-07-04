@@ -1,1 +1,5 @@
 dotnet format --verbosity diag
+
+bash << EOF
+git diff --cached --name-only
+EOF
