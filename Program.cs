@@ -4,34 +4,44 @@ using Cloud.Models;
 using Cloud.Services;
 using Cloud.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-/*using Microsoft.EntityFrameworkCore;*/
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
-/*using Microsoft.Extensions.Configuration;*/
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Load environment variables
 Env.Load();
 
-var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Configure Entity Framework Core with PostgreSQL
-string connectionString;
+var appEnv = Environment.GetEnvironmentVariable("APP_ENV");
+var connectionString = "";
 
-if (environment == "Development") {
-  connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL")
-	  ?? throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
+if (string.Equals(appEnv, "development", StringComparison.OrdinalIgnoreCase))
+{
+    connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL");
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
+    }
 }
-else {
-  connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON")
-	  ?? throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
+else
+{
+    connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON");
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
+    }
 }
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+	options.UseNpgsql(connectionString));
 
 // Add JWT configuration
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
