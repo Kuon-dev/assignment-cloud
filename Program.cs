@@ -7,11 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
-<<<<<<< Updated upstream
 using Stripe;
-=======
 using Microsoft.Extensions.Logging;
->>>>>>> Stashed changes
 
 var builder = WebApplication.CreateBuilder(args);
 
