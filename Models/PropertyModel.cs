@@ -47,7 +47,7 @@ namespace Cloud.Models {
 
 	public DateTime UpdatedAt { get; set; }
 
-	public DateTime? DeletedAt { get; set; } = null;
+	public DateTime? DeletedAt { get; set; }
 
 	public RoomType RoomType { get; set; }
 
