@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Cloud.Models;
 using Cloud.Services;
-/*using System.Net;*/
+using System.Security.Claims;
 
 namespace Cloud.Controllers {
   [ApiController]
@@ -188,6 +188,26 @@ namespace Cloud.Controllers {
 	  await _context.SaveChangesAsync();
 
 	  return Ok(new { message = "Profile picture uploaded successfully", imageUrl = user.ProfilePictureUrl });
+	}
+
+	/// <summary>
+	/// Get the current user profile based on the JWT token.
+	/// </summary>
+	[HttpGet("profile")]
+	public async Task<ActionResult<UserModel>> GetCurrentUserProfile() {
+	  var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+	  if (userId == null) {
+		return Unauthorized();
+	  }
+
+	  var user = await _context.Users
+		  .FirstOrDefaultAsync(u => u.Id == userId && u.DeletedAt == null);
+
+	  if (user == null) {
+		return NotFound();
+	  }
+
+	  return user;
 	}
 
 	private bool UserExists(string id) {

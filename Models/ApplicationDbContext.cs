@@ -49,6 +49,10 @@ namespace Cloud.Models {
 		  .HasMany(p => p.Listings)
 		  .WithOne(l => l!.Property)
 		  .OnDelete(DeleteBehavior.Cascade);
+	  modelBuilder.Entity<ListingModel>()
+		  .HasOne(l => l.Property)
+		  .WithMany()
+		  .OnDelete(DeleteBehavior.Restrict);
 	  /*modelBuilder.Entity<ApplicationDocumentModel>().*/
 	}
   }
