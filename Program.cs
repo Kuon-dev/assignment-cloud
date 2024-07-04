@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,17 +24,21 @@ builder.Services.AddSwaggerGen();
 var appEnv = Environment.GetEnvironmentVariable("APP_ENV");
 var connectionString = "";
 
-if (string.Equals(appEnv, "development", StringComparison.OrdinalIgnoreCase)) {
-  connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL");
-  if (string.IsNullOrEmpty(connectionString)) {
-	throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
-  }
+if (string.Equals(appEnv, "development", StringComparison.OrdinalIgnoreCase))
+{
+    connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL");
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
+    }
 }
-else {
-  connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON");
-  if (string.IsNullOrEmpty(connectionString)) {
-	throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
-  }
+else
+{
+    connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON");
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
+    }
 }
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -92,6 +97,10 @@ builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<ILeaseService, LeaseService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IMaintenanceTaskService, MaintenanceTaskService>();
+builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
+builder.Services.AddScoped<PaymentIntentService>();
+
+StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ?? throw new InvalidOperationException("Stripe secret key not found.");
 
 var app = builder.Build();
 

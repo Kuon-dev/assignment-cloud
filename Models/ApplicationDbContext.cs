@@ -16,7 +16,10 @@ namespace Cloud.Models {
 	/*public DbSet<ListingModel>? Listings { get; set; }*/
 	/*public DbSet<RentalApplicationModel>? RentalApplications { get; set; }*/
 	public DbSet<LeaseModel>? Leases { get; set; }
+
 	public DbSet<RentPaymentModel>? RentPayments { get; set; }
+	public DbSet<OwnerPaymentModel> OwnerPayments { get; set; }
+
 	public DbSet<StripeCustomerModel>? StripeCustomers { get; set; }
 	public DbSet<MaintenanceRequestModel>? MaintenanceRequests { get; set; }
 	public DbSet<MaintenanceTaskModel>? MaintenanceTasks { get; set; }
