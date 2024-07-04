@@ -29,12 +29,13 @@ var connectionString = "";
 if (string.Equals(appEnv, "development", StringComparison.OrdinalIgnoreCase)) {
   connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL");
   if (string.IsNullOrEmpty(connectionString)) {
-    throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
+	throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
   }
-} else {
+}
+else {
   connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON");
   if (string.IsNullOrEmpty(connectionString)) {
-    throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
+	throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
   }
 }
 
@@ -52,15 +53,15 @@ if (string.IsNullOrEmpty(jwtSecret) || string.IsNullOrEmpty(jwtIssuer) || string
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
   .AddJwtBearer(options => {
-    options.TokenValidationParameters = new TokenValidationParameters {
-      ValidateIssuer = true,
-      ValidateAudience = true,
-      ValidateLifetime = true,
-      ValidateIssuerSigningKey = true,
-      ValidIssuer = jwtIssuer,
-      ValidAudience = jwtAudience,
-      IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
-    };
+	options.TokenValidationParameters = new TokenValidationParameters {
+	  ValidateIssuer = true,
+	  ValidateAudience = true,
+	  ValidateLifetime = true,
+	  ValidateIssuerSigningKey = true,
+	  ValidIssuer = jwtIssuer,
+	  ValidAudience = jwtAudience,
+	  IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+	};
   });
 
 builder.Services.AddIdentity<UserModel, IdentityRole>(options => {
@@ -107,14 +108,15 @@ builder.Services.AddTransient<DataSeeder>();
 
 var app = builder.Build();
 using (var scope = app.Services.CreateScope()) {
-    var services = scope.ServiceProvider;
-    try {
-        var seeder = services.GetRequiredService<DataSeeder>();
-        await seeder.SeedAsync();
-    } catch (Exception ex) {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred seeding the DB.");
-    }
+  var services = scope.ServiceProvider;
+  try {
+	var seeder = services.GetRequiredService<DataSeeder>();
+	await seeder.SeedAsync();
+  }
+  catch (Exception ex) {
+	var logger = services.GetRequiredService<ILogger<Program>>();
+	logger.LogError(ex, "An error occurred seeding the DB.");
+  }
 }
 
 // Configure the HTTP request pipeline.
