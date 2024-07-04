@@ -1,23 +1,17 @@
 // TenantModel.cs
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cloud.Models.Data;
 
 namespace Cloud.Models {
-  public class TenantModel {
-	[Key]
-	public Guid Id { get; set; }
-
+  public class TenantModel : BaseEntity {
 	[Required]
 	public String UserId { get; set; } = null!;
 
 	[ForeignKey("UserId")]
 	public UserModel? User { get; set; }
 
-	// Add this property to reference the current property
 	public Guid? CurrentPropertyId { get; set; }
-
-	public Guid? PropertyId { get; set; }
-
 	[ForeignKey("CurrentPropertyId")]
 	public PropertyModel? CurrentProperty { get; set; }
 

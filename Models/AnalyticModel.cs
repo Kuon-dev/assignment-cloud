@@ -3,7 +3,6 @@ namespace Cloud.Models {
 	public int TotalListings { get; set; }
 	public decimal AveragePrice { get; set; }
 	public int TotalApplications { get; set; }
-	// Add other relevant properties
   }
 
   public class ListingAnalytics {
@@ -11,6 +10,5 @@ namespace Cloud.Models {
 	public int Views { get; set; }
 	public int Applications { get; set; }
 	public DateTime LastUpdated { get; set; }
-	// Add other relevant properties
   }
 }

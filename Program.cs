@@ -2,13 +2,15 @@ using DotNetEnv;
 using Cloud.Models;
 using Cloud.Services;
 using Cloud.Filters;
+using Cloud.Middlewares;
+using Cloud.Factories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Stripe;
-using Microsoft.Extensions.Logging;
+/*using Microsoft.Extensions.Logging;*/
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,12 +29,13 @@ var connectionString = "";
 if (string.Equals(appEnv, "development", StringComparison.OrdinalIgnoreCase)) {
   connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL");
   if (string.IsNullOrEmpty(connectionString)) {
-    throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
+	throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
   }
-} else {
+}
+else {
   connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON");
   if (string.IsNullOrEmpty(connectionString)) {
-    throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
+	throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
   }
 }
 
@@ -50,15 +53,15 @@ if (string.IsNullOrEmpty(jwtSecret) || string.IsNullOrEmpty(jwtIssuer) || string
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
   .AddJwtBearer(options => {
-    options.TokenValidationParameters = new TokenValidationParameters {
-      ValidateIssuer = true,
-      ValidateAudience = true,
-      ValidateLifetime = true,
-      ValidateIssuerSigningKey = true,
-      ValidIssuer = jwtIssuer,
-      ValidAudience = jwtAudience,
-      IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
-    };
+	options.TokenValidationParameters = new TokenValidationParameters {
+	  ValidateIssuer = true,
+	  ValidateAudience = true,
+	  ValidateLifetime = true,
+	  ValidateIssuerSigningKey = true,
+	  ValidIssuer = jwtIssuer,
+	  ValidAudience = jwtAudience,
+	  IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+	};
   });
 
 builder.Services.AddIdentity<UserModel, IdentityRole>(options => {
@@ -92,6 +95,10 @@ builder.Services.AddScoped<IMaintenanceTaskService, MaintenanceTaskService>();
 builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 
+builder.Services.AddScoped<PropertyFactory>();
+builder.Services.AddScoped<LeaseFactory>();
+builder.Services.AddScoped<UserFactory>();
+
 builder.Services.AddScoped<PaymentIntentService>();
 
 StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ?? throw new InvalidOperationException("Stripe secret key not found.");
@@ -100,20 +107,21 @@ StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_K
 builder.Services.AddTransient<DataSeeder>();
 
 var app = builder.Build();
-
 using (var scope = app.Services.CreateScope()) {
-    var services = scope.ServiceProvider;
-    try {
-        var seeder = services.GetRequiredService<DataSeeder>();
-        await seeder.SeedAsync();
-    } catch (Exception ex) {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred seeding the DB.");
-    }
+  var services = scope.ServiceProvider;
+  try {
+	var seeder = services.GetRequiredService<DataSeeder>();
+	await seeder.SeedAsync();
+  }
+  catch (Exception ex) {
+	var logger = services.GetRequiredService<ILogger<Program>>();
+	logger.LogError(ex, "An error occurred seeding the DB.");
+  }
 }
 
 // Configure the HTTP request pipeline.
 /*if (app.Environment.IsDevelopment()) {*/
+app.UseUserStatusMiddleware();
 app.UseSwagger();
 app.UseSwaggerUI();
 /*}*/

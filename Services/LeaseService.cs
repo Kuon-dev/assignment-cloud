@@ -1,6 +1,6 @@
 // LeaseService.cs
 using Cloud.Models;
-/*using Cloud.Data;*/
+using Cloud.Factories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cloud.Services {
@@ -9,17 +9,24 @@ namespace Cloud.Services {
   /// </summary>
   public class LeaseService : ILeaseService {
 	private readonly ApplicationDbContext _context;
+	private readonly LeaseFactory _leaseFactory;
 
 	/// <summary>
 	/// Initializes a new instance of the LeaseService class.
 	/// </summary>
 	/// <param name="context">The database context.</param>
-	public LeaseService(ApplicationDbContext context) {
-	  _context = context;
+	/// <param name="leaseFactory">The lease factory.</param>
+	public LeaseService(ApplicationDbContext context, LeaseFactory leaseFactory) {
+	  _context = context ?? throw new ArgumentNullException(nameof(context));
+	  _leaseFactory = leaseFactory ?? throw new ArgumentNullException(nameof(leaseFactory));
 	}
 
 	/// <inheritdoc />
 	public async Task<(IEnumerable<LeaseModel> Leases, int TotalCount)> GetAllLeasesAsync(int page, int size) {
+	  if (_context.Leases == null) {
+		throw new InvalidOperationException("Lease DbSet is not initialized.");
+	  }
+
 	  var totalCount = await _context.Leases.CountAsync();
 	  var leases = await _context.Leases
 		  .Skip((page - 1) * size)
@@ -31,23 +38,37 @@ namespace Cloud.Services {
 
 	/// <inheritdoc />
 	public async Task<LeaseModel?> GetLeaseByIdAsync(Guid id) {
+	  if (_context.Leases == null) {
+		throw new InvalidOperationException("Lease DbSet is not initialized.");
+	  }
+
 	  return await _context.Leases.FindAsync(id);
 	}
 
 	/// <inheritdoc />
 	public async Task<LeaseModel> CreateLeaseAsync(LeaseModel lease) {
-	  lease.Id = Guid.NewGuid();
-	  lease.CreatedAt = DateTime.UtcNow;
-	  lease.UpdatedAt = DateTime.UtcNow;
+	  if (_context.Leases == null) {
+		throw new InvalidOperationException("Lease DbSet is not initialized.");
+	  }
 
-	  _context.Leases.Add(lease);
-	  await _context.SaveChangesAsync();
+	  var createdLease = await _leaseFactory.CreateLeaseAsync(
+		lease.TenantId,
+		lease.StartDate,
+		lease.EndDate,
+		lease.RentAmount,
+		lease.SecurityDeposit,
+		lease.IsActive
+	  );
 
-	  return lease;
+	  return createdLease;
 	}
 
 	/// <inheritdoc />
 	public async Task<LeaseModel?> UpdateLeaseAsync(Guid id, LeaseModel lease) {
+	  if (_context.Leases == null) {
+		throw new InvalidOperationException("Lease DbSet is not initialized.");
+	  }
+
 	  var existingLease = await _context.Leases.FindAsync(id);
 
 	  if (existingLease == null) {
@@ -55,13 +76,12 @@ namespace Cloud.Services {
 	  }
 
 	  existingLease.TenantId = lease.TenantId;
-	  existingLease.UnitId = lease.UnitId;
 	  existingLease.StartDate = lease.StartDate;
 	  existingLease.EndDate = lease.EndDate;
 	  existingLease.RentAmount = lease.RentAmount;
 	  existingLease.SecurityDeposit = lease.SecurityDeposit;
 	  existingLease.IsActive = lease.IsActive;
-	  existingLease.UpdatedAt = DateTime.UtcNow;
+	  existingLease.UpdateModifiedProperties(DateTime.UtcNow);
 
 	  await _context.SaveChangesAsync();
 
@@ -70,6 +90,10 @@ namespace Cloud.Services {
 
 	/// <inheritdoc />
 	public async Task<bool> DeleteLeaseAsync(Guid id) {
+	  if (_context.Leases == null) {
+		throw new InvalidOperationException("Lease DbSet is not initialized.");
+	  }
+
 	  var lease = await _context.Leases.FindAsync(id);
 
 	  if (lease == null) {
@@ -77,7 +101,7 @@ namespace Cloud.Services {
 	  }
 
 	  lease.IsActive = false;
-	  lease.UpdatedAt = DateTime.UtcNow;
+	  lease.UpdateModifiedProperties(DateTime.UtcNow);
 
 	  await _context.SaveChangesAsync();
 
@@ -86,6 +110,10 @@ namespace Cloud.Services {
 
 	/// <inheritdoc />
 	public async Task<IEnumerable<LeaseModel>> GetActiveLeasesAsync() {
+	  if (_context.Leases == null) {
+		throw new InvalidOperationException("Lease DbSet is not initialized.");
+	  }
+
 	  return await _context.Leases
 		  .Where(l => l.IsActive && l.EndDate >= DateTime.UtcNow)
 		  .ToListAsync();
@@ -93,6 +121,10 @@ namespace Cloud.Services {
 
 	/// <inheritdoc />
 	public async Task<IEnumerable<LeaseModel>> GetExpiredLeasesAsync() {
+	  if (_context.Leases == null) {
+		throw new InvalidOperationException("Lease DbSet is not initialized.");
+	  }
+
 	  return await _context.Leases
 		  .Where(l => l.EndDate < DateTime.UtcNow)
 		  .ToListAsync();

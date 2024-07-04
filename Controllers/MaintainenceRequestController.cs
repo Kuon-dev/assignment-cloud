@@ -51,8 +51,6 @@ namespace Cloud.Controllers {
 		return BadRequest(ModelState);
 	  }
 
-	  request.CreatedAt = DateTime.UtcNow;
-	  request.UpdatedAt = DateTime.UtcNow;
 	  request.Status = MaintenanceStatus.Pending;
 
 	  _context.MaintenanceRequests.Add(request);
@@ -75,7 +73,7 @@ namespace Cloud.Controllers {
 
 	  existingRequest.Description = request.Description;
 	  existingRequest.Status = request.Status;
-	  existingRequest.UpdatedAt = DateTime.UtcNow;
+	  existingRequest.UpdateModifiedProperties(DateTime.UtcNow);
 
 	  try {
 		await _context.SaveChangesAsync();

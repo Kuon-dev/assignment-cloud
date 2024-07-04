@@ -1,15 +1,11 @@
 // MaintenanceRequestModel.cs
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cloud.Models.Data;
 
 namespace Cloud.Models {
 
-  public class MaintenanceRequestModel {
-	[Key]
-	public Guid Id { get; set; }
-
+  public class MaintenanceRequestModel : BaseEntity {
 	[Required]
 	public Guid TenantId { get; set; }
 
@@ -26,10 +22,6 @@ namespace Cloud.Models {
 	public string Description { get; set; } = string.Empty;
 
 	public MaintenanceStatus Status { get; set; }
-
-	public DateTime CreatedAt { get; set; }
-
-	public DateTime UpdatedAt { get; set; }
 
 	// Navigation properties
 	public ICollection<MaintenanceTaskModel>? MaintenanceTasks { get; set; }

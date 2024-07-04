@@ -1,13 +1,11 @@
 // PropertyModel.cs
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cloud.Models.Data;
 
 namespace Cloud.Models {
 
-  public class PropertyModel {
-	[Key]
-	public Guid Id { get; set; }
-
+  public class PropertyModel : BaseEntity {
 	[Required]
 	public Guid OwnerId { get; set; }
 
@@ -42,12 +40,6 @@ namespace Cloud.Models {
 	public List<string>? Amenities { get; set; }
 
 	public bool IsAvailable { get; set; }
-
-	public DateTime CreatedAt { get; set; }
-
-	public DateTime UpdatedAt { get; set; }
-
-	public DateTime? DeletedAt { get; set; }
 
 	public RoomType RoomType { get; set; }
 
