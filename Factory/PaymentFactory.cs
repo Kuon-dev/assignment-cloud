@@ -1,19 +1,17 @@
 ﻿using Bogus;
 using Cloud.Models;
 using Cloud.Models.DTO;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Cloud.Models.Validator;
 
 namespace Cloud.Factories {
   public class RentPaymentFactory {
 	private readonly ApplicationDbContext _dbContext;
 	private readonly Faker<RentPaymentModel> _paymentFaker;
-	private readonly PaymentValidator _paymentValidator;
+	private readonly RentPaymentValidator _rentPaymentValidator;
 
-	public RentPaymentFactory(ApplicationDbContext dbContext, PaymentValidator paymentValidator) {
+	public RentPaymentFactory(ApplicationDbContext dbContext, RentPaymentValidator rentPaymentValidator) {
 	  _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-	  _paymentValidator = paymentValidator ?? throw new ArgumentNullException(nameof(paymentValidator));
+	  _rentPaymentValidator = rentPaymentValidator ?? throw new ArgumentNullException(nameof(rentPaymentValidator));
 
 	  // Initialize Bogus for generating fake rent payment data
 	  _paymentFaker = new Faker<RentPaymentModel>()
@@ -31,7 +29,15 @@ namespace Cloud.Factories {
 	  }
 
 	  var payment = _paymentFaker.Generate();
-	  _paymentValidator.ValidatePayment(payment);
+	  _rentPaymentValidator.ValidatePayment(payment);
+	  _rentPaymentValidator.AddStrategy(new TenantIdValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new AmountValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new CurrencyValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new PaymentIntentIdValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new PaymentMethodIdValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new StatusValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new DuplicatePaymentValidationStrategy(_dbContext));
+
 	  _dbContext.RentPayments.Add(payment);
 	  await _dbContext.SaveChangesAsync();
 	  return payment;
@@ -51,8 +57,16 @@ namespace Cloud.Factories {
 		Status = dto.Status
 	  };
 
-	  _paymentValidator.ValidatePayment(payment);
+	  _rentPaymentValidator.ValidatePayment(payment);
+	  _rentPaymentValidator.AddStrategy(new TenantIdValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new AmountValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new CurrencyValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new PaymentIntentIdValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new PaymentMethodIdValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new StatusValidationStrategy());
+	  _rentPaymentValidator.AddStrategy(new DuplicatePaymentValidationStrategy(_dbContext));
 	  _dbContext.RentPayments.Add(payment);
+
 	  await _dbContext.SaveChangesAsync();
 	  return payment;
 	}
@@ -66,7 +80,7 @@ namespace Cloud.Factories {
 
 	  for (int i = 0; i < count; i++) {
 		var payment = _paymentFaker.Generate();
-		_paymentValidator.ValidatePayment(payment);
+		_rentPaymentValidator.ValidatePayment(payment);
 		payments.Add(payment);
 	  }
 

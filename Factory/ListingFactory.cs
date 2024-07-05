@@ -1,7 +1,7 @@
 using Bogus;
 using Cloud.Models;
 using Cloud.Models.DTO;
-/*using Microsoft.EntityFrameworkCore;*/
+using Microsoft.EntityFrameworkCore;
 
 namespace Cloud.Factories {
   /// <summary>
@@ -26,10 +26,9 @@ namespace Cloud.Factories {
 		  .RuleFor(l => l.Title, f => f.Lorem.Sentence(3, 3))
 		  .RuleFor(l => l.Description, f => f.Lorem.Paragraph())
 		  .RuleFor(l => l.Price, f => f.Random.Decimal(500, 5000))
-		  .RuleFor(l => l.PropertyId, f => f.Random.Guid())
 		  .RuleFor(l => l.IsActive, f => f.Random.Bool())
-		  .RuleFor(l => l.StartDate, f => f.Date.Past(1))
-		  .RuleFor(l => l.EndDate, (f, l) => l.StartDate.AddMonths(f.Random.Int(6, 24)))
+		  .RuleFor(l => l.StartDate, f => f.Date.Past(1, DateTime.UtcNow).ToUniversalTime())
+		  .RuleFor(l => l.EndDate, (f, l) => l.StartDate.AddMonths(f.Random.Int(6, 24)).ToUniversalTime())
 		  .RuleFor(l => l.Views, f => f.Random.Int(0, 1000));
 	}
 
@@ -37,12 +36,12 @@ namespace Cloud.Factories {
 	/// Creates a fake listing with random data.
 	/// </summary>
 	/// <returns>The created ListingModel.</returns>
-	public async Task<ListingModel> CreateFakeListingAsync() {
+	public async Task<ListingModel> CreateFakeListingAsync(Guid propertyId) {
 	  if (_dbContext.Listings == null) {
 		throw new InvalidOperationException("Listing DbSet is not initialized.");
 	  }
 
-	  var listing = _listingFaker.Generate();
+	  var listing = _listingFaker.Clone().RuleFor(l => l.PropertyId, _ => propertyId).Generate();
 	  await ValidateAndSaveListingAsync(listing);
 	  return listing;
 	}
@@ -69,10 +68,11 @@ namespace Cloud.Factories {
 		Price = createListingDto.Price,
 		PropertyId = createListingDto.PropertyId,
 		IsActive = createListingDto.IsActive,
-		StartDate = createListingDto.StartDate,
-		EndDate = createListingDto.EndDate,
 		Views = 0
 	  };
+
+	  listing.UpdateCreationProperties(DateTime.UtcNow);
+	  listing.UpdateModifiedProperties(DateTime.UtcNow);
 
 	  await ValidateAndSaveListingAsync(listing);
 	  return listing;
@@ -83,14 +83,24 @@ namespace Cloud.Factories {
 	/// </summary>
 	/// <param name="count">The number of listings to create.</param>
 	public async Task SeedListingsAsync(int count) {
-	  if (_dbContext.Listings == null) {
-		throw new InvalidOperationException("Listing DbSet is not initialized.");
+	  if (_dbContext.Listings == null || _dbContext.Properties == null) {
+		throw new InvalidOperationException("DbSet is not initialized.");
+	  }
+
+	  var propertyIds = await _dbContext.Properties.Select(p => p.Id).ToListAsync();
+
+	  if (propertyIds.Count == 0) {
+		throw new InvalidOperationException("No properties found to associate with listings.");
 	  }
 
 	  var listings = new List<ListingModel>(count);
+	  var random = new Random();
 
 	  for (int i = 0; i < count; i++) {
-		var listing = _listingFaker.Generate();
+		var propertyId = propertyIds[random.Next(propertyIds.Count)];
+		var listing = _listingFaker.Clone().RuleFor(l => l.PropertyId, _ => propertyId).Generate();
+		listing.UpdateCreationProperties(DateTime.UtcNow);
+		listing.UpdateModifiedProperties(DateTime.UtcNow);
 		_listingValidator.ValidateListing(listing);
 		listings.Add(listing);
 	  }
@@ -105,5 +115,4 @@ namespace Cloud.Factories {
 	  await _dbContext.SaveChangesAsync();
 	}
   }
-
 }
