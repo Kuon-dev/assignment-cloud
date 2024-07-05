@@ -18,7 +18,10 @@ namespace Cloud.Services {
 	}
 
 	public async Task<MaintenanceTaskModel> GetTaskByIdAsync(Guid id) {
-	  return await _context.MaintenanceTasks.FindAsync(id);
+	  var listings = await _context.MaintenanceTasks.FindAsync(id);
+	  if (listings == null)
+		throw new NotFoundException("Maintenance task not found.");
+	  return listings;
 	}
 
 	public async Task<MaintenanceTaskModel> CreateTaskAsync(MaintenanceTaskModel task) {
@@ -34,8 +37,8 @@ namespace Cloud.Services {
 	  }
 	  catch (DbUpdateConcurrencyException) {
 		if (!await TaskExists(task.Id))
-		  return null;
-		throw;
+		  throw new NotFoundException("Maintenance task not found.");
+		else throw;
 	  }
 	  return task;
 	}

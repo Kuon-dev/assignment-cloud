@@ -11,6 +11,7 @@ public class UserStatusMiddleware {
   }
 
   public async Task InvokeAsync(HttpContext context, UserManager<UserModel> userManager) {
+	if (context.User.Identity == null) throw new InvalidOperationException("User identity is not available.");
 	if (context.User.Identity.IsAuthenticated) {
 	  var user = await userManager.GetUserAsync(context.User);
 

@@ -129,6 +129,9 @@ namespace Cloud.Controllers {
 	public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenModel model) {
 	  var principal = GetPrincipalFromExpiredToken(model.Token);
 	  var email = principal.FindFirstValue(ClaimTypes.Email);
+
+	  if (email == null) throw new SecurityTokenException("Invalid token");
+
 	  var user = await _userManager.FindByEmailAsync(email);
 
 	  if (user == null) {
@@ -147,7 +150,7 @@ namespace Cloud.Controllers {
 	[HttpPost("forgot-password")]
 	public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordModel model) {
 	  var user = await _userManager.FindByEmailAsync(model.Email);
-	  if (user == null) {
+	  if (user == null || user.Email == null) {
 		// Don't reveal that the user does not exist
 		return Ok(new { message = "If your email is registered, you will receive a password reset link." });
 	  }
@@ -211,6 +214,9 @@ namespace Cloud.Controllers {
 	/// <param name="user">The user model for which to generate the token.</param>
 	/// <returns>A string containing the JWT token.</returns>
 	private string GenerateJwtToken(UserModel user) {
+	  if (user == null) throw new ArgumentNullException(nameof(user));
+	  if (user.Email == null) throw new InvalidOperationException("Email is not set");
+
 	  var claims = new List<Claim>
 	  {
 				new Claim(ClaimTypes.NameIdentifier, user.Id),

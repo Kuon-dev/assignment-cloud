@@ -117,6 +117,9 @@ namespace Cloud.Services {
 
 	/// <inheritdoc/>
 	public async Task<MaintenanceRequestModel> CreateMaintenanceRequestAsync(CreateMaintenanceRequestDto dto, string userId) {
+	  if (_context.Tenants == null || _context.Properties == null || _context.MaintenanceRequests == null) {
+		throw new InvalidOperationException("ApplicationDbContext is null.");
+	  }
 	  var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.UserId == userId);
 	  if (tenant == null) {
 		throw new InvalidOperationException("User is not a tenant.");
@@ -134,6 +137,10 @@ namespace Cloud.Services {
 
 	/// <inheritdoc/>
 	public async Task UpdateMaintenanceRequestAsync(Guid id, UpdateMaintenanceRequestDto dto, string userId) {
+	  if (_context.MaintenanceRequests == null) {
+		throw new InvalidOperationException("ApplicationDbContext is null.");
+	  }
+
 	  var request = await _context.MaintenanceRequests
 		  .Include(r => r.Tenant)
 		  .FirstOrDefaultAsync(r => r.Id == id);
@@ -171,6 +178,9 @@ namespace Cloud.Services {
 
 	/// <inheritdoc/>
 	public async Task DeleteMaintenanceRequestAsync(Guid id) {
+	  if (_context.Tenants == null || _context.Properties == null || _context.MaintenanceRequests == null) {
+		throw new InvalidOperationException("ApplicationDbContext is null.");
+	  }
 	  var request = await _context.MaintenanceRequests.FindAsync(id);
 	  if (request == null) {
 		throw new NotFoundException("Maintenance request not found.");

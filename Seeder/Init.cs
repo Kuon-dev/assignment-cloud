@@ -64,14 +64,17 @@ public class DataSeeder {
   }
 
   private async Task SeedPropertiesAsync() {
-	if (!await _dbContext.Properties?.AnyAsync()) {
-	  var owners = await _dbContext.Users.AsNoTracking()
-										 .Include(u => u.Owner)
-										 .Where(u => u.Role == UserRole.Owner && u.Owner != null)
-										 .Select(u => u.Owner)
-										 .ToListAsync();
+	if (_dbContext != null && !await _dbContext.Properties.AnyAsync()) {
+	  var owners = await _dbContext.Users
+		  .AsNoTracking()
+		  .Include(u => u.Owner)
+		  .Where(u => u.Role == UserRole.Owner && u.Owner != null)
+		  .Select(u => u.Owner)
+		  .Where(o => o != null) // Filter out null owners here
+		  .ToListAsync();
 
 	  if (owners.Count > 0) {
+		// Now 'owners' is of type List<OwnerModel> (non-nullable)
 		await SeedPropertiesForOwnersAsync(owners, 50);
 	  }
 	  else {
@@ -80,11 +83,15 @@ public class DataSeeder {
 	}
   }
 
-  private async Task SeedPropertiesForOwnersAsync(List<OwnerModel> owners, int count) {
+  private async Task SeedPropertiesForOwnersAsync(List<OwnerModel?> owners, int count) {
 	var random = new Random();
 	for (int i = 0; i < count; i++) {
 	  try {
 		var owner = owners[random.Next(owners.Count)];
+		if (owner == null) {
+		  Console.WriteLine("Owner is null.");
+		  continue;
+		}
 		await _propertyFactory.CreateFakePropertyAsync(owner.Id);
 	  }
 	  catch (Exception ex) {

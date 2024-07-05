@@ -64,8 +64,14 @@ namespace Cloud.Services {
 	/// </summary>
 	/// <param name="id">The ID of the listing.</param>
 	/// <returns>The listing if found, null otherwise.</returns>
-	public async Task<ListingModel?> GetListingByIdAsync(Guid id) {
-	  return await _context.Listings.FindAsync(id);
+	public async Task<ListingModel> GetListingByIdAsync(Guid id) {
+	  var listing = await _context.Listings.FindAsync(id);
+
+	  if (listing == null) {
+		throw new NotFoundException($"Listing with ID {id} not found.");
+	  }
+
+	  return listing;
 	}
 
 	/// <summary>
@@ -114,6 +120,10 @@ namespace Cloud.Services {
 		  .Include(l => l.Property)
 		  .FirstOrDefaultAsync(l => l.Id == id);
 
+	  if (listing == null || listing.Property == null) {
+		throw new NotFoundException($"Listing with ID {id} not found.");
+	  }
+
 	  if (listing == null || listing.Property.OwnerId.ToString() != userId) {
 		return false;
 	  }
@@ -139,8 +149,11 @@ namespace Cloud.Services {
 		  .Include(l => l.Property)
 		  .FirstOrDefaultAsync(l => l.Id == id);
 
-	  if (listing == null || listing.Property.OwnerId.ToString() != userId) {
-		return false;
+	  if (listing == null || listing.Property == null) {
+		throw new NotFoundException($"Listing with ID {id} not found.");
+	  }
+	  if (listing.Property.OwnerId.ToString() != userId) {
+		throw new UnauthorizedAccessException("User is not authorized to view these applications.");
 	  }
 
 	  listing.UpdateIsDeleted(DateTime.UtcNow, true);
@@ -166,9 +179,13 @@ namespace Cloud.Services {
 		  .AsQueryable();
 
 	  if (!string.IsNullOrEmpty(searchParams.Location)) {
-		query = query.Where(l => l.Property.City.Contains(searchParams.Location) ||
-								 l.Property.State.Contains(searchParams.Location) ||
-								 l.Property.ZipCode.Contains(searchParams.Location));
+		query = query.Where(l =>
+			l.Property != null && (
+				l.Property.City.Contains(searchParams.Location) ||
+				l.Property.State.Contains(searchParams.Location) ||
+				l.Property.ZipCode.Contains(searchParams.Location)
+			)
+		);
 	  }
 
 	  if (searchParams.MinPrice.HasValue)
@@ -178,11 +195,11 @@ namespace Cloud.Services {
 		query = query.Where(l => l.Price <= searchParams.MaxPrice.Value);
 
 	  if (searchParams.Bedrooms.HasValue)
-		query = query.Where(l => l.Property.Bedrooms == searchParams.Bedrooms.Value);
+		query = query.Where(l => l.Property != null && l.Property.Bedrooms == searchParams.Bedrooms.Value);
 
 	  if (!string.IsNullOrEmpty(searchParams.Amenities)) {
 		var amenities = searchParams.Amenities.Split(',');
-		query = query.Where(l => amenities.All(a => l.Property.Amenities.Contains(a)));
+		query = query.Where(l => l.Property != null && l.Property.Amenities != null && amenities.All(a => l.Property.Amenities.Contains(a)));
 	  }
 
 	  return await query.ToListAsync();
@@ -198,8 +215,10 @@ namespace Cloud.Services {
 	  var listing = await _context.Listings
 		  .Include(l => l.Property)
 		  .FirstOrDefaultAsync(l => l.Id == id);
-
-	  if (listing == null || listing.Property.OwnerId.ToString() != userId) {
+	  if (listing == null || listing.Property == null) {
+		throw new NotFoundException($"Listing with ID {id} not found.");
+	  }
+	  if (listing.Property.OwnerId.ToString() != userId) {
 		throw new UnauthorizedAccessException("User is not authorized to view these applications.");
 	  }
 
@@ -235,7 +254,11 @@ namespace Cloud.Services {
 		  .Include(l => l.Property)
 		  .FirstOrDefaultAsync(l => l.Id == id);
 
-	  if (listing == null || listing.Property.OwnerId.ToString() != userId) {
+	  if (listing == null || listing.Property == null) {
+		throw new NotFoundException($"Listing with ID {id} not found.");
+	  }
+
+	  if (listing.Property.OwnerId.ToString() != userId) {
 		return null;
 	  }
 
