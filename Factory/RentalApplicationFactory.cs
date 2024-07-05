@@ -3,6 +3,7 @@ using Bogus;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Cloud.Models.DTO;
 
 namespace Cloud.Factory {
   /// <summary>
@@ -11,13 +12,15 @@ namespace Cloud.Factory {
   public class RentalApplicationFactory {
 	private readonly ApplicationDbContext _dbContext;
 	private readonly Faker<RentalApplicationModel> _applicationFaker;
+	private readonly RentalApplicationValidator _applicationValidator;
 
 	/// <summary>
 	/// Initializes a new instance of the RentalApplicationFactory class.
 	/// </summary>
 	/// <param name="dbContext">The database context for entity operations.</param>
-	public RentalApplicationFactory(ApplicationDbContext dbContext) {
+	public RentalApplicationFactory(ApplicationDbContext dbContext, RentalApplicationValidator applicationValidator) {
 	  _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+	  _applicationValidator = applicationValidator ?? throw new ArgumentNullException(nameof(applicationValidator));
 
 	  // Initialize Bogus for generating fake rental application data
 	  _applicationFaker = new Faker<RentalApplicationModel>()
@@ -40,6 +43,7 @@ namespace Cloud.Factory {
 	  }
 
 	  var application = _applicationFaker.Generate();
+	  _applicationValidator.ValidateApplication(application);
 	  _dbContext.RentalApplications.Add(application);
 	  await _dbContext.SaveChangesAsync();
 	  return application;
@@ -71,6 +75,7 @@ namespace Cloud.Factory {
 		AdditionalNotes = additionalNotes
 	  };
 
+	  _applicationValidator.ValidateApplication(application);
 	  _dbContext.RentalApplications.Add(application);
 	  await _dbContext.SaveChangesAsync();
 	  return application;
@@ -89,6 +94,7 @@ namespace Cloud.Factory {
 
 	  for (int i = 0; i < count; i++) {
 		var application = _applicationFaker.Generate();
+		_applicationValidator.ValidateApplication(application);
 		applications.Add(application);
 	  }
 
