@@ -41,7 +41,9 @@ namespace Cloud.Services {
 	}
 
 	public async Task<RentalApplicationModel> GetApplicationByIdAsync(Guid id) {
-	  return await _context.RentalApplications.FindAsync(id);
+	  var result = await _context.RentalApplications.FindAsync(id);
+	  if (result == null) throw new NotFoundException("Rental application not found.");
+	  return result;
 	}
 
 	public async Task<RentalApplicationModel> CreateApplicationAsync(CreateRentalApplicationDto applicationDto) {

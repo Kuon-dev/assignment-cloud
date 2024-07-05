@@ -22,6 +22,7 @@ namespace Cloud.Models {
 	public string Description { get; set; } = string.Empty;
 
 	public MaintenanceStatus Status { get; set; }
+	/*public List<String> */
 
 	// Navigation properties
 	public ICollection<MaintenanceTaskModel>? MaintenanceTasks { get; set; }

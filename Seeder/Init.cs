@@ -2,23 +2,35 @@ using Cloud.Factories;
 using Cloud.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 public class DataSeeder {
   private readonly IServiceProvider _serviceProvider;
   private readonly ApplicationDbContext _dbContext;
   private readonly UserManager<UserModel> _userManager;
+  private readonly RoleManager<IdentityRole> _roleManager;
   private readonly UserFactory _userFactory;
   private readonly PropertyFactory _propertyFactory;
   private readonly ListingFactory _listingFactory;
+  private readonly RentalApplicationFactory _rentalApplicationFactory;
 
-  public DataSeeder(IServiceProvider serviceProvider, ApplicationDbContext dbContext, UserManager<UserModel> userManager, UserFactory userFactory, PropertyFactory propertyFactory, ListingFactory listingFactory) {
+  public DataSeeder(
+	  IServiceProvider serviceProvider,
+	  ApplicationDbContext dbContext,
+	  UserManager<UserModel> userManager,
+	  RoleManager<IdentityRole> roleManager,
+	  UserFactory userFactory,
+	  PropertyFactory propertyFactory,
+	  ListingFactory listingFactory,
+	  RentalApplicationFactory rentalApplicationFactory
+	) {
 	_serviceProvider = serviceProvider;
 	_dbContext = dbContext;
 	_userManager = userManager;
+	_roleManager = roleManager;
 	_userFactory = userFactory;
 	_propertyFactory = propertyFactory;
 	_listingFactory = listingFactory;
+	_rentalApplicationFactory = rentalApplicationFactory;
   }
 
   public async Task SeedAsync() {
@@ -28,9 +40,21 @@ public class DataSeeder {
 	  throw new InvalidOperationException("Database context is not initialized.");
 	}
 
+	await SeedRolesAsync();
 	await SeedUsersAsync();
 	await SeedPropertiesAsync();
 	await SeedListingsAsync();
+	await SeedRentalApplicationsAsync();
+  }
+
+  private async Task SeedRolesAsync() {
+	var roles = new[] { "Owner", "Tenant", "Admin" };
+
+	foreach (var role in roles) {
+	  if (!await _roleManager.RoleExistsAsync(role)) {
+		await _roleManager.CreateAsync(new IdentityRole(role));
+	  }
+	}
   }
 
   private async Task SeedUsersAsync() {
@@ -40,14 +64,17 @@ public class DataSeeder {
   }
 
   private async Task SeedPropertiesAsync() {
-	if (!await _dbContext.Properties?.AnyAsync()) {
-	  var owners = await _dbContext.Users.AsNoTracking()
-										 .Include(u => u.Owner)
-										 .Where(u => u.Role == UserRole.Owner && u.Owner != null)
-										 .Select(u => u.Owner)
-										 .ToListAsync();
+	if (_dbContext != null && !await _dbContext.Properties.AnyAsync()) {
+	  var owners = await _dbContext.Users
+		  .AsNoTracking()
+		  .Include(u => u.Owner)
+		  .Where(u => u.Role == UserRole.Owner && u.Owner != null)
+		  .Select(u => u.Owner)
+		  .Where(o => o != null) // Filter out null owners here
+		  .ToListAsync();
 
 	  if (owners.Count > 0) {
+		// Now 'owners' is of type List<OwnerModel> (non-nullable)
 		await SeedPropertiesForOwnersAsync(owners, 50);
 	  }
 	  else {
@@ -56,11 +83,15 @@ public class DataSeeder {
 	}
   }
 
-  private async Task SeedPropertiesForOwnersAsync(List<OwnerModel> owners, int count) {
+  private async Task SeedPropertiesForOwnersAsync(List<OwnerModel?> owners, int count) {
 	var random = new Random();
 	for (int i = 0; i < count; i++) {
 	  try {
 		var owner = owners[random.Next(owners.Count)];
+		if (owner == null) {
+		  Console.WriteLine("Owner is null.");
+		  continue;
+		}
 		await _propertyFactory.CreateFakePropertyAsync(owner.Id);
 	  }
 	  catch (Exception ex) {
@@ -88,4 +119,11 @@ public class DataSeeder {
 	  }
 	}
   }
+
+  private async Task SeedRentalApplicationsAsync() {
+	if (!await _dbContext.RentalApplications.AnyAsync()) {
+	  await _rentalApplicationFactory.SeedApplicationsAsync(50);
+	}
+  }
+
 }
