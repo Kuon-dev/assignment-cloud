@@ -1,29 +1,30 @@
-using Cloud.Models;
 using Bogus;
+using Cloud.Models;
+using Cloud.Models.DTO;
 
 namespace Cloud.Factories {
-
   /// <summary>
-  /// Factory class for creating lease models.
+  /// Factory class for creating lease models with validations.
   /// </summary>
   public class LeaseFactory {
 	private readonly ApplicationDbContext _dbContext;
 	private readonly Faker<LeaseModel> _leaseFaker;
+	private readonly LeaseValidator _leaseValidator;
 
 	/// <summary>
 	/// Initializes a new instance of the LeaseFactory class.
 	/// </summary>
 	/// <param name="dbContext">The database context for entity operations.</param>
-	public LeaseFactory(ApplicationDbContext dbContext) {
+	public LeaseFactory(ApplicationDbContext dbContext, LeaseValidator leaseValidator) {
 	  _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-
+	  _leaseValidator = leaseValidator ?? throw new ArgumentNullException(nameof(leaseValidator));
 	  // Initialize Bogus for generating fake lease data
 	  _leaseFaker = new Faker<LeaseModel>()
 		  .RuleFor(l => l.TenantId, f => f.Random.Guid())
-		  .RuleFor(l => l.StartDate, f => f.Date.Past())
+		  .RuleFor(l => l.StartDate, f => f.Date.Future())
 		  .RuleFor(l => l.EndDate, (f, l) => l.StartDate.AddMonths(f.Random.Int(6, 24)))
-		  .RuleFor(l => l.RentAmount, f => f.Finance.Amount(500, 2000))
-		  .RuleFor(l => l.SecurityDeposit, f => f.Finance.Amount(500, 2000))
+		  .RuleFor(l => l.RentAmount, f => f.Finance.Amount(500, 5000))
+		  .RuleFor(l => l.SecurityDeposit, f => f.Finance.Amount(500, 5000))
 		  .RuleFor(l => l.IsActive, f => f.Random.Bool());
 	}
 
@@ -37,6 +38,7 @@ namespace Cloud.Factories {
 	  }
 
 	  var lease = _leaseFaker.Generate();
+	  _leaseValidator.ValidateLease(lease);
 	  _dbContext.Leases.Add(lease);
 	  await _dbContext.SaveChangesAsync();
 	  return lease;
@@ -66,6 +68,7 @@ namespace Cloud.Factories {
 		IsActive = isActive
 	  };
 
+	  _leaseValidator.ValidateLease(lease);
 	  _dbContext.Leases.Add(lease);
 	  await _dbContext.SaveChangesAsync();
 	  return lease;
@@ -84,6 +87,7 @@ namespace Cloud.Factories {
 
 	  for (int i = 0; i < count; i++) {
 		var lease = _leaseFaker.Generate();
+		_leaseValidator.ValidateLease(lease);
 		leases.Add(lease);
 	  }
 

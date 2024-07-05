@@ -1,6 +1,6 @@
 // LeaseController.cs
 using Microsoft.AspNetCore.Mvc;
-using Cloud.Models;
+using Cloud.Models.DTO;
 using Cloud.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -52,27 +52,51 @@ namespace Cloud.Controllers {
 	/// <summary>
 	/// Create a new lease.
 	/// </summary>
-	/// <param name="lease">The lease to create.</param>
+	/// <param name="leaseDto">The lease data to create.</param>
 	/// <returns>The created lease.</returns>
 	[HttpPost]
-	public async Task<IActionResult> CreateLease([FromBody] LeaseModel lease) {
-	  var createdLease = await _leaseService.CreateLeaseAsync(lease);
-	  return CreatedAtAction(nameof(GetLeaseById), new { id = createdLease.Id }, createdLease);
+	public async Task<IActionResult> CreateLease([FromBody] LeaseDto leaseDto) {
+	  if (!ModelState.IsValid) {
+		return BadRequest(ModelState);
+	  }
+
+	  try {
+		var createdLease = await _leaseService.CreateLeaseAsync(leaseDto);
+		return CreatedAtAction(nameof(GetLeaseById), new { id = createdLease.Id }, createdLease);
+	  }
+	  catch (ArgumentException ex) {
+		return BadRequest(ex.Message);
+	  }
+	  catch (InvalidOperationException ex) {
+		return StatusCode(500, ex.Message);
+	  }
 	}
 
 	/// <summary>
 	/// Update an existing lease.
 	/// </summary>
 	/// <param name="id">The ID of the lease to update.</param>
-	/// <param name="lease">The updated lease information.</param>
+	/// <param name="leaseDto">The updated lease information.</param>
 	/// <returns>The updated lease if found, NotFound otherwise.</returns>
 	[HttpPut("{id}")]
-	public async Task<IActionResult> UpdateLease(Guid id, [FromBody] LeaseModel lease) {
-	  var updatedLease = await _leaseService.UpdateLeaseAsync(id, lease);
-	  if (updatedLease == null) {
-		return NotFound();
+	public async Task<IActionResult> UpdateLease(Guid id, [FromBody] LeaseDto leaseDto) {
+	  if (!ModelState.IsValid) {
+		return BadRequest(ModelState);
 	  }
-	  return Ok(updatedLease);
+
+	  try {
+		var updatedLease = await _leaseService.UpdateLeaseAsync(id, leaseDto);
+		if (updatedLease == null) {
+		  return NotFound();
+		}
+		return Ok(updatedLease);
+	  }
+	  catch (ArgumentException ex) {
+		return BadRequest(ex.Message);
+	  }
+	  catch (InvalidOperationException ex) {
+		return StatusCode(500, ex.Message);
+	  }
 	}
 
 	/// <summary>

@@ -1,4 +1,4 @@
-// ListingController.cs
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -6,7 +6,7 @@ using Cloud.Models;
 using Cloud.Services;
 using Cloud.Filters;
 using Cloud.Models.DTO;
-/*using Microsoft.Extensions.Logging;*/
+using System.Security.Claims;
 
 namespace Cloud.Controllers {
   [ApiController]
@@ -18,14 +18,14 @@ namespace Cloud.Controllers {
 	private readonly ILogger<ListingsController> _logger;
 
 	public ListingsController(IListingService listingService, ILogger<ListingsController> logger) {
-	  _listingService = listingService;
-	  _logger = logger;
+	  _listingService = listingService ?? throw new ArgumentNullException(nameof(listingService));
+	  _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
 
 	// GET: api/listings
 	[HttpGet]
 	[AllowAnonymous]
-	public async Task<ActionResult<Cloud.Models.DTO.CustomPaginatedResult<ListingModel>>> GetListings([FromQuery] Cloud.Models.DTO.PaginationParams paginationParams) {
+	public async Task<ActionResult<CustomPaginatedResult<ListingModel>>> GetListings([FromQuery] Cloud.Models.DTO.PaginationParams paginationParams) {
 	  _logger.LogInformation("Getting listings with pagination parameters: {@PaginationParams}", paginationParams);
 	  var listings = await _listingService.GetListingsAsync(paginationParams);
 	  return Ok(listings);
@@ -50,7 +50,12 @@ namespace Cloud.Controllers {
 		return BadRequest(ModelState);
 	  }
 
-	  var listing = await _listingService.CreateListingAsync(listingDto);
+	  var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+	  if (string.IsNullOrEmpty(userId)) {
+		return Unauthorized();
+	  }
+
+	  var listing = await _listingService.CreateListingAsync(listingDto, userId);
 	  return CreatedAtAction(nameof(GetListing), new { id = listing.Id }, listing);
 	}
 
@@ -62,7 +67,12 @@ namespace Cloud.Controllers {
 		return BadRequest(ModelState);
 	  }
 
-	  var result = await _listingService.UpdateListingAsync(id, listingDto);
+	  var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+	  if (string.IsNullOrEmpty(userId)) {
+		return Unauthorized();
+	  }
+
+	  var result = await _listingService.UpdateListingAsync(id, listingDto, userId);
 	  if (!result) {
 		return NotFound();
 	  }
@@ -71,9 +81,14 @@ namespace Cloud.Controllers {
 
 	// DELETE: api/listings/{id}
 	[HttpDelete("{id}")]
-	[Authorize(Roles = "Admin")]
+	[Authorize(Roles = "Admin,Owner")]
 	public async Task<IActionResult> DeleteListing(Guid id) {
-	  var result = await _listingService.SoftDeleteListingAsync(id);
+	  var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+	  if (string.IsNullOrEmpty(userId)) {
+		return Unauthorized();
+	  }
+
+	  var result = await _listingService.SoftDeleteListingAsync(id, userId);
 	  if (!result) {
 		return NotFound();
 	  }
@@ -92,8 +107,18 @@ namespace Cloud.Controllers {
 	[HttpGet("{id}/applications")]
 	[Authorize(Roles = "Admin,Owner")]
 	public async Task<ActionResult<IEnumerable<RentalApplicationModel>>> GetListingApplications(Guid id) {
-	  var applications = await _listingService.GetListingApplicationsAsync(id);
-	  return Ok(applications);
+	  var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+	  if (string.IsNullOrEmpty(userId)) {
+		return Unauthorized();
+	  }
+
+	  try {
+		var applications = await _listingService.GetListingApplicationsAsync(id, userId);
+		return Ok(applications);
+	  }
+	  catch (UnauthorizedAccessException) {
+		return Forbid();
+	  }
 	}
 
 	// GET: api/listings/performance
@@ -108,7 +133,12 @@ namespace Cloud.Controllers {
 	[HttpGet("{id}/analytics")]
 	[Authorize(Roles = "Admin,Owner")]
 	public async Task<ActionResult<ListingAnalytics>> GetListingAnalytics(Guid id) {
-	  var analytics = await _listingService.GetListingAnalyticsAsync(id);
+	  var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+	  if (string.IsNullOrEmpty(userId)) {
+		return Unauthorized();
+	  }
+
+	  var analytics = await _listingService.GetListingAnalyticsAsync(id, userId);
 	  if (analytics == null) {
 		return NotFound();
 	  }

@@ -1,6 +1,8 @@
 # Models
 This is a list of models provided for a propety listing website. The models are written in C# using Entity Framework Core.
 
+This is Base Entity, almost all of the models inherit this base entity. You are not allowed to directly access the properties
+of UpdatedAt and CreatedAt in the base entity, as well as DeletedAt and IsDeleted.
 ```cs
 using System.ComponentModel.DataAnnotations;
 
@@ -24,10 +26,8 @@ namespace Cloud.Models.Data {
 	  public Guid Id { get; private set; } = Guid.NewGuid();
 	  
 	  public DateTime CreatedAt { get; private set; }
-	  public string CreatedBy { get; private set; } = null!;
 	  
 	  public DateTime? UpdatedAt { get; private set; }
-	  /*public string UpdatedBy { get; private set; } = null!;*/
 
 	  public bool IsDeleted { get; private set; }
 	  public DateTime? DeletedAt { get; private set; }
@@ -35,13 +35,11 @@ namespace Cloud.Models.Data {
 	  public void UpdateCreationProperties(DateTime createdAt)
 	  {
 		  CreatedAt = createdAt;
-		  /*CreatedBy = createdBy;*/
 	  }
 	  
 	  public void UpdateModifiedProperties(DateTime? updatedAt)
 	  {
 		  UpdatedAt = updatedAt;
-		  /*UpdatedBy = lastModifiedBy;*/
 	  }
 	  
 	  public void UpdateIsDeleted(DateTime? deletedAt, bool isDeleted)

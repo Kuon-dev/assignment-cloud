@@ -1,24 +1,37 @@
 // LeaseService.cs
 using Cloud.Models;
+using Cloud.Models.DTO;
 using Cloud.Factories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cloud.Services {
+  public interface ILeaseService {
+	Task<(IEnumerable<LeaseModel> Leases, int TotalCount)> GetAllLeasesAsync(int page, int size);
+	Task<LeaseModel?> GetLeaseByIdAsync(Guid id);
+	Task<LeaseModel> CreateLeaseAsync(LeaseDto leaseDto);
+	Task<LeaseModel?> UpdateLeaseAsync(Guid id, LeaseDto leaseDto);
+	Task<bool> DeleteLeaseAsync(Guid id);
+	Task<IEnumerable<LeaseModel>> GetActiveLeasesAsync();
+	Task<IEnumerable<LeaseModel>> GetExpiredLeasesAsync();
+  }
+
   /// <summary>
   /// Service for handling lease-related operations.
   /// </summary>
   public class LeaseService : ILeaseService {
 	private readonly ApplicationDbContext _context;
 	private readonly LeaseFactory _leaseFactory;
+	private readonly LeaseValidator _leaseValidator;
 
 	/// <summary>
 	/// Initializes a new instance of the LeaseService class.
 	/// </summary>
 	/// <param name="context">The database context.</param>
 	/// <param name="leaseFactory">The lease factory.</param>
-	public LeaseService(ApplicationDbContext context, LeaseFactory leaseFactory) {
+	public LeaseService(ApplicationDbContext context, LeaseFactory leaseFactory, LeaseValidator leaseValidator) {
 	  _context = context ?? throw new ArgumentNullException(nameof(context));
 	  _leaseFactory = leaseFactory ?? throw new ArgumentNullException(nameof(leaseFactory));
+	  _leaseValidator = leaseValidator ?? throw new ArgumentNullException(nameof(leaseValidator));
 	}
 
 	/// <inheritdoc />
@@ -46,25 +59,25 @@ namespace Cloud.Services {
 	}
 
 	/// <inheritdoc />
-	public async Task<LeaseModel> CreateLeaseAsync(LeaseModel lease) {
+	public async Task<LeaseModel> CreateLeaseAsync(LeaseDto leaseDto) {
 	  if (_context.Leases == null) {
 		throw new InvalidOperationException("Lease DbSet is not initialized.");
 	  }
 
 	  var createdLease = await _leaseFactory.CreateLeaseAsync(
-		lease.TenantId,
-		lease.StartDate,
-		lease.EndDate,
-		lease.RentAmount,
-		lease.SecurityDeposit,
-		lease.IsActive
+		  leaseDto.TenantId,
+		  leaseDto.StartDate,
+		  leaseDto.EndDate,
+		  leaseDto.RentAmount,
+		  leaseDto.SecurityDeposit,
+		  leaseDto.IsActive
 	  );
 
 	  return createdLease;
 	}
 
 	/// <inheritdoc />
-	public async Task<LeaseModel?> UpdateLeaseAsync(Guid id, LeaseModel lease) {
+	public async Task<LeaseModel?> UpdateLeaseAsync(Guid id, LeaseDto leaseDto) {
 	  if (_context.Leases == null) {
 		throw new InvalidOperationException("Lease DbSet is not initialized.");
 	  }
@@ -75,14 +88,15 @@ namespace Cloud.Services {
 		return null;
 	  }
 
-	  existingLease.TenantId = lease.TenantId;
-	  existingLease.StartDate = lease.StartDate;
-	  existingLease.EndDate = lease.EndDate;
-	  existingLease.RentAmount = lease.RentAmount;
-	  existingLease.SecurityDeposit = lease.SecurityDeposit;
-	  existingLease.IsActive = lease.IsActive;
+	  existingLease.TenantId = leaseDto.TenantId;
+	  existingLease.StartDate = leaseDto.StartDate;
+	  existingLease.EndDate = leaseDto.EndDate;
+	  existingLease.RentAmount = leaseDto.RentAmount;
+	  existingLease.SecurityDeposit = leaseDto.SecurityDeposit;
+	  existingLease.IsActive = leaseDto.IsActive;
 	  existingLease.UpdateModifiedProperties(DateTime.UtcNow);
 
+	  _leaseValidator.ValidateLease(existingLease);
 	  await _context.SaveChangesAsync();
 
 	  return existingLease;
