@@ -24,8 +24,6 @@ public class PropertyFactory {
 	  .RuleFor(p => p.Description, f => f.Lorem.Paragraph())
 	  .RuleFor(p => p.Amenities, f => f.Make(3, () => f.Commerce.Product()))
 	  .RuleFor(p => p.IsAvailable, f => f.Random.Bool())
-	  .RuleFor(p => p.CreatedAt, f => DateTime.SpecifyKind(f.Date.Past(1), DateTimeKind.Utc))
-	  .RuleFor(p => p.UpdatedAt, f => DateTime.SpecifyKind(f.Date.Recent(), DateTimeKind.Utc))
 	  .RuleFor(p => p.RoomType, f => f.PickRandom<RoomType>());
 
 	_randomizer = new Randomizer();
@@ -34,6 +32,8 @@ public class PropertyFactory {
   // Method to create fake property data for seeding
   public async Task<PropertyModel> CreateFakePropertyAsync(Guid ownerId) {
 	var property = _propertyFaker.Generate();
+	property.UpdateCreationProperties(DateTime.UtcNow);
+	property.UpdateModifiedProperties(DateTime.UtcNow);
 	property.OwnerId = ownerId; // Set the actual owner ID
 
 	await _context.Properties.AddAsync(property);

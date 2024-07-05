@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Security.Claims;
+using Cloud.Models.DTO;
 
 namespace Cloud.Controllers {
   [ApiController]
@@ -32,7 +33,7 @@ namespace Cloud.Controllers {
 	}
 
 	[HttpPost]
-	public async Task<IActionResult> CreatePayment([FromBody] RentPaymentModel payment) {
+	public async Task<IActionResult> CreatePayment([FromBody] CreateRentPaymentDto paymentDto) {
 	  if (!ModelState.IsValid) {
 		return BadRequest(ModelState);
 	  }
@@ -42,7 +43,7 @@ namespace Cloud.Controllers {
 		return Unauthorized();
 	  }
 
-	  var createdPayment = await _paymentService.CreatePaymentAsync(payment, userId);
+	  var createdPayment = await _paymentService.CreatePaymentAsync(paymentDto, userId);
 	  return CreatedAtAction(nameof(GetPaymentById), new { id = createdPayment.Id }, createdPayment);
 	}
 

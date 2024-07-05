@@ -1,5 +1,8 @@
 // PaymentService.cs
+using Cloud.Factories;
 using Cloud.Models;
+using Cloud.Models.DTO;
+using Cloud.Models.Validator;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
 
@@ -28,7 +31,7 @@ namespace Cloud.Services {
 	/// </summary>
 	/// <param name="payment">The payment to create.</param>
 	/// <returns>The created payment.</returns>
-	Task<RentPaymentModel> CreatePaymentAsync(RentPaymentModel payment, String userId);
+	Task<RentPaymentModel> CreatePaymentAsync(CreateRentPaymentDto paymentDto, String userId);
 
 	/// <summary>
 	/// Update an existing payment.
@@ -76,6 +79,7 @@ namespace Cloud.Services {
   /// </summary>
   public class PaymentService : IPaymentService {
 	private readonly ApplicationDbContext _context;
+	private readonly RentPaymentFactory _rentPaymentFactory;
 
 	/// <summary>
 	/// Initializes a new instance of the PaymentService class.
@@ -103,12 +107,20 @@ namespace Cloud.Services {
 	}
 
 	/// <inheritdoc />
-	public async Task<RentPaymentModel> CreatePaymentAsync(RentPaymentModel payment, string createdBy) {
+	public async Task<RentPaymentModel> CreatePaymentAsync(CreateRentPaymentDto paymentDto, string createdBy) {
+	  if (paymentDto == null) {
+		throw new ArgumentNullException(nameof(paymentDto));
+	  }
+
+	  var tenant = await _context.Tenants.FindAsync(paymentDto.TenantId);
+	  if (tenant == null || tenant.Id.ToString() != createdBy) {
+		throw new InvalidOperationException("Invalid tenant");
+	  }
+
+	  var payment = await _rentPaymentFactory.CreatePaymentAsync(paymentDto);
 	  payment.UpdateCreationProperties(DateTime.UtcNow);
 
-	  _context.RentPayments.Add(payment);
 	  await _context.SaveChangesAsync();
-
 	  return payment;
 	}
 

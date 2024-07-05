@@ -1,59 +1,90 @@
+using Cloud.Factories;
 using Cloud.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 public class DataSeeder {
   private readonly IServiceProvider _serviceProvider;
+  private readonly ApplicationDbContext _dbContext;
+  private readonly UserManager<UserModel> _userManager;
+  private readonly UserFactory _userFactory;
+  private readonly PropertyFactory _propertyFactory;
+  private readonly ListingFactory _listingFactory;
 
-  public DataSeeder(IServiceProvider serviceProvider) {
+  public DataSeeder(IServiceProvider serviceProvider, ApplicationDbContext dbContext, UserManager<UserModel> userManager, UserFactory userFactory, PropertyFactory propertyFactory, ListingFactory listingFactory) {
 	_serviceProvider = serviceProvider;
+	_dbContext = dbContext;
+	_userManager = userManager;
+	_userFactory = userFactory;
+	_propertyFactory = propertyFactory;
+	_listingFactory = listingFactory;
   }
 
   public async Task SeedAsync() {
-	using (var scope = _serviceProvider.CreateScope()) {
-	  var userManager = scope.ServiceProvider.GetRequiredService<UserManager<UserModel>>();
-	  var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-	  var userFactory = new UserFactory(userManager, dbContext);
-	  var propertyFactory = new PropertyFactory(dbContext);
+	using var scope = _serviceProvider.CreateScope();
 
-	  if (dbContext == null) {
-		throw new InvalidOperationException("Database context is not initialized.");
-	  }
+	if (_dbContext == null) {
+	  throw new InvalidOperationException("Database context is not initialized.");
+	}
 
-	  // Seed Users if table is empty
-	  if (!await dbContext.Users.AnyAsync()) {
-		await userFactory.SeedUsersAsync(50);
-	  }
+	await SeedUsersAsync();
+	await SeedPropertiesAsync();
+	await SeedListingsAsync();
+  }
 
-	  // Seed Properties if table is empty
-	  if (!await dbContext.Properties?.AnyAsync()) {
-		var owners = await dbContext.Users.Include(u => u.Owner)
-										  .Where(u => u.Role == UserRole.Owner)
-										  .Select(u => u.Owner)
-										  .Where(o => o != null)
-										  .ToListAsync();
-
-		if (owners.Count > 0) { // Ensure there are owners before seeding properties
-		  await SeedPropertiesAsync(propertyFactory, owners!, 50);
-		}
-		else {
-		  Console.WriteLine("No owners found to seed properties.");
-		}
-	  }
-
-	  // Add more seeding methods for other models here
+  private async Task SeedUsersAsync() {
+	if (!await _dbContext.Users.AnyAsync()) {
+	  await _userFactory.SeedUsersAsync(50);
 	}
   }
 
-  private async Task SeedPropertiesAsync(PropertyFactory propertyFactory, List<OwnerModel> owners, int count) {
+  private async Task SeedPropertiesAsync() {
+	if (!await _dbContext.Properties?.AnyAsync()) {
+	  var owners = await _dbContext.Users.AsNoTracking()
+										 .Include(u => u.Owner)
+										 .Where(u => u.Role == UserRole.Owner && u.Owner != null)
+										 .Select(u => u.Owner)
+										 .ToListAsync();
+
+	  if (owners.Count > 0) {
+		await SeedPropertiesForOwnersAsync(owners, 50);
+	  }
+	  else {
+		Console.WriteLine("No owners found to seed properties.");
+	  }
+	}
+  }
+
+  private async Task SeedPropertiesForOwnersAsync(List<OwnerModel> owners, int count) {
 	var random = new Random();
 	for (int i = 0; i < count; i++) {
 	  try {
 		var owner = owners[random.Next(owners.Count)];
-		await propertyFactory.CreateFakePropertyAsync(owner.Id);
+		await _propertyFactory.CreateFakePropertyAsync(owner.Id);
 	  }
 	  catch (Exception ex) {
 		Console.WriteLine($"Error creating property: {ex.Message}");
+	  }
+	}
+  }
+
+  private async Task SeedListingsAsync() {
+	if (!await _dbContext.Listings.AnyAsync()) {
+	  var propertyIds = await _dbContext.Properties.Select(p => p.Id).ToListAsync();
+
+	  if (propertyIds.Count > 0) {
+		foreach (var propertyId in propertyIds) {
+		  try {
+			await _listingFactory.CreateFakeListingAsync(propertyId);
+		  }
+		  catch (Exception ex) {
+			Console.WriteLine($"Error creating listing for property {propertyId}: {ex.Message}");
+		  }
+		}
+	  }
+	  else {
+		Console.WriteLine("No properties found to seed listings.");
 	  }
 	}
   }

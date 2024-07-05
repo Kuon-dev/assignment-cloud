@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Stripe;
+using Cloud.Models.Validator;
 /*using Microsoft.Extensions.Logging;*/
 
 var builder = WebApplication.CreateBuilder(args);
@@ -109,9 +110,11 @@ builder.Services.AddScoped<PropertyFactory>();
 builder.Services.AddScoped<LeaseFactory>();
 builder.Services.AddScoped<UserFactory>();
 builder.Services.AddScoped<ListingFactory>();
+builder.Services.AddScoped<RentPaymentFactory>();
 
 builder.Services.AddScoped<ListingValidator>();
 builder.Services.AddScoped<LeaseValidator>();
+builder.Services.AddScoped<RentPaymentValidator>();
 
 builder.Services.AddScoped<PaymentIntentService>();
 
