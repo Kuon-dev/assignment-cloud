@@ -95,6 +95,7 @@ builder.Services.AddLogging();
 builder.Services.AddSingleton<S3Service>();
 builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddScoped<ApiExceptionFilter>();
+builder.Services.AddScoped<PaymentIntentService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IListingService, ListingService>();
@@ -105,20 +106,22 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IMaintenanceTaskService, MaintenanceTaskService>();
 builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+builder.Services.AddScoped<IMaintenanceRequestService, MaintenanceRequestService>();
 
 builder.Services.AddScoped<PropertyFactory>();
 builder.Services.AddScoped<LeaseFactory>();
 builder.Services.AddScoped<UserFactory>();
 builder.Services.AddScoped<ListingFactory>();
 builder.Services.AddScoped<RentPaymentFactory>();
+builder.Services.AddScoped<MaintenanceRequestFactory>();
 builder.Services.AddScoped<RentalApplicationFactory>();
 
 builder.Services.AddScoped<ListingValidator>();
 builder.Services.AddScoped<LeaseValidator>();
 builder.Services.AddScoped<RentPaymentValidator>();
 builder.Services.AddScoped<RentalApplicationValidator>();
+builder.Services.AddScoped<MaintenanceRequestValidator>();
 
-builder.Services.AddScoped<PaymentIntentService>();
 
 StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ?? throw new InvalidOperationException("Stripe secret key not found.");
 
