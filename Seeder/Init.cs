@@ -2,23 +2,35 @@ using Cloud.Factories;
 using Cloud.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 public class DataSeeder {
   private readonly IServiceProvider _serviceProvider;
   private readonly ApplicationDbContext _dbContext;
   private readonly UserManager<UserModel> _userManager;
+  private readonly RoleManager<IdentityRole> _roleManager;
   private readonly UserFactory _userFactory;
   private readonly PropertyFactory _propertyFactory;
   private readonly ListingFactory _listingFactory;
+  private readonly RentalApplicationFactory _rentalApplicationFactory;
 
-  public DataSeeder(IServiceProvider serviceProvider, ApplicationDbContext dbContext, UserManager<UserModel> userManager, UserFactory userFactory, PropertyFactory propertyFactory, ListingFactory listingFactory) {
+  public DataSeeder(
+	  IServiceProvider serviceProvider,
+	  ApplicationDbContext dbContext,
+	  UserManager<UserModel> userManager,
+	  RoleManager<IdentityRole> roleManager,
+	  UserFactory userFactory,
+	  PropertyFactory propertyFactory,
+	  ListingFactory listingFactory,
+	  RentalApplicationFactory rentalApplicationFactory
+	) {
 	_serviceProvider = serviceProvider;
 	_dbContext = dbContext;
 	_userManager = userManager;
+	_roleManager = roleManager;
 	_userFactory = userFactory;
 	_propertyFactory = propertyFactory;
 	_listingFactory = listingFactory;
+	_rentalApplicationFactory = rentalApplicationFactory;
   }
 
   public async Task SeedAsync() {
@@ -28,9 +40,21 @@ public class DataSeeder {
 	  throw new InvalidOperationException("Database context is not initialized.");
 	}
 
+	await SeedRolesAsync();
 	await SeedUsersAsync();
 	await SeedPropertiesAsync();
 	await SeedListingsAsync();
+	await SeedRentalApplicationsAsync();
+  }
+
+  private async Task SeedRolesAsync() {
+	var roles = new[] { "Owner", "Tenant", "Admin" };
+
+	foreach (var role in roles) {
+	  if (!await _roleManager.RoleExistsAsync(role)) {
+		await _roleManager.CreateAsync(new IdentityRole(role));
+	  }
+	}
   }
 
   private async Task SeedUsersAsync() {
@@ -88,4 +112,11 @@ public class DataSeeder {
 	  }
 	}
   }
+
+  private async Task SeedRentalApplicationsAsync() {
+	if (!await _dbContext.RentalApplications.AnyAsync()) {
+	  await _rentalApplicationFactory.SeedApplicationsAsync(50);
+	}
+  }
+
 }

@@ -1,14 +1,12 @@
 // RentalApplicationModel.cs
-/*using System;*/
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Cloud.Models.Data;
 
-/*namespace Cloud.Models*/
 namespace Cloud.Models {
   public class RentalApplicationModel : BaseEntity {
 	[Required]
-	public Guid TenantId { get; set; }
+	public Guid TenantId { get; set; } // Change this to Guid
 
 	[ForeignKey("TenantId")]
 	public TenantModel? Tenant { get; set; }
