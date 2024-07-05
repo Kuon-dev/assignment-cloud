@@ -54,13 +54,14 @@ namespace Cloud.Factories {
 	/// <param name="securityDeposit">The security deposit for the lease.</param>
 	/// <param name="isActive">Indicates whether the lease is active.</param>
 	/// <returns>The created LeaseModel.</returns>
-	public async Task<LeaseModel> CreateLeaseAsync(Guid tenantId, DateTime startDate, DateTime endDate, decimal rentAmount, decimal securityDeposit, bool isActive) {
+	public async Task<LeaseModel> CreateLeaseAsync(Guid tenantId, Guid propertyId, DateTime startDate, DateTime endDate, decimal rentAmount, decimal securityDeposit, bool isActive) {
 	  if (_dbContext.Leases == null) {
 		throw new InvalidOperationException("Lease DbSet is not initialized.");
 	  }
 
 	  var lease = new LeaseModel {
 		TenantId = tenantId,
+		PropertyId = propertyId,
 		StartDate = startDate,
 		EndDate = endDate,
 		RentAmount = rentAmount,
