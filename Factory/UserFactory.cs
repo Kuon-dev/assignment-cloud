@@ -142,11 +142,11 @@ public class UserFactory {
 	var roleSpecificModels = new List<object>(count);
 
 	// static users for testing
-	/*var tenantUser = _userFaker.Generate();*/
-	/*tenantUser.Email = "tenant@example.com";*/
-	/*tenantUser.Role = UserRole.Tenant;*/
-	/*users.Add(tenantUser);*/
-	/*roleSpecificModels.Add(new TenantModel { UserId = tenantUser.Id, User = tenantUser });*/
+	var tenantUser = _userFaker.Generate();
+	tenantUser.Email = "tenant@example.com";
+	tenantUser.Role = UserRole.Tenant;
+	users.Add(tenantUser);
+	roleSpecificModels.Add(new TenantModel { UserId = tenantUser.Id, User = tenantUser });
 
 	var ownerUser = _userFaker.Generate();
 	ownerUser.Email = "owner@example.com";
