@@ -61,9 +61,15 @@ public class UserFactory {
   /// <param name="password">The password for the user.</param>
   /// <param name="firstName">The first name of the user.</param>
   /// <param name="lastName">The last name of the user.</param>
-  /// <returns>The created UserModel.</returns>
-  public Task<UserModel> CreateTenantAsync(string email, string password, string firstName, string lastName)
-	  => CreateUserAsync(email, password, firstName, lastName, UserRole.Tenant);
+  /// <returns>The created UserModel or null if creation failed.</returns>
+  /// <exception cref="InvalidOperationException">Thrown when user creation fails.</exception>
+  public async Task<UserModel> CreateTenantAsync(string email, string password, string firstName, string lastName) {
+	var user = await CreateUserAsync(email, password, firstName, lastName, UserRole.Tenant);
+	if (user == null) {
+	  throw new InvalidOperationException("Failed to create tenant user.");
+	}
+	return user;
+  }
 
   /// <summary>
   /// Creates an owner user.
@@ -72,9 +78,15 @@ public class UserFactory {
   /// <param name="password">The password for the user.</param>
   /// <param name="firstName">The first name of the user.</param>
   /// <param name="lastName">The last name of the user.</param>
-  /// <returns>The created UserModel.</returns>
-  public Task<UserModel> CreateOwnerAsync(string email, string password, string firstName, string lastName)
-	  => CreateUserAsync(email, password, firstName, lastName, UserRole.Owner);
+  /// <returns>The created UserModel or null if creation failed.</returns>
+  /// <exception cref="InvalidOperationException">Thrown when user creation fails.</exception>
+  public async Task<UserModel> CreateOwnerAsync(string email, string password, string firstName, string lastName) {
+	var user = await CreateUserAsync(email, password, firstName, lastName, UserRole.Owner);
+	if (user == null) {
+	  throw new InvalidOperationException("Failed to create owner user.");
+	}
+	return user;
+  }
 
   /// <summary>
   /// Creates an admin user.
@@ -83,9 +95,15 @@ public class UserFactory {
   /// <param name="password">The password for the user.</param>
   /// <param name="firstName">The first name of the user.</param>
   /// <param name="lastName">The last name of the user.</param>
-  /// <returns>The created UserModel.</returns>
-  public Task<UserModel> CreateAdminAsync(string email, string password, string firstName, string lastName)
-	  => CreateUserAsync(email, password, firstName, lastName, UserRole.Admin);
+  /// <returns>The created UserModel or null if creation failed.</returns>
+  /// <exception cref="InvalidOperationException">Thrown when user creation fails.</exception>
+  public async Task<UserModel> CreateAdminAsync(string email, string password, string firstName, string lastName) {
+	var user = await CreateUserAsync(email, password, firstName, lastName, UserRole.Admin);
+	if (user == null) {
+	  throw new InvalidOperationException("Failed to create admin user.");
+	}
+	return user;
+  }
 
   /// <summary>
   /// Creates a user with the specified role.
@@ -96,7 +114,7 @@ public class UserFactory {
   /// <param name="lastName">The last name of the user.</param>
   /// <param name="role">The role of the user.</param>
   /// <returns>The created UserModel.</returns>
-  private async Task<UserModel> CreateUserAsync(string email, string password, string firstName, string lastName, UserRole role) {
+  private async Task<UserModel?> CreateUserAsync(string email, string password, string firstName, string lastName, UserRole role) {
 	// start transaction
 	using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
@@ -128,9 +146,10 @@ public class UserFactory {
 
 	  await transaction.CommitAsync();
 	  return user;
-	} catch (Exception ex) {
+	}
+	catch {
 	  await transaction.RollbackAsync();
-	  throw ex;
+	  return null;
 	}
   }
 

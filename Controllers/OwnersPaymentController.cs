@@ -1,10 +1,14 @@
-// OwnerPaymentsController.cs
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Cloud.Models;
 using Cloud.Services;
+using Cloud.Models.DTO;
+/*using Cloud.Filters;*/
 
 namespace Cloud.Controllers {
+  /// <summary>
+  /// Controller for managing owner payments
+  /// </summary>
   [Authorize]
   [ApiController]
   [Route("api/[controller]")]
@@ -22,9 +26,11 @@ namespace Cloud.Controllers {
 	/// <param name="size">Page size</param>
 	/// <returns>A list of owner payments</returns>
 	[HttpGet]
-	public async Task<ActionResult<IEnumerable<OwnerPaymentModel>>> GetOwnerPayments([FromQuery] int page = 1, [FromQuery] int size = 10) {
+	[Authorize(Roles = "Admin,Owner")]
+	public async Task<ActionResult<IEnumerable<OwnerPaymentDto>>> GetOwnerPayments([FromQuery] int page = 1, [FromQuery] int size = 10) {
 	  var payments = await _ownerPaymentService.GetAllPaymentsAsync(page, size);
-	  return Ok(payments);
+	  var paymentDtos = payments.Select(p => new OwnerPaymentDto(p));
+	  return Ok(paymentDtos);
 	}
 
 	/// <summary>
@@ -33,42 +39,57 @@ namespace Cloud.Controllers {
 	/// <param name="id">Payment ID</param>
 	/// <returns>The owner payment</returns>
 	[HttpGet("{id}")]
-	public async Task<ActionResult<OwnerPaymentModel>> GetOwnerPayment(Guid id) {
-	  var payment = await _ownerPaymentService.GetPaymentByIdAsync(id);
-
-	  if (payment == null) {
+	[Authorize(Roles = "Admin,Owner")]
+	public async Task<ActionResult<OwnerPaymentDto>> GetOwnerPayment(Guid id) {
+	  try {
+		var payment = await _ownerPaymentService.GetPaymentByIdAsync(id);
+		return Ok(new OwnerPaymentDto(payment));
+	  }
+	  catch (NotFoundException) {
 		return NotFound();
 	  }
-
-	  return Ok(payment);
 	}
 
 	/// <summary>
 	/// Create a new owner payment
 	/// </summary>
-	/// <param name="payment">The owner payment to create</param>
+	/// <param name="paymentDto">The owner payment to create</param>
 	/// <returns>The created owner payment</returns>
 	[HttpPost]
-	public async Task<ActionResult<OwnerPaymentModel>> CreateOwnerPayment(OwnerPaymentModel payment) {
-	  var createdPayment = await _ownerPaymentService.CreatePaymentAsync(payment);
-	  return CreatedAtAction(nameof(GetOwnerPayment), new { id = createdPayment.Id }, createdPayment);
+	[Authorize(Roles = "Admin")]
+	public async Task<ActionResult<OwnerPaymentDto>> CreateOwnerPayment([FromBody] CreateOwnerPaymentDto paymentDto) {
+	  try {
+		var createdPayment = await _ownerPaymentService.CreatePaymentAsync(paymentDto.OwnerId, paymentDto.PropertyId, paymentDto.Amount);
+		return CreatedAtAction(nameof(GetOwnerPayment), new { id = createdPayment.Id }, new OwnerPaymentDto(createdPayment));
+	  }
+	  catch (ValidationException ex) {
+		return BadRequest(ex.Message);
+	  }
 	}
 
 	/// <summary>
 	/// Update an existing owner payment
 	/// </summary>
 	/// <param name="id">Payment ID</param>
-	/// <param name="payment">The updated owner payment</param>
+	/// <param name="paymentDto">The updated owner payment</param>
 	/// <returns>No content</returns>
 	[HttpPut("{id}")]
-	public async Task<IActionResult> UpdateOwnerPayment(Guid id, OwnerPaymentModel payment) {
-	  var updatedPayment = await _ownerPaymentService.UpdatePaymentAsync(id, payment);
+	[Authorize(Roles = "Admin")]
+	public async Task<IActionResult> UpdateOwnerPayment(Guid id, [FromBody] UpdateOwnerPaymentDto paymentDto) {
+	  try {
+		var payment = await _ownerPaymentService.GetPaymentByIdAsync(id);
+		payment.Amount = paymentDto.Amount;
+		payment.Status = paymentDto.Status;
 
-	  if (updatedPayment == null) {
+		await _ownerPaymentService.UpdatePaymentAsync(id, payment);
+		return NoContent();
+	  }
+	  catch (NotFoundException) {
 		return NotFound();
 	  }
-
-	  return NoContent();
+	  catch (ValidationException ex) {
+		return BadRequest(ex.Message);
+	  }
 	}
 
 	/// <summary>
@@ -77,14 +98,15 @@ namespace Cloud.Controllers {
 	/// <param name="id">Payment ID</param>
 	/// <returns>No content</returns>
 	[HttpDelete("{id}")]
+	[Authorize(Roles = "Admin")]
 	public async Task<IActionResult> DeleteOwnerPayment(Guid id) {
-	  var result = await _ownerPaymentService.DeletePaymentAsync(id);
-
-	  if (!result) {
+	  try {
+		await _ownerPaymentService.DeletePaymentAsync(id);
+		return NoContent();
+	  }
+	  catch (NotFoundException) {
 		return NotFound();
 	  }
-
-	  return NoContent();
 	}
 
 	/// <summary>
@@ -95,9 +117,11 @@ namespace Cloud.Controllers {
 	/// <param name="size">Page size</param>
 	/// <returns>A list of owner payments</returns>
 	[HttpGet("owner/{ownerId}")]
-	public async Task<ActionResult<IEnumerable<OwnerPaymentModel>>> GetPaymentsByOwnerId(Guid ownerId, [FromQuery] int page = 1, [FromQuery] int size = 10) {
+	[Authorize(Roles = "Admin,Owner")]
+	public async Task<ActionResult<IEnumerable<OwnerPaymentDto>>> GetPaymentsByOwnerId(Guid ownerId, [FromQuery] int page = 1, [FromQuery] int size = 10) {
 	  var payments = await _ownerPaymentService.GetPaymentsByOwnerIdAsync(ownerId, page, size);
-	  return Ok(payments);
+	  var paymentDtos = payments.Select(p => new OwnerPaymentDto(p));
+	  return Ok(paymentDtos);
 	}
 
 	/// <summary>
@@ -108,9 +132,11 @@ namespace Cloud.Controllers {
 	/// <param name="size">Page size</param>
 	/// <returns>A list of owner payments</returns>
 	[HttpGet("property/{propertyId}")]
-	public async Task<ActionResult<IEnumerable<OwnerPaymentModel>>> GetPaymentsByPropertyId(Guid propertyId, [FromQuery] int page = 1, [FromQuery] int size = 10) {
+	[Authorize(Roles = "Admin,Owner")]
+	public async Task<ActionResult<IEnumerable<OwnerPaymentDto>>> GetPaymentsByPropertyId(Guid propertyId, [FromQuery] int page = 1, [FromQuery] int size = 10) {
 	  var payments = await _ownerPaymentService.GetPaymentsByPropertyIdAsync(propertyId, page, size);
-	  return Ok(payments);
+	  var paymentDtos = payments.Select(p => new OwnerPaymentDto(p));
+	  return Ok(paymentDtos);
 	}
 
 	/// <summary>
@@ -119,14 +145,18 @@ namespace Cloud.Controllers {
 	/// <param name="id">Payment ID</param>
 	/// <returns>The updated owner payment</returns>
 	[HttpPost("{id}/process-payment")]
-	public async Task<ActionResult<OwnerPaymentModel>> ProcessStripePayment(Guid id) {
-	  var payment = await _ownerPaymentService.ProcessStripePaymentAsync(id);
-
-	  if (payment == null) {
+	[Authorize(Roles = "Admin")]
+	public async Task<ActionResult<OwnerPaymentDto>> ProcessStripePayment(Guid id) {
+	  try {
+		var payment = await _ownerPaymentService.ProcessStripePaymentAsync(id);
+		return Ok(new OwnerPaymentDto(payment));
+	  }
+	  catch (NotFoundException) {
 		return NotFound();
 	  }
-
-	  return Ok(payment);
+	  catch (ServiceException ex) {
+		return BadRequest(ex.Message);
+	  }
 	}
   }
 }
