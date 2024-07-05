@@ -66,6 +66,7 @@ namespace Cloud.Services {
 
 	  var createdLease = await _leaseFactory.CreateLeaseAsync(
 		  leaseDto.TenantId,
+		  leaseDto.PropertyId,
 		  leaseDto.StartDate,
 		  leaseDto.EndDate,
 		  leaseDto.RentAmount,
