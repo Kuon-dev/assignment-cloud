@@ -214,7 +214,15 @@ namespace Cloud.Controllers {
 	  }
 
 	  var user = await _context.Users
-		  .FirstOrDefaultAsync(u => u.Id == userId && u.DeletedAt == null);
+		  .Where(u => u.Id == userId && !u.IsDeleted)
+			.Select(u => new UserModel {
+			  Id = u.Id,
+			  // Include other necessary UserModel properties here
+			  Tenant = u.Tenant,
+			  Owner = u.Owner,
+			  Admin = u.Admin
+			}).FirstOrDefaultAsync();
+
 
 	  if (user == null) {
 		throw new NotFoundException("User profile not found");

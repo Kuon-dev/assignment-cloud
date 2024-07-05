@@ -12,6 +12,8 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Stripe;
 using Cloud.Models.Validator;
+/*using System.Text.Json;*/
+using System.Text.Json.Serialization;
 /*using Microsoft.Extensions.Logging;*/
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +23,11 @@ Env.Load();
 
 // Add services to the container.
 builder.Services.AddControllers();
+  /*.AddJsonOptions(options =>*/
+  /*{*/
+  /* options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;*/
+  /* options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;*/
+  /*});*/
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -98,6 +105,7 @@ builder.Services.AddScoped<ApiExceptionFilter>();
 builder.Services.AddScoped<PaymentIntentService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IListingService, ListingService>();
 builder.Services.AddScoped<IRentalApplicationService, RentalApplicationService>();
 builder.Services.AddScoped<IPropertyService, PropertyService>();
@@ -127,7 +135,7 @@ builder.Services.AddScoped<RentalApplicationValidator>();
 builder.Services.AddScoped<MaintenanceRequestValidator>();
 builder.Services.AddScoped<MaintenanceTaskValidator>();
 builder.Services.AddScoped<OwnerPaymentValidator>();
-
+builder.Services.AddScoped<StripeCustomerValidator>();
 
 StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ?? throw new InvalidOperationException("Stripe secret key not found.");
 
