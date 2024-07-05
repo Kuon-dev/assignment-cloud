@@ -63,7 +63,7 @@ namespace Cloud.Services {
 		  .Include(o => o.Properties)
 		  .FirstOrDefaultAsync(o => o.Id == ownerId);
 
-	  if (owner == null) {
+	  if (owner == null || owner.Properties == null) {
 		return Enumerable.Empty<PropertyModel>();
 	  }
 

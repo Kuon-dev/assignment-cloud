@@ -62,7 +62,7 @@ namespace Cloud.Services {
 		  .Include(t => t.Leases)
 		  .FirstOrDefaultAsync(t => t.Id == tenantId);
 
-	  if (tenant == null) {
+	  if (tenant == null || tenant.Leases == null) {
 		return Enumerable.Empty<LeaseModel>();
 	  }
 

@@ -108,7 +108,7 @@ builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IMaintenanceRequestService, MaintenanceRequestService>();
 builder.Services.AddScoped<IMaintenanceTaskService, MaintenanceTaskService>();
-builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
+builder.Services.AddScoped<IStripeCustomerService, StripeCustomerService>();
 
 builder.Services.AddScoped<PropertyFactory>();
 builder.Services.AddScoped<LeaseFactory>();
@@ -118,6 +118,7 @@ builder.Services.AddScoped<RentPaymentFactory>();
 builder.Services.AddScoped<MaintenanceRequestFactory>();
 builder.Services.AddScoped<RentalApplicationFactory>();
 builder.Services.AddScoped<MaintenanceTaskFactory>();
+builder.Services.AddScoped<OwnerPaymentFactory>();
 
 builder.Services.AddScoped<ListingValidator>();
 builder.Services.AddScoped<LeaseValidator>();
