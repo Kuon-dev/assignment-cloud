@@ -1,5 +1,6 @@
 using DotNetEnv;
 using Cloud.Models;
+using Cloud.Models.DTO;
 using Cloud.Services;
 using Cloud.Filters;
 using Cloud.Middlewares;
@@ -78,6 +79,15 @@ builder.Services.AddIdentity<UserModel, IdentityRole>(options => {
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+builder.Services.AddCors(options => {
+  options.AddPolicy("AllowFrontend",
+	  builder => builder
+		  .WithOrigins(Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173")
+		  .AllowAnyMethod()
+		  .AllowAnyHeader()
+		  .AllowCredentials());
+});
+
 // Add logging
 builder.Services.AddLogging();
 
@@ -98,6 +108,10 @@ builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<PropertyFactory>();
 builder.Services.AddScoped<LeaseFactory>();
 builder.Services.AddScoped<UserFactory>();
+builder.Services.AddScoped<ListingFactory>();
+
+builder.Services.AddScoped<ListingValidator>();
+builder.Services.AddScoped<LeaseValidator>();
 
 builder.Services.AddScoped<PaymentIntentService>();
 
@@ -107,15 +121,18 @@ StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_K
 builder.Services.AddTransient<DataSeeder>();
 
 var app = builder.Build();
-using (var scope = app.Services.CreateScope()) {
-  var services = scope.ServiceProvider;
-  try {
-	var seeder = services.GetRequiredService<DataSeeder>();
-	await seeder.SeedAsync();
-  }
-  catch (Exception ex) {
-	var logger = services.GetRequiredService<ILogger<Program>>();
-	logger.LogError(ex, "An error occurred seeding the DB.");
+
+if (app.Environment.IsDevelopment()) {
+  using (var scope = app.Services.CreateScope()) {
+	var services = scope.ServiceProvider;
+	try {
+	  var seeder = services.GetRequiredService<DataSeeder>();
+	  await seeder.SeedAsync();
+	}
+	catch (Exception ex) {
+	  var logger = services.GetRequiredService<ILogger<Program>>();
+	  logger.LogError(ex, "An error occurred seeding the DB.");
+	}
   }
 }
 
@@ -125,6 +142,9 @@ app.UseUserStatusMiddleware();
 app.UseSwagger();
 app.UseSwaggerUI();
 /*}*/
+app.UseRouting();  /// NOT SURE WHETHER THIS REQUIRED OR NOT
+app.UseCors("AllowFrontend");
+
 
 app.UseHttpsRedirection();
 
