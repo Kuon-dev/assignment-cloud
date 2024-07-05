@@ -1,14 +1,11 @@
 namespace Cloud.Models.DTO {
   public class LeaseDto {
-	public Guid Id { get; set; }
 	public Guid TenantId { get; set; }
 	public DateTime StartDate { get; set; }
 	public DateTime EndDate { get; set; }
 	public decimal RentAmount { get; set; }
 	public decimal SecurityDeposit { get; set; }
 	public bool IsActive { get; set; }
-	public DateTime CreatedAt { get; set; }
-	public DateTime? ModifiedAt { get; set; }
   }
 
   public class LeaseValidator {
