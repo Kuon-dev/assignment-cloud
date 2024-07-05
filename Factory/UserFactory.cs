@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Cloud.Models;
 using Bogus;
+using Cloud.Models.Validator;
+using Stripe;
 
 /// <summary>
 /// Factory class for creating user models and related entities.
@@ -10,15 +12,17 @@ public class UserFactory {
   private readonly ApplicationDbContext _dbContext;
   private readonly Faker<UserModel> _userFaker;
   private readonly Randomizer _randomizer;
+  private readonly StripeCustomerValidator _stripeCustomerValidator;
 
   /// <summary>
   /// Initializes a new instance of the UserFactory class.
   /// </summary>
   /// <param name="userManager">The UserManager instance for managing user operations.</param>
   /// <param name="dbContext">The database context for entity operations.</param>
-  public UserFactory(UserManager<UserModel> userManager, ApplicationDbContext dbContext) {
+  public UserFactory(UserManager<UserModel> userManager, ApplicationDbContext dbContext, StripeCustomerValidator stripeCustomerValidator) {
 	_userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
 	_dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+	_stripeCustomerValidator = stripeCustomerValidator ?? throw new ArgumentNullException(nameof(stripeCustomerValidator));
 
 	// Initialize Bogus for generating fake user data
 	_userFaker = new Faker<UserModel>()
@@ -93,22 +97,41 @@ public class UserFactory {
   /// <param name="role">The role of the user.</param>
   /// <returns>The created UserModel.</returns>
   private async Task<UserModel> CreateUserAsync(string email, string password, string firstName, string lastName, UserRole role) {
-	var user = new UserModel {
-	  UserName = email,
-	  Email = email,
-	  FirstName = firstName,
-	  LastName = lastName,
-	  Role = role
-	};
+	// start transaction
+	using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
-	var result = await _userManager.CreateAsync(user, password);
-	if (result.Succeeded) {
+	try {
+	  var user = new UserModel {
+		UserName = email,
+		Email = email,
+		FirstName = firstName,
+		LastName = lastName,
+		Role = role
+	  };
+
+	  var result = await _userManager.CreateAsync(user, password);
+	  if (!result.Succeeded) {
+		throw new InvalidOperationException($"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+	  }
+
+	  // stripe api generate stripe customer id
+	  var options = new CustomerCreateOptions {
+		Name = $"{user.FirstName} {user.LastName}",
+		Email = user.Email,
+	  };
+	  var service = new CustomerService();
+	  var stripeCustomer = await service.CreateAsync(options);
+
 	  await _userManager.AddToRoleAsync(user, role.ToString());
 	  await CreateRoleSpecificModelAsync(user);
-	  return user;
-	}
+	  await CreateStripeCustomerAsync(user, stripeCustomer.Id);
 
-	throw new InvalidOperationException($"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+	  await transaction.CommitAsync();
+	  return user;
+	} catch (Exception ex) {
+	  await transaction.RollbackAsync();
+	  throw ex;
+	}
   }
 
   /// <summary>
@@ -130,6 +153,25 @@ public class UserFactory {
 		throw new ArgumentOutOfRangeException(nameof(user.Role), user.Role, "Invalid user role");
 	}
 
+	await _dbContext.SaveChangesAsync();
+  }
+
+  private async Task CreateStripeCustomerAsync(UserModel user, string stripeCustomerId) {
+	if (_dbContext.StripeCustomers == null) {
+	  throw new InvalidOperationException("StripeCustomers DbSet is not initialized.");
+	}
+
+	var customerStripe = new StripeCustomerModel {
+	  UserId = user.Id,
+	  StripeCustomerId = stripeCustomerId
+	};
+
+	_stripeCustomerValidator.AddStrategy(new UserIdValidationStrategy());
+	_stripeCustomerValidator.AddStrategy(new StripeCustomerIdValidationStrategy());
+	_stripeCustomerValidator.AddStrategy(new DuplicateStripeCustomerValidationStrategy(_dbContext));
+	_stripeCustomerValidator.ValidateStripeCustomer(customerStripe);
+
+	_dbContext.StripeCustomers.Add(customerStripe);
 	await _dbContext.SaveChangesAsync();
   }
 
