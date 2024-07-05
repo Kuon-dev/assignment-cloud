@@ -1,4 +1,3 @@
-// Controllers/UserController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -26,13 +25,21 @@ namespace Cloud.Controllers {
 	/// Get all users with pagination.
 	/// </summary>
 	[HttpGet]
-	[Authorize(Roles = "Admin")] // Only admins can access all users
+	[Authorize(Roles = "Admin")]
 	public async Task<ActionResult<IEnumerable<UserModel>>> GetUsers([FromQuery] int page = 1, [FromQuery] int size = 10) {
+	  if (page < 1 || size < 1) {
+		throw new BadRequestException("Page and size must be positive integers");
+	  }
+
 	  var users = await _context.Users
 		  .Where(u => u.DeletedAt == null)
 		  .Skip((page - 1) * size)
 		  .Take(size)
 		  .ToListAsync();
+
+	  if (!users.Any()) {
+		throw new NotFoundException("No users found");
+	  }
 
 	  return Ok(users);
 	}
@@ -45,7 +52,7 @@ namespace Cloud.Controllers {
 	  var user = await _context.Users.FindAsync(id);
 
 	  if (user == null || user.DeletedAt != null) {
-		return NotFound();
+		throw new NotFoundException($"User with ID {id} not found");
 	  }
 
 	  return user;
@@ -55,8 +62,12 @@ namespace Cloud.Controllers {
 	/// Create a new user.
 	/// </summary>
 	[HttpPost]
-	[Authorize(Roles = "Admin")] // Only admins can create users
+	[Authorize(Roles = "Admin")]
 	public async Task<ActionResult<UserModel>> CreateUser(UserModel user) {
+	  if (user == null) {
+		throw new BadRequestException("User data is required");
+	  }
+
 	  user.CreatedAt = DateTime.UtcNow;
 	  user.UpdatedAt = DateTime.UtcNow;
 	  _context.Users.Add(user);
@@ -71,7 +82,7 @@ namespace Cloud.Controllers {
 	[HttpPut("{id}")]
 	public async Task<IActionResult> UpdateUser(string id, UserModel user) {
 	  if (id != user.Id) {
-		return BadRequest();
+		throw new BadRequestException("ID in URL does not match ID in request body");
 	  }
 
 	  user.UpdatedAt = DateTime.UtcNow;
@@ -82,7 +93,7 @@ namespace Cloud.Controllers {
 	  }
 	  catch (DbUpdateConcurrencyException) {
 		if (!UserExists(id)) {
-		  return NotFound();
+		  throw new NotFoundException($"User with ID {id} not found");
 		}
 		else {
 		  throw;
@@ -96,11 +107,11 @@ namespace Cloud.Controllers {
 	/// Soft delete a user.
 	/// </summary>
 	[HttpDelete("{id}")]
-	[Authorize(Roles = "Admin")] // Only admins can delete users
+	[Authorize(Roles = "Admin")]
 	public async Task<IActionResult> DeleteUser(string id) {
 	  var user = await _context.Users.FindAsync(id);
 	  if (user == null) {
-		return NotFound();
+		throw new NotFoundException($"User with ID {id} not found");
 	  }
 
 	  user.DeletedAt = DateTime.UtcNow;
@@ -117,7 +128,7 @@ namespace Cloud.Controllers {
 	  var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.DeletedAt == null);
 
 	  if (user == null) {
-		return NotFound();
+		throw new NotFoundException($"User with email {email} not found");
 	  }
 
 	  return user;
@@ -129,9 +140,6 @@ namespace Cloud.Controllers {
 	[HttpGet("{id}/rented-property")]
 	public async Task<ActionResult<PropertyModel>> GetRentedProperty(string id) {
 	  var rentedProperty = await _userService.GetRentedPropertyAsync(id);
-	  if (rentedProperty == null) {
-		return NotFound();
-	  }
 	  return Ok(rentedProperty);
 	}
 
@@ -169,25 +177,30 @@ namespace Cloud.Controllers {
 	public async Task<IActionResult> UploadProfilePicture(string id, IFormFile file) {
 	  var user = await _context.Users.FindAsync(id);
 	  if (user == null) {
-		return NotFound();
+		throw new NotFoundException($"User with ID {id} not found");
 	  }
 
 	  if (file == null || file.Length == 0) {
-		return BadRequest("No file uploaded");
+		throw new BadRequestException("No file uploaded");
 	  }
 
 	  // Generate a unique file name
 	  var fileName = $"profile-pictures/{id}/{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
 
-	  using (var stream = file.OpenReadStream()) {
-		var imageUrl = await _s3Service.UploadFileAsync(stream, fileName, file.ContentType);
-		user.ProfilePictureUrl = imageUrl;
-		user.UpdatedAt = DateTime.UtcNow;
+	  try {
+		using (var stream = file.OpenReadStream()) {
+		  var imageUrl = await _s3Service.UploadFileAsync(stream, fileName, file.ContentType);
+		  user.ProfilePictureUrl = imageUrl;
+		  user.UpdatedAt = DateTime.UtcNow;
+		}
+
+		await _context.SaveChangesAsync();
+
+		return Ok(new { message = "Profile picture uploaded successfully", imageUrl = user.ProfilePictureUrl });
 	  }
-
-	  await _context.SaveChangesAsync();
-
-	  return Ok(new { message = "Profile picture uploaded successfully", imageUrl = user.ProfilePictureUrl });
+	  catch (Exception ex) {
+		throw new BadRequestException($"Failed to upload profile picture: {ex.Message}");
+	  }
 	}
 
 	/// <summary>
@@ -197,14 +210,14 @@ namespace Cloud.Controllers {
 	public async Task<ActionResult<UserModel>> GetCurrentUserProfile() {
 	  var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 	  if (userId == null) {
-		return Unauthorized();
+		throw new UnauthorizedException("User not authenticated");
 	  }
 
 	  var user = await _context.Users
 		  .FirstOrDefaultAsync(u => u.Id == userId && u.DeletedAt == null);
 
 	  if (user == null) {
-		return NotFound();
+		throw new NotFoundException("User profile not found");
 	  }
 
 	  return user;

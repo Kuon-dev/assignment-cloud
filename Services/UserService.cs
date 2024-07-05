@@ -1,7 +1,5 @@
 using Cloud.Models;
 using Microsoft.EntityFrameworkCore;
-/*using Cloud.Models.DTO;*/
-/*using Cloud.Data; // Assuming you have a DbContext in this namespace*/
 
 namespace Cloud.Services {
   public interface IUserService {
@@ -10,9 +8,7 @@ namespace Cloud.Services {
 	Task<IEnumerable<MaintenanceRequestModel>> GetMaintenanceRequestsAsync(string userId, int page, int size);
 	Task<IEnumerable<RentalApplicationModel>> GetApplicationsAsync(string userId, int page, int size);
   }
-}
 
-namespace Cloud.Services {
   public class UserService : IUserService {
 	private readonly ApplicationDbContext _context;
 
@@ -21,36 +17,63 @@ namespace Cloud.Services {
 	}
 
 	public async Task<PropertyModel> GetRentedPropertyAsync(string userId) {
-	  if (_context.Leases == null) throw new ArgumentNullException(nameof(_context.Leases));
-	  return await _context.Leases
+	  var lease = await _context.Leases
+		  .Include(l => l.PropertyModel)
 		  .Where(l => l.Tenant != null && l.Tenant.UserId == userId && l.IsActive)
-		  .Select(l => l.PropertyModel)
-		  .FirstOrDefaultAsync() ?? new PropertyModel();
+		  .FirstOrDefaultAsync();
+
+	  if (lease == null) {
+		throw new NotFoundException($"No active lease found for user with ID {userId}");
+	  }
+
+	  return lease.PropertyModel ?? throw new NotFoundException($"No property found for the active lease of user with ID {userId}");
 	}
 
 	public async Task<IEnumerable<RentPaymentModel>> GetPaymentHistoryAsync(string userId, int page, int size) {
-	  if (_context.RentPayments == null) throw new ArgumentNullException(nameof(_context.Leases));
-	  return await _context.RentPayments
+	  if (page < 1 || size < 1) {
+		throw new BadRequestException("Page and size must be positive integers");
+	  }
+
+	  var payments = await _context.RentPayments
 		  .Where(p => p.Tenant != null && p.Tenant.UserId == userId)
 		  .OrderByDescending(p => p.CreatedAt)
 		  .Skip((page - 1) * size)
 		  .Take(size)
 		  .ToListAsync();
+
+	  if (!payments.Any()) {
+		throw new NotFoundException($"No payment history found for user with ID {userId}");
+	  }
+
+	  return payments;
 	}
 
 	public async Task<IEnumerable<MaintenanceRequestModel>> GetMaintenanceRequestsAsync(string userId, int page, int size) {
-	  if (_context.MaintenanceRequests == null) throw new ArgumentNullException(nameof(_context.Leases));
-	  return await _context.MaintenanceRequests
+	  if (page < 1 || size < 1) {
+		throw new BadRequestException("Page and size must be positive integers");
+	  }
+
+	  var requests = await _context.MaintenanceRequests
 		  .Include(m => m.Property)
 		  .Where(m => m.Tenant != null && m.Tenant.UserId == userId)
 		  .OrderByDescending(m => m.CreatedAt)
 		  .Skip((page - 1) * size)
 		  .Take(size)
 		  .ToListAsync();
+
+	  if (!requests.Any()) {
+		throw new NotFoundException($"No maintenance requests found for user with ID {userId}");
+	  }
+
+	  return requests;
 	}
 
 	public async Task<IEnumerable<RentalApplicationModel>> GetApplicationsAsync(string userId, int page, int size) {
-	  return await _context.RentalApplications
+	  if (page < 1 || size < 1) {
+		throw new BadRequestException("Page and size must be positive integers");
+	  }
+
+	  var applications = await _context.RentalApplications
 		  .Include(a => a.Listing)
 		  .ThenInclude(l => l!.Property)
 		  .Where(a => a.Tenant != null && a.Tenant.UserId == userId)
@@ -58,6 +81,12 @@ namespace Cloud.Services {
 		  .Skip((page - 1) * size)
 		  .Take(size)
 		  .ToListAsync();
+
+	  if (!applications.Any()) {
+		throw new NotFoundException($"No rental applications found for user with ID {userId}");
+	  }
+
+	  return applications;
 	}
   }
 }
