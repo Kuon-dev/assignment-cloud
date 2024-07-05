@@ -1,12 +1,11 @@
 using Cloud.Models;
-using Microsoft.EntityFrameworkCore;
+using Cloud.Models.DTO;
 
 namespace Cloud.Services {
 
   public interface IStripeCustomerService {
-	Task<StripeCustomerModel> CreateStripeCustomerAsync(StripeCustomerModel customer);
-	Task<StripeCustomerModel?> GetStripeCustomerAsync(Guid id);
-	Task<StripeCustomerModel?> UpdateStripeCustomerAsync(StripeCustomerModel customer);
+	Task<StripeCustomerModel> GetStripeCustomerByIdAsync(Guid id);
+	Task<StripeCustomerModel> UpdateStripeCustomerAsync(Guid id, UpdateStripeCustomerDto customerDto);
 	Task<bool> DeleteStripeCustomerAsync(Guid id);
   }
 
@@ -17,51 +16,48 @@ namespace Cloud.Services {
 	  _context = context ?? throw new ArgumentNullException(nameof(context));
 	}
 
-	public async Task<StripeCustomerModel> CreateStripeCustomerAsync(StripeCustomerModel customer) {
-	  if (customer == null)
-		throw new ArgumentNullException(nameof(customer));
+	public async Task<StripeCustomerModel> GetStripeCustomerByIdAsync(Guid id) {
+	  if (_context.StripeCustomers == null)
+		throw new InvalidOperationException("StripeCustomers DbSet is not initialized.");
 
-	  _context.StripeCustomers.Add(customer);
+	  var stripeCustomer = await _context.StripeCustomers.FindAsync(id);
+	  if (stripeCustomer == null)
+		throw new InvalidOperationException("Stripe customer not found");
+
+	  return stripeCustomer;
+	}
+
+	public async Task<StripeCustomerModel> UpdateStripeCustomerAsync(Guid id, UpdateStripeCustomerDto stripeCustomerDto) {
+	  if (stripeCustomerDto == null)
+		throw new ArgumentNullException(nameof(stripeCustomerDto));
+
+	  if (_context.StripeCustomers == null)
+		throw new InvalidOperationException("StripeCustomers DbSet is not initialized.");
+
+	  var stripeCustomer = await _context.StripeCustomers.FindAsync(id);
+	  if (stripeCustomer == null)
+		throw new InvalidOperationException("Stripe customer not found");
+
+	  if (!string.IsNullOrEmpty(stripeCustomerDto.StripeCustomerId))
+		stripeCustomer.StripeCustomerId = stripeCustomerDto.StripeCustomerId;
+
+	  stripeCustomer.UpdateModifiedProperties(DateTime.UtcNow);
 	  await _context.SaveChangesAsync();
-	  return customer;
-	}
 
-	public async Task<StripeCustomerModel?> GetStripeCustomerAsync(Guid id) {
-	  if (_context.StripeCustomers == null)
-		throw new InvalidOperationException("StripeCustomers DbSet is not initialized.");
-
-	  return await _context.StripeCustomers.FindAsync(id);
-	}
-
-	public async Task<StripeCustomerModel?> UpdateStripeCustomerAsync(StripeCustomerModel customer) {
-	  if (customer == null)
-		throw new ArgumentNullException(nameof(customer));
-
-	  if (_context.StripeCustomers == null)
-		throw new InvalidOperationException("StripeCustomers DbSet is not initialized.");
-
-	  _context.Entry(customer).State = EntityState.Modified;
-	  try {
-		await _context.SaveChangesAsync();
-	  }
-	  catch (DbUpdateConcurrencyException) {
-		if (!StripeCustomerExists(customer.Id))
-		  return null;
-		throw;
-	  }
-	  return customer;
+	  return stripeCustomer;
 	}
 
 	public async Task<bool> DeleteStripeCustomerAsync(Guid id) {
 	  if (_context.StripeCustomers == null)
 		throw new InvalidOperationException("StripeCustomers DbSet is not initialized.");
 
-	  var customer = await _context.StripeCustomers.FindAsync(id);
-	  if (customer == null)
+	  var stripeCustomer = await _context.StripeCustomers.FindAsync(id);
+	  if (stripeCustomer == null)
 		return false;
 
-	  _context.StripeCustomers.Remove(customer);
+	  stripeCustomer.UpdateIsDeleted(DateTime.UtcNow, true);
 	  await _context.SaveChangesAsync();
+
 	  return true;
 	}
 
