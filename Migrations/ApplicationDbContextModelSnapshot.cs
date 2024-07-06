@@ -298,9 +298,6 @@ namespace Cloud.Migrations
                     b.Property<Guid>("RequestId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("StaffId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("timestamp with time zone");
 

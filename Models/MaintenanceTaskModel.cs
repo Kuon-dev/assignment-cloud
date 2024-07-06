@@ -15,9 +15,6 @@ namespace Cloud.Models
 		public MaintenanceRequestModel? Request { get; set; }
 
 		[Required]
-		public Guid StaffId { get; set; }
-
-		[Required]
 		public string Description { get; set; } = string.Empty;
 
 		[Column(TypeName = "decimal(18,2)")]

@@ -539,7 +539,6 @@ namespace Cloud.Migrations
 				{
 					Id = table.Column<Guid>(type: "uuid", nullable: false),
 					RequestId = table.Column<Guid>(type: "uuid", nullable: false),
-					StaffId = table.Column<Guid>(type: "uuid", nullable: false),
 					Description = table.Column<string>(type: "text", nullable: false),
 					EstimatedCost = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
 					ActualCost = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
