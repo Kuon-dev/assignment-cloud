@@ -97,8 +97,8 @@ namespace Cloud.Services
 			}
 
 			var ownerId = _context.Owners.FirstOrDefault(o => o.UserId == userId)?.Id;
-
 			var property = await _context.Properties.FindAsync(listingDto.PropertyId);
+
 			if (property == null || property.OwnerId.ToString() != ownerId.ToString())
 			{
 				throw new InvalidOperationException("Invalid property or user does not own the property.");
