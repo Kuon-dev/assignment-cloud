@@ -12,6 +12,8 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Stripe;
 using Cloud.Models.Validator;
+/*using System.Text.Json;*/
+using System.Text.Json.Serialization;
 /*using Microsoft.Extensions.Logging;*/
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +23,11 @@ Env.Load();
 
 // Add services to the container.
 builder.Services.AddControllers();
+/*.AddJsonOptions(options =>*/
+/*{*/
+/* options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;*/
+/* options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;*/
+/*});*/
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -28,17 +35,21 @@ builder.Services.AddSwaggerGen();
 var appEnv = Environment.GetEnvironmentVariable("APP_ENV");
 var connectionString = "";
 
-if (string.Equals(appEnv, "development", StringComparison.OrdinalIgnoreCase)) {
-  connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL");
-  if (string.IsNullOrEmpty(connectionString)) {
-	throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
-  }
+if (string.Equals(appEnv, "development", StringComparison.OrdinalIgnoreCase))
+{
+	connectionString = Environment.GetEnvironmentVariable("DATABASE_LOCAL_URL");
+	if (string.IsNullOrEmpty(connectionString))
+	{
+		throw new InvalidOperationException("Database connection string 'DATABASE_LOCAL_URL' not found.");
+	}
 }
-else {
-  connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON");
-  if (string.IsNullOrEmpty(connectionString)) {
-	throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
-  }
+else
+{
+	connectionString = Environment.GetEnvironmentVariable("DATABASE_REMOTE_NEON");
+	if (string.IsNullOrEmpty(connectionString))
+	{
+		throw new InvalidOperationException("Database connection string 'DATABASE_REMOTE_NEON' not found.");
+	}
 }
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -49,44 +60,49 @@ var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
 var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
 
-if (string.IsNullOrEmpty(jwtSecret) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience)) {
-  throw new InvalidOperationException("JWT configuration not found.");
+if (string.IsNullOrEmpty(jwtSecret) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
+{
+	throw new InvalidOperationException("JWT configuration not found.");
 }
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-  .AddJwtBearer(options => {
-	options.TokenValidationParameters = new TokenValidationParameters {
-	  ValidateIssuer = true,
-	  ValidateAudience = true,
-	  ValidateLifetime = true,
-	  ValidateIssuerSigningKey = true,
-	  ValidIssuer = jwtIssuer,
-	  ValidAudience = jwtAudience,
-	  IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
-	};
+  .AddJwtBearer(options =>
+  {
+	  options.TokenValidationParameters = new TokenValidationParameters
+	  {
+		  ValidateIssuer = true,
+		  ValidateAudience = true,
+		  ValidateLifetime = true,
+		  ValidateIssuerSigningKey = true,
+		  ValidIssuer = jwtIssuer,
+		  ValidAudience = jwtAudience,
+		  IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+	  };
   });
 
-builder.Services.AddIdentity<UserModel, IdentityRole>(options => {
-  // Configure identity options here if needed
-  options.SignIn.RequireConfirmedAccount = false;
-  options.SignIn.RequireConfirmedPhoneNumber = false;
+builder.Services.AddIdentity<UserModel, IdentityRole>(options =>
+{
+	// Configure identity options here if needed
+	options.SignIn.RequireConfirmedAccount = false;
+	options.SignIn.RequireConfirmedPhoneNumber = false;
 
-  options.Password.RequireDigit = true;
-  options.Password.RequireLowercase = true;
-  options.Password.RequireUppercase = true;
-  options.Password.RequireNonAlphanumeric = true;
-  options.Password.RequiredLength = 8;
+	options.Password.RequireDigit = true;
+	options.Password.RequireLowercase = true;
+	options.Password.RequireUppercase = true;
+	options.Password.RequireNonAlphanumeric = true;
+	options.Password.RequiredLength = 8;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-builder.Services.AddCors(options => {
-  options.AddPolicy("AllowFrontend",
-	  builder => builder
-		  .WithOrigins(Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173")
-		  .AllowAnyMethod()
-		  .AllowAnyHeader()
-		  .AllowCredentials());
+builder.Services.AddCors(options =>
+{
+	options.AddPolicy("AllowFrontend",
+		builder => builder
+			.WithOrigins(Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173")
+			.AllowAnyMethod()
+			.AllowAnyHeader()
+			.AllowCredentials());
 });
 
 // Add logging
@@ -98,6 +114,7 @@ builder.Services.AddScoped<ApiExceptionFilter>();
 builder.Services.AddScoped<PaymentIntentService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IListingService, ListingService>();
 builder.Services.AddScoped<IRentalApplicationService, RentalApplicationService>();
 builder.Services.AddScoped<IPropertyService, PropertyService>();
@@ -127,7 +144,7 @@ builder.Services.AddScoped<RentalApplicationValidator>();
 builder.Services.AddScoped<MaintenanceRequestValidator>();
 builder.Services.AddScoped<MaintenanceTaskValidator>();
 builder.Services.AddScoped<OwnerPaymentValidator>();
-
+builder.Services.AddScoped<StripeCustomerValidator>();
 
 StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ?? throw new InvalidOperationException("Stripe secret key not found.");
 
@@ -136,18 +153,22 @@ builder.Services.AddTransient<DataSeeder>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment()) {
-  using (var scope = app.Services.CreateScope()) {
-	var services = scope.ServiceProvider;
-	try {
-	  var seeder = services.GetRequiredService<DataSeeder>();
-	  await seeder.SeedAsync();
+if (app.Environment.IsDevelopment())
+{
+	using (var scope = app.Services.CreateScope())
+	{
+		var services = scope.ServiceProvider;
+		try
+		{
+			var seeder = services.GetRequiredService<DataSeeder>();
+			await seeder.SeedAsync();
+		}
+		catch (Exception ex)
+		{
+			var logger = services.GetRequiredService<ILogger<Program>>();
+			logger.LogError(ex, "An error occurred seeding the DB.");
+		}
 	}
-	catch (Exception ex) {
-	  var logger = services.GetRequiredService<ILogger<Program>>();
-	  logger.LogError(ex, "An error occurred seeding the DB.");
-	}
-  }
 }
 
 // Configure the HTTP request pipeline.

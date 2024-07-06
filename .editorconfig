@@ -1,23 +1,60 @@
-# C# files
-[*.cs]
-
 #### Core EditorConfig Options ####
 
 # Indentation and spacing
-indent_size = 2
+
+# http://editorconfig.org
+root = true
+
+[*]
 indent_style = tab
-tab_width = 4
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.json]
+insert_final_newline = unset
+
+[**.min.js]
+indent_style = unset
+insert_final_newline = unset
+
+[MakeFile]
+indent_style = space
+
+[*.md]
+trim_trailing_whitespace = false
 
 # New line preferences
+[*.cs]
 end_of_line = crlf
 insert_final_newline = false
 
-csharp_new_line_before_open_brace = none
-csharp_new_line_before_open_brace_methods = none
-csharp_new_line_before_open_brace_types = none
-csharp_new_line_before_open_brace_control_blocks = none
-csharp_new_line_before_open_brace_accessors = none
-csharp_new_line_before_open_brace_anonymous_methods = none
-csharp_new_line_before_open_brace_anonymous_types = none
-csharp_new_line_before_open_brace_lambda_expression_bodies = none
-csharp_new_line_before_open_brace_object_collection_array_initializers = none
+# csharp_new_line_before_open_brace = none
+# csharp_new_line_before_open_brace_methods = none
+# csharp_new_line_before_open_brace_types = none
+# csharp_new_line_before_open_brace_control_blocks = none
+# csharp_new_line_before_open_brace_accessors = none
+# csharp_new_line_before_open_brace_anonymous_methods = none
+# csharp_new_line_before_open_brace_anonymous_types = none
+# csharp_new_line_before_open_brace_lambda_expression_bodies = none
+# csharp_new_line_before_open_brace_object_collection_array_initializers = none
+
+
+# C# Formatting Rules
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_case_contents = true
+csharp_indent_case_contents_when_block = true
+csharp_indent_labels = one_less_than_current
+csharp_indent_switch_labels = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_else = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_open_brace = all
+csharp_new_line_between_query_expression_clauses = true
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = true

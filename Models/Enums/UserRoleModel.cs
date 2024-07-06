@@ -1,9 +1,11 @@
 // UserRoleModel.cs
-namespace Cloud.Models {
+namespace Cloud.Models
+{
 
-  public enum UserRole {
-	Tenant,
-	Owner,
-	Admin,
-  }
+	public enum UserRole
+	{
+		Tenant,
+		Owner,
+		Admin,
+	}
 }
