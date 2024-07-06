@@ -10,7 +10,7 @@ namespace Cloud.Services
 	/// </summary>
 	public interface IMaintenanceTaskService
 	{
-		Task<MaintenanceTaskModel> CreateTaskAsync(Guid requestId, Guid staffId, string description, decimal estimatedCost);
+		Task<MaintenanceTaskModel> CreateTaskAsync(Guid requestId, string description, decimal estimatedCost);
 		Task<MaintenanceTaskModel> GetTaskByIdAsync(Guid taskId);
 		Task<IEnumerable<MaintenanceTaskModel>> GetTasksByRequestIdAsync(Guid requestId);
 		Task<MaintenanceTaskModel> UpdateTaskAsync(Guid taskId, string description, decimal? estimatedCost, decimal? actualCost, DateTime? startDate, DateTime? completionDate, Cloud.Models.TaskStatus status);
@@ -43,15 +43,14 @@ namespace Cloud.Services
 		/// Creates a new maintenance task.
 		/// </summary>
 		/// <param name="requestId">The ID of the associated maintenance request.</param>
-		/// <param name="staffId">The ID of the assigned staff member.</param>
 		/// <param name="description">The description of the task.</param>
 		/// <param name="estimatedCost">The estimated cost of the task.</param>
 		/// <returns>The created maintenance task.</returns>
-		public async Task<MaintenanceTaskModel> CreateTaskAsync(Guid requestId, Guid staffId, string description, decimal estimatedCost)
+		public async Task<MaintenanceTaskModel> CreateTaskAsync(Guid requestId, string description, decimal estimatedCost)
 		{
 			try
 			{
-				var task = await _taskFactory.CreateTaskAsync(requestId, staffId, description, estimatedCost, Cloud.Models.TaskStatus.Pending);
+				var task = await _taskFactory.CreateTaskAsync(requestId, description, estimatedCost, Cloud.Models.TaskStatus.Pending);
 				_taskValidator.ValidateTask(task);
 				return task;
 			}

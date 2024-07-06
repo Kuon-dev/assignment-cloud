@@ -27,7 +27,7 @@ namespace Cloud.Controllers
 		{
 			try
 			{
-				var task = await _maintenanceTaskService.CreateTaskAsync(dto.RequestId, dto.StaffId, dto.Description, dto.EstimatedCost);
+				var task = await _maintenanceTaskService.CreateTaskAsync(dto.RequestId, dto.Description, dto.EstimatedCost);
 				return CreatedAtAction(nameof(GetTaskById), new { taskId = task.Id }, task);
 			}
 			catch (Exception ex)
@@ -125,7 +125,6 @@ namespace Cloud.Controllers
 	public class CreateMaintenanceTaskDto
 	{
 		public Guid RequestId { get; set; }
-		public Guid StaffId { get; set; }
 		public string Description { get; set; } = string.Empty;
 		public decimal EstimatedCost { get; set; }
 	}

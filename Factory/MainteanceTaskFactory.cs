@@ -30,8 +30,8 @@ namespace Cloud.Factories
 		/// <returns>The created MaintenanceTaskModel.</returns>
 		public async Task<MaintenanceTaskModel> CreateFakeTaskAsync()
 		{
-			var (requestIds, staffIds) = await GetRequestAndStaffIdsAsync();
-			var task = GenerateFakeTask(requestIds, staffIds);
+			var requestIds = await GetRequestsAsync();
+			var task = GenerateFakeTask(requestIds);
 			await SaveTaskAsync(task);
 			return task;
 		}
@@ -40,17 +40,15 @@ namespace Cloud.Factories
 		/// Creates a maintenance task with specified details.
 		/// </summary>
 		/// <param name="requestId">The ID of the maintenance request.</param>
-		/// <param name="staffId">The ID of the staff member assigned to the task.</param>
 		/// <param name="description">The task description.</param>
 		/// <param name="estimatedCost">The estimated cost of the task.</param>
 		/// <param name="status">The task status.</param>
 		/// <returns>The created MaintenanceTaskModel.</returns>
-		public async Task<MaintenanceTaskModel> CreateTaskAsync(Guid requestId, Guid staffId, string description, decimal estimatedCost, Cloud.Models.TaskStatus status)
+		public async Task<MaintenanceTaskModel> CreateTaskAsync(Guid requestId, string description, decimal estimatedCost, Cloud.Models.TaskStatus status)
 		{
 			var task = new MaintenanceTaskModel
 			{
 				RequestId = requestId,
-				StaffId = staffId,
 				Description = description,
 				EstimatedCost = estimatedCost,
 				Status = status
@@ -65,37 +63,32 @@ namespace Cloud.Factories
 		/// <param name="count">The number of tasks to create.</param>
 		public async Task SeedTasksAsync(int count)
 		{
-			var (requestIds, staffIds) = await GetRequestAndStaffIdsAsync();
+			var requestIds = await GetRequestsAsync();
 			var tasks = Enumerable.Range(0, count)
-				.Select(_ => GenerateFakeTask(requestIds, staffIds))
+				.Select(_ => GenerateFakeTask(requestIds))
 				.ToList();
 			await _dbContext.MaintenanceTasks.AddRangeAsync(tasks);
 			await _dbContext.SaveChangesAsync();
 		}
 
-		private async Task<(List<Guid> RequestIds, List<Guid> StaffIds)> GetRequestAndStaffIdsAsync()
+		private async Task<List<Guid>> GetRequestsAsync()
 		{
 			var requestIds = await _dbContext.MaintenanceRequests
 				.Select(r => r.Id)
 				.ToListAsync();
-			var staffIds = await _dbContext.Users
-				.Where(u => u.Role == UserRole.Admin)
-				.Select(u => Guid.Parse(u.Id))
-				.ToListAsync();
 
-			if (!requestIds.Any() || !staffIds.Any())
+			if (!requestIds.Any())
 			{
 				throw new InvalidOperationException("No maintenance requests or staff members available for creating maintenance tasks.");
 			}
 
-			return (requestIds, staffIds);
+			return (requestIds);
 		}
 
-		private MaintenanceTaskModel GenerateFakeTask(List<Guid> requestIds, List<Guid> staffIds)
+		private MaintenanceTaskModel GenerateFakeTask(List<Guid> requestIds)
 		{
 			var faker = new Faker<MaintenanceTaskModel>()
 				.RuleFor(t => t.RequestId, (f, _) => f.PickRandom(requestIds))
-				.RuleFor(t => t.StaffId, (f, _) => f.PickRandom(staffIds))
 				.RuleFor(t => t.Description, (f, _) => f.Lorem.Paragraph())
 				.RuleFor(t => t.EstimatedCost, (f, _) => f.Random.Decimal(50, 1000))
 				.RuleFor(t => t.ActualCost, (f, _) => f.Random.Decimal(50, 1000))

@@ -52,20 +52,6 @@ namespace Cloud.Models.Validator
 	}
 
 	/// <summary>
-	/// Validates that the StaffId of a maintenance task is not empty.
-	/// </summary>
-	public class StaffIdValidationStrategy : IMaintenanceTaskValidationStrategy
-	{
-		public void Validate(MaintenanceTaskModel task)
-		{
-			if (task.StaffId == Guid.Empty)
-			{
-				throw new ArgumentException("Staff ID cannot be empty.", nameof(task.StaffId));
-			}
-		}
-	}
-
-	/// <summary>
 	/// Validates that the EstimatedCost of a maintenance task is not negative.
 	/// </summary>
 	public class EstimatedCostValidationStrategy : IMaintenanceTaskValidationStrategy
@@ -95,7 +81,6 @@ namespace Cloud.Models.Validator
 		{
 			if (_dbContext.MaintenanceTasks.Any(t =>
 				t.RequestId == task.RequestId &&
-				t.StaffId == task.StaffId &&
 				t.Description == task.Description &&
 				t.Status == task.Status))
 			{
