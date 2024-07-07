@@ -3,7 +3,7 @@ using Cloud.Models;
 using Cloud.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Cloud.Filters;
+/*using Cloud.Filters;*/
 /*using Cloud.Exceptions;*/
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -192,7 +192,6 @@ namespace Cloud.Controllers
 				{
 					if (image.Length > 0)
 					{
-						_logger.LogInformation("Uploading image: {ImageName}", image.FileName);
 						var fileName = $"properties/{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
 
 						using (var stream = image.OpenReadStream())
