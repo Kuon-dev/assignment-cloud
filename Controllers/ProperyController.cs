@@ -1,301 +1,172 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
-using Cloud.Models;
 using Cloud.Models.DTO;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Cloud.Filters;
 using Cloud.Services;
-/*using Cloud.Filters;*/
-using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Cloud.Controllers
 {
 	[ApiController]
 	[Route("api/[controller]")]
-	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-	[ServiceFilter(typeof(ApiExceptionFilter))]
-	/*[Authorize] // Requires authentication for all endpoints*/
 	public class PropertyController : ControllerBase
 	{
-		private readonly ApplicationDbContext _context;
 		private readonly IPropertyService _propertyService;
 
-		public PropertyController(ApplicationDbContext context, IPropertyService propertyService)
+		public PropertyController(IPropertyService propertyService)
 		{
-			_context = context;
 			_propertyService = propertyService;
 		}
 
 		/// <summary>
-		/// Get all properties with pagination
+		/// Creates a new property
 		/// </summary>
-		[HttpGet]
-		[AllowAnonymous]
-		public async Task<ActionResult<Cloud.Models.DTO.CustomPaginatedResult<PropertyModel>>> GetProperties([FromQuery] PaginationParams paginationParams)
-		{
-			var query = _context.Properties.AsNoTracking();
-			var totalCount = await query.CountAsync();
-
-			var properties = await query
-				.Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
-				.Take(paginationParams.PageSize)
-				.ToListAsync();
-
-			var paginatedResult = new Cloud.Models.DTO.CustomPaginatedResult<PropertyModel>
-			{
-				Items = properties,
-				TotalCount = totalCount,
-				PageNumber = paginationParams.PageNumber,
-				PageSize = paginationParams.PageSize
-			};
-
-			return Ok(paginatedResult);
-		}
-
-		/// <summary>
-		/// Get a specific property by ID
-		/// </summary>
-		[HttpGet("{id}")]
-		[AllowAnonymous]
-		public async Task<ActionResult<PropertyModel>> GetProperty(Guid id)
-		{
-			var property = await _context.Properties.FindAsync(id);
-
-			if (property == null)
-			{
-				return NotFound();
-			}
-
-			return property;
-		}
-
-		/// <summary>
-		/// Create a new property
-		/// </summary>
+		/// <param name="createPropertyDto">The property details</param>
+		/// <returns>The created property</returns>
 		[HttpPost]
-		[Authorize(Roles = "Admin,Owner")] // Only allows Admin or Owner roles
-		[ServiceFilter(typeof(ValidationFilter))] // Custom filter for model validation
-		public async Task<ActionResult<PropertyModel>> CreateProperty(CreatePropertyModel model)
+		[Authorize(Roles = "Owner,Admin")]
+		public async Task<ActionResult<PropertyDto>> CreateProperty(CreatePropertyDto createPropertyDto)
 		{
-			var property = new PropertyModel
-			{
-				OwnerId = model.OwnerId,
-				Address = model.Address,
-				City = model.City,
-				State = model.State,
-				ZipCode = model.ZipCode,
-				PropertyType = model.PropertyType,
-				Bedrooms = model.Bedrooms,
-				Bathrooms = model.Bathrooms,
-				RentAmount = model.RentAmount,
-				Description = model.Description,
-				Amenities = model.Amenities,
-				IsAvailable = model.IsAvailable,
-			};
+			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			if (userId == null)
+				return Unauthorized();
 
-			_context.Properties.Add(property);
-			await _context.SaveChangesAsync();
+			var userGuid = Guid.Parse(userId);
 
+			// Ensure the user can only create properties for themselves unless they're an admin
+			if (!User.IsInRole("Admin") && createPropertyDto.OwnerId != userGuid)
+				return Forbid();
+
+			var property = await _propertyService.CreatePropertyAsync(createPropertyDto);
 			return CreatedAtAction(nameof(GetProperty), new { id = property.Id }, property);
 		}
 
 		/// <summary>
-		/// Update an existing property
+		/// Retrieves a specific property by id
 		/// </summary>
-		[HttpPut("{id}")]
-		[Authorize(Roles = "Admin,Owner")]
-		[ServiceFilter(typeof(ValidationFilter))]
-		public async Task<IActionResult> UpdateProperty(Guid id, UpdatePropertyModel model)
+		/// <param name="id">The id of the property</param>
+		/// <returns>The property details</returns>
+		[HttpGet("{id}")]
+		[Authorize]
+		public async Task<ActionResult<PropertyDto>> GetProperty(Guid id)
 		{
-			var property = await _context.Properties.FindAsync(id);
-
+			var property = await _propertyService.GetPropertyByIdAsync(id);
 			if (property == null)
-			{
 				return NotFound();
-			}
 
-			// Update properties
-			property.Address = model.Address ?? property.Address;
-			property.City = model.City ?? property.City;
-			property.State = model.State ?? property.State;
-			property.ZipCode = model.ZipCode ?? property.ZipCode;
-			property.PropertyType = model.PropertyType ?? property.PropertyType;
-			property.Bedrooms = model.Bedrooms ?? property.Bedrooms;
-			property.Bathrooms = model.Bathrooms ?? property.Bathrooms;
-			property.RentAmount = model.RentAmount ?? property.RentAmount;
-			property.Description = model.Description ?? property.Description;
-			property.Amenities = model.Amenities ?? property.Amenities;
-			property.IsAvailable = model.IsAvailable ?? property.IsAvailable;
-
-			property.UpdateModifiedProperties(DateTime.UtcNow);
-
-			try
-			{
-				await _context.SaveChangesAsync();
-			}
-			catch (DbUpdateConcurrencyException)
-			{
-				if (!PropertyExists(id))
-				{
-					return NotFound();
-				}
-				else
-				{
-					throw;
-				}
-			}
-
-			return NoContent();
+			return Ok(property);
 		}
 
 		/// <summary>
-		/// Soft delete a property
+		/// Retrieves all properties
 		/// </summary>
+		/// <returns>A list of all properties</returns>
+		[HttpGet]
+		[Authorize]
+		public async Task<ActionResult<IEnumerable<PropertyDto>>> GetAllProperties()
+		{
+			var properties = await _propertyService.GetAllPropertiesAsync();
+			return Ok(properties);
+		}
+
+		/// <summary>
+		/// Updates a specific property
+		/// </summary>
+		/// <param name="id">The id of the property to update</param>
+		/// <param name="updatePropertyDto">The updated property details</param>
+		/// <returns>The updated property</returns>
+		[HttpPut("{id}")]
+		[Authorize(Roles = "Owner,Admin")]
+		public async Task<ActionResult<PropertyDto>> UpdateProperty(Guid id, UpdatePropertyDto updatePropertyDto)
+		{
+			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			if (userId == null)
+				return Unauthorized();
+
+			var property = await _propertyService.GetPropertyByIdAsync(id);
+			if (property == null)
+				return NotFound();
+
+			// Ensure the user can only update their own properties unless they're an admin
+			if (!User.IsInRole("Admin") && property.OwnerId != Guid.Parse(userId))
+				return Forbid();
+
+			var updatedProperty = await _propertyService.UpdatePropertyAsync(id, updatePropertyDto);
+			if (updatedProperty == null)
+				return NotFound();
+
+			return Ok(updatedProperty);
+		}
+
+		/// <summary>
+		/// Retrieves a paginated list of properties
+		/// </summary>
+		/// <param name="paginationParams">Pagination parameters</param>
+		/// <returns>A paginated list of properties</returns>
+		[HttpGet("paginated")]
+		[Authorize]
+		public async Task<ActionResult<CustomPaginatedResult<PropertyDto>>> GetPaginatedProperties([FromQuery] PaginationParams paginationParams)
+		{
+			var paginatedResult = await _propertyService.GetPaginatedPropertiesAsync(paginationParams);
+			return Ok(paginatedResult);
+		}
+
+		/// <summary>
+		/// Deletes a specific property
+		/// </summary>
+		/// <param name="id">The id of the property to delete</param>
+		/// <returns>No content if successful</returns>
 		[HttpDelete("{id}")]
-		[Authorize(Roles = "Admin")]
+		[Authorize(Roles = "Owner,Admin")]
 		public async Task<IActionResult> DeleteProperty(Guid id)
 		{
-			var property = await _context.Properties.FindAsync(id);
-			if (property == null)
-			{
-				return NotFound();
-			}
+			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			if (userId == null)
+				return Unauthorized();
 
-			property.UpdateIsDeleted(DateTime.UtcNow, true);
-			await _context.SaveChangesAsync();
+			var property = await _propertyService.GetPropertyByIdAsync(id);
+			if (property == null)
+				return NotFound();
+
+			// Ensure the user can only delete their own properties unless they're an admin
+			if (!User.IsInRole("Admin") && property.OwnerId != Guid.Parse(userId))
+				return Forbid();
+
+			var result = await _propertyService.DeletePropertyAsync(id);
+			if (!result)
+				return NotFound();
 
 			return NoContent();
 		}
 
-		/// <summary>
-		/// Search for properties with filters
-		/// </summary>
-		[HttpGet("search")]
-		[AllowAnonymous]
-		public async Task<ActionResult<Cloud.Models.DTO.CustomPaginatedResult<PropertyModel>>> SearchProperties([FromQuery] SearchPropertyParams searchParams, [FromQuery] PaginationParams paginationParams)
-		{
-			var paginatedSearchResults = await _propertyService.SearchPropertiesAsync(
-				searchParams.Location,
-				searchParams.PriceRange,
-				searchParams.Bedrooms,
-				searchParams.Amenities);
-			return Ok(paginatedSearchResults);
-		}
 
-		/// <summary>
-		/// Get all tenants currently renting a specific property with pagination
-		/// </summary>
-		[HttpGet("{id}/tenants")]
-		[Authorize(Roles = "Admin,Owner")]
-		public async Task<ActionResult<Cloud.Models.DTO.CustomPaginatedResult<TenantModel>>> GetPropertyTenants(Guid id, [FromQuery] PaginationParams paginationParams)
+		[HttpPost("upload-images")]
+		[Authorize(Roles = "Owner,Admin")]
+		public async Task<ActionResult<List<string>>> UploadImages(List<IFormFile> images)
 		{
-			var property = await _context.Properties.FindAsync(id);
-			if (property == null)
+			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			if (userId == null)
+				return Unauthorized();
+
+			var uploadedUrls = new List<string>();
+
+			foreach (var image in images)
 			{
-				return NotFound("Property not found");
+				if (image.Length > 0)
+				{
+					var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+					var filePath = Path.Combine("wwwroot", "images", "properties", fileName);
+
+					using (var stream = new FileStream(filePath, FileMode.Create))
+					{
+						await image.CopyToAsync(stream);
+					}
+
+					uploadedUrls.Add("/images/properties/" + fileName);
+				}
 			}
 
-			var paginatedTenants = await _propertyService.GetPropertyTenantsAsync(id, paginationParams.PageNumber, paginationParams.PageSize);
-			return Ok(paginatedTenants);
+			return Ok(uploadedUrls);
 		}
 
-		private bool PropertyExists(Guid id)
-		{
-			return _context.Properties.Any(e => e.Id == id);
-		}
-	}
-
-	public class SearchPropertyParams
-	{
-		public string? Location { get; set; }
-		public string? PriceRange { get; set; }
-		public int? Bedrooms { get; set; }
-		public List<string>? Amenities { get; set; }
-	}
-
-	public class CreatePropertyModel
-	{
-		[Required]
-		public Guid OwnerId { get; set; }
-
-		[Required]
-		[StringLength(200)]
-		public string Address { get; set; } = string.Empty;
-
-		[Required]
-		[StringLength(100)]
-		public string City { get; set; } = string.Empty;
-
-		[Required]
-		[StringLength(50)]
-		public string State { get; set; } = string.Empty;
-
-		[Required]
-		[StringLength(20)]
-		public string ZipCode { get; set; } = string.Empty;
-
-		[Required]
-		public PropertyType PropertyType { get; set; }
-
-		[Required]
-		[Range(0, 20)]
-		public int Bedrooms { get; set; }
-
-		[Required]
-		[Range(0, 10)]
-		public int Bathrooms { get; set; }
-
-		[Required]
-		[Range(0, 10000)]
-		public int SquareFootage { get; set; }
-
-		[Required]
-		[Range(0, 1000000)]
-		public decimal RentAmount { get; set; }
-
-		[StringLength(1000)]
-		public string? Description { get; set; }
-
-		public List<string>? Amenities { get; set; }
-
-		[Required]
-		public bool IsAvailable { get; set; }
-	}
-
-	public class UpdatePropertyModel
-	{
-		[StringLength(200)]
-		public string? Address { get; set; }
-
-		[StringLength(100)]
-		public string? City { get; set; }
-
-		[StringLength(50)]
-		public string? State { get; set; }
-
-		[StringLength(20)]
-		public string? ZipCode { get; set; }
-
-		public PropertyType? PropertyType { get; set; }
-
-		[Range(0, 20)]
-		public int? Bedrooms { get; set; }
-
-		[Range(0, 10)]
-		public int? Bathrooms { get; set; }
-
-		[Range(0, 10000)]
-		public int? SquareFootage { get; set; }
-
-		[Range(0, 1000000)]
-		public decimal? RentAmount { get; set; }
-
-		[StringLength(1000)]
-		public string? Description { get; set; }
-
-		public List<string>? Amenities { get; set; }
-
-		public bool? IsAvailable { get; set; }
 	}
 }

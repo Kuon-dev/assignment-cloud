@@ -45,6 +45,8 @@ namespace Cloud.Models
 
 		public RoomType RoomType { get; set; }
 
+		public List<string>? ImageUrls { get; set; }
+
 		// Navigation properties
 		public ICollection<ListingModel>? Listings { get; set; }
 		public ICollection<MaintenanceRequestModel>? MaintenanceRequests { get; set; }
