@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cloud.Migrations
 {
 	/// <inheritdoc />
-	public partial class initial : Migration
+	public partial class InitializeDb : Migration
 	{
 		/// <inheritdoc />
 		protected override void Up(MigrationBuilder migrationBuilder)
@@ -223,6 +223,33 @@ namespace Cloud.Migrations
 					table.PrimaryKey("PK_AspNetUserTokens", x => new { x.UserId, x.LoginProvider, x.Name });
 					table.ForeignKey(
 						name: "FK_AspNetUserTokens_AspNetUsers_UserId",
+						column: x => x.UserId,
+						principalTable: "AspNetUsers",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "Medias",
+				columns: table => new
+				{
+					Id = table.Column<Guid>(type: "uuid", nullable: false),
+					UserId = table.Column<string>(type: "text", nullable: false),
+					FileName = table.Column<string>(type: "text", nullable: false),
+					FilePath = table.Column<string>(type: "text", nullable: false),
+					FileType = table.Column<string>(type: "text", nullable: false),
+					FileSize = table.Column<long>(type: "bigint", nullable: false),
+					UploadedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+					CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+					UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+					IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+					DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_Medias", x => x.Id);
+					table.ForeignKey(
+						name: "FK_Medias_AspNetUsers_UserId",
 						column: x => x.UserId,
 						principalTable: "AspNetUsers",
 						principalColumn: "Id",
@@ -647,6 +674,11 @@ namespace Cloud.Migrations
 				column: "RequestId");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_Medias_UserId",
+				table: "Medias",
+				column: "UserId");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_OwnerPayments_OwnerId",
 				table: "OwnerPayments",
 				column: "OwnerId");
@@ -738,6 +770,9 @@ namespace Cloud.Migrations
 
 			migrationBuilder.DropTable(
 				name: "MaintenanceTasks");
+
+			migrationBuilder.DropTable(
+				name: "Medias");
 
 			migrationBuilder.DropTable(
 				name: "OwnerPayments");
