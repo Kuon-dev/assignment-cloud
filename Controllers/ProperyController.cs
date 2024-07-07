@@ -38,16 +38,16 @@ namespace Cloud.Controllers
 			var totalCount = await query.CountAsync();
 
 			var properties = await query
-				.Skip((paginationParams.Page - 1) * paginationParams.Size)
-				.Take(paginationParams.Size)
+				.Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
+				.Take(paginationParams.PageSize)
 				.ToListAsync();
 
 			var paginatedResult = new Cloud.Models.DTO.CustomPaginatedResult<PropertyModel>
 			{
 				Items = properties,
 				TotalCount = totalCount,
-				PageNumber = paginationParams.Page,
-				PageSize = paginationParams.Size
+				PageNumber = paginationParams.PageNumber,
+				PageSize = paginationParams.PageSize
 			};
 
 			return Ok(paginatedResult);
@@ -196,7 +196,7 @@ namespace Cloud.Controllers
 				return NotFound("Property not found");
 			}
 
-			var paginatedTenants = await _propertyService.GetPropertyTenantsAsync(id, paginationParams.Page, paginationParams.Size);
+			var paginatedTenants = await _propertyService.GetPropertyTenantsAsync(id, paginationParams.PageNumber, paginationParams.PageSize);
 			return Ok(paginatedTenants);
 		}
 
