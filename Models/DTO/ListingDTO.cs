@@ -42,9 +42,18 @@ namespace Cloud.Models.DTO
 
 	public class PaginationParams
 	{
+		[Range(1, int.MaxValue, ErrorMessage = "Page must be greater than 0")]
 		public int PageNumber { get; set; } = 1;
+
+		[Range(1, 100, ErrorMessage = "Size must be between 1 and 100")]
 		public int PageSize { get; set; } = 10;
 	}
+
+	/*public class PaginationParams*/
+	/*{*/
+	/*	public int PageNumber { get; set; } = 1;*/
+	/*	public int PageSize { get; set; } = 10;*/
+	/*}*/
 
 	public class ListingSearchParams
 	{
