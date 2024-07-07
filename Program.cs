@@ -22,11 +22,12 @@ var builder = WebApplication.CreateBuilder(args);
 Env.Load();
 
 // Add services to the container.
-builder.Services.AddControllers().AddJsonOptions(options =>
-{
-	options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
-	options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-});
+builder.Services.AddControllers();
+/*	.AddJsonOptions(options =>*/
+/*{*/
+/*	options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;*/
+/*	options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;*/
+/*});*/
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -119,11 +120,9 @@ builder.Services.AddScoped<IRentalApplicationService, RentalApplicationService>(
 builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<ILeaseService, LeaseService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddScoped<IMaintenanceTaskService, MaintenanceTaskService>();
 builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
-builder.Services.AddScoped<IMaintenanceRequestService, MaintenanceRequestService>();
-builder.Services.AddScoped<IMaintenanceTaskService, MaintenanceTaskService>();
+builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
 builder.Services.AddScoped<IStripeCustomerService, StripeCustomerService>();
 
 builder.Services.AddScoped<PropertyFactory>();
@@ -131,17 +130,16 @@ builder.Services.AddScoped<LeaseFactory>();
 builder.Services.AddScoped<UserFactory>();
 builder.Services.AddScoped<ListingFactory>();
 builder.Services.AddScoped<RentPaymentFactory>();
-builder.Services.AddScoped<MaintenanceRequestFactory>();
 builder.Services.AddScoped<RentalApplicationFactory>();
-builder.Services.AddScoped<MaintenanceTaskFactory>();
+builder.Services.AddScoped<MaintenanceFactory>();
 builder.Services.AddScoped<OwnerPaymentFactory>();
 
 builder.Services.AddScoped<ListingValidator>();
 builder.Services.AddScoped<LeaseValidator>();
 builder.Services.AddScoped<RentPaymentValidator>();
 builder.Services.AddScoped<RentalApplicationValidator>();
-builder.Services.AddScoped<MaintenanceRequestValidator>();
 builder.Services.AddScoped<MaintenanceTaskValidator>();
+builder.Services.AddScoped<MaintenanceRequestValidator>();
 builder.Services.AddScoped<OwnerPaymentValidator>();
 builder.Services.AddScoped<StripeCustomerValidator>();
 

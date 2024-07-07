@@ -431,6 +431,9 @@ namespace Cloud.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<List<string>>("ImageUrls")
+                        .HasColumnType("text[]");
+
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("boolean");
 

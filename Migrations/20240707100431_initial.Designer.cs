@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cloud.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240705160130_Initial")]
-    partial class Initial
+    [Migration("20240707100431_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -433,6 +433,9 @@ namespace Cloud.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
+
+                    b.Property<List<string>>("ImageUrls")
+                        .HasColumnType("text[]");
 
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("boolean");

@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cloud.Migrations
 {
 	/// <inheritdoc />
-	public partial class Initial : Migration
+	public partial class initial : Migration
 	{
 		/// <inheritdoc />
 		protected override void Up(MigrationBuilder migrationBuilder)
@@ -292,6 +292,7 @@ namespace Cloud.Migrations
 					Amenities = table.Column<List<string>>(type: "text[]", nullable: true),
 					IsAvailable = table.Column<bool>(type: "boolean", nullable: false),
 					RoomType = table.Column<int>(type: "integer", nullable: false),
+					ImageUrls = table.Column<List<string>>(type: "text[]", nullable: true),
 					CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
 					UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
 					IsDeleted = table.Column<bool>(type: "boolean", nullable: false),

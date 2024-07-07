@@ -30,7 +30,7 @@ namespace Cloud.Controllers
 		[Authorize(Roles = "Admin,Owner")]
 		public async Task<ActionResult<CustomPaginatedResult<RentalApplicationModel>>> GetApplications([FromQuery] PaginationParams paginationParams)
 		{
-			var applications = await _rentalApplicationService.GetApplicationsAsync(paginationParams.Page, paginationParams.Size);
+			var applications = await _rentalApplicationService.GetApplicationsAsync(paginationParams.PageNumber, paginationParams.PageSize);
 			return Ok(applications);
 		}
 
@@ -126,7 +126,7 @@ namespace Cloud.Controllers
 				return BadRequest("Invalid application status.");
 			}
 
-			var applications = await _rentalApplicationService.GetApplicationsByStatusAsync(applicationStatus, paginationParams.Page, paginationParams.Size);
+			var applications = await _rentalApplicationService.GetApplicationsByStatusAsync(applicationStatus, paginationParams.PageNumber, paginationParams.PageSize);
 			return Ok(applications);
 		}
 	}

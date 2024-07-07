@@ -46,7 +46,7 @@ public class PropertyFactory
 	}
 
 	// Method to create actual property data from user input
-	public async Task<PropertyModel> CreatePropertyAsync(Guid ownerId, string address, string city, string state, string zipCode, PropertyType propertyType, int bedrooms, int bathrooms, decimal rentAmount, string? description, List<string>? amenities, bool isAvailable, RoomType roomType)
+	public async Task<PropertyModel> CreatePropertyAsync(Guid ownerId, string address, string city, string state, string zipCode, PropertyType propertyType, int bedrooms, int bathrooms, decimal rentAmount, string? description, List<string>? amenities, bool isAvailable, RoomType roomType, List<string>? imageUrls)
 	{
 		var property = new PropertyModel
 		{
@@ -62,7 +62,8 @@ public class PropertyFactory
 			Description = description,
 			Amenities = amenities,
 			IsAvailable = isAvailable,
-			RoomType = roomType
+			RoomType = roomType,
+			ImageUrls = imageUrls
 		};
 
 		property.UpdateCreationProperties(DateTime.UtcNow);
