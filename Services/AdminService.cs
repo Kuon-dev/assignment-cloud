@@ -13,7 +13,7 @@ namespace Cloud.Services
 		Task<CustomPaginatedResult<MaintenanceRequestModel>> GetMaintenanceRequestAsync(PaginationParams paginationParams);
 		Task<CustomPaginatedResult<PropertyModel>> GetPropertiesAsync(PaginationParams paginationParams);
 		Task<bool> UpdateMaintenanceRequestStatusAsync(Guid id, string action);
-		// Task<bool> UpdatePropertyStatusAsync(Guid id, string status);
+		Task<bool> UpdatePropertyStatusAsync(Guid id, string status);
 		Task<CustomPaginatedResult<ActivityLogModel>> GetActivityLogsAsync(PaginationParams paginationParams);
 	}
 }
