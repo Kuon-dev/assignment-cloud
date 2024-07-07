@@ -7,9 +7,8 @@ namespace Cloud.Services
 {
 	public interface IListingService
 	{
-		Task<CustomPaginatedResult<ListingModel>> GetListingsAsync(PaginationParams paginationParams);
-		Task<ListingModel> GetListingByIdAsync(Guid id);
-		Task<ListingModel> CreateListingAsync(CreateListingDto createListingDto, String userId);
+		Task<CustomPaginatedResult<ListingResponseDto>> GetListingsAsync(PaginationParams paginationParams);
+		Task<ListingResponseDto> GetListingByIdAsync(Guid id); Task<ListingModel> CreateListingAsync(CreateListingDto createListingDto, String userId);
 		Task<bool> UpdateListingAsync(Guid id, UpdateListingDto updateListingDto, String userId);
 		Task<bool> SoftDeleteListingAsync(Guid id, String userId);
 		Task<IEnumerable<ListingModel>> SearchListingsAsync(ListingSearchParams searchParams);
@@ -17,7 +16,6 @@ namespace Cloud.Services
 		Task<PerformanceAnalytics> GetListingsPerformanceAsync();
 		Task<ListingAnalytics?> GetListingAnalyticsAsync(Guid id, string userId);
 	}
-
 
 	public class ListingService : IListingService
 	{
@@ -32,22 +30,41 @@ namespace Cloud.Services
 			_listingFactory = listingFactory ?? throw new ArgumentNullException(nameof(listingFactory));
 		}
 
-		public async Task<CustomPaginatedResult<ListingModel>> GetListingsAsync(PaginationParams paginationParams)
+		public async Task<CustomPaginatedResult<ListingResponseDto>> GetListingsAsync(PaginationParams paginationParams)
 		{
 			if (paginationParams == null)
 			{
 				throw new ArgumentNullException(nameof(paginationParams));
 			}
 
-			var query = _context.Listings.AsNoTracking().Where(l => !l.IsDeleted);
+			var query = _context.Listings
+				.AsNoTracking()
+				.Where(l => !l.IsDeleted)
+				.Include(l => l.Property);
+
 			var totalCount = await query.CountAsync();
 
 			var items = await query
 				.Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
 				.Take(paginationParams.PageSize)
+				.Select(l => new ListingResponseDto
+				{
+					Id = l.Id,
+					Title = l.Title,
+					Description = l.Description,
+					Price = l.Price,
+					StartDate = l.StartDate,
+					EndDate = l.EndDate,
+					IsActive = l.IsActive,
+					Views = l.Views,
+					ImageUrls = l.Property!.ImageUrls,
+					Location = $"{l.Property!.Address}, {l.Property.City}, {l.Property.State} {l.Property.ZipCode}",
+					Bedrooms = l.Property.Bedrooms,
+					Bathrooms = l.Property.Bathrooms
+				})
 				.ToListAsync();
 
-			return new CustomPaginatedResult<ListingModel>
+			return new CustomPaginatedResult<ListingResponseDto>
 			{
 				Items = items,
 				TotalCount = totalCount,
@@ -56,16 +73,33 @@ namespace Cloud.Services
 			};
 		}
 
-		public async Task<ListingModel> GetListingByIdAsync(Guid id)
+		public async Task<ListingResponseDto> GetListingByIdAsync(Guid id)
 		{
-			var listing = await _context.Listings.FindAsync(id);
+			var listing = await _context.Listings
+				.AsNoTracking()
+				.Include(l => l.Property)
+				.FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted);
 
-			if (listing == null)
+			if (listing == null || listing.Property == null)
 			{
 				throw new NotFoundException($"Listing with ID {id} not found.");
 			}
 
-			return listing;
+			return new ListingResponseDto
+			{
+				Id = listing.Id,
+				Title = listing.Title,
+				Description = listing.Description,
+				Price = listing.Price,
+				StartDate = listing.StartDate,
+				EndDate = listing.EndDate,
+				IsActive = listing.IsActive,
+				Views = listing.Views,
+				ImageUrls = listing.Property.ImageUrls,
+				Location = $"{listing.Property.Address}, {listing.Property.City}, {listing.Property.State} {listing.Property.ZipCode}",
+				Bedrooms = listing.Property.Bedrooms,
+				Bathrooms = listing.Property.Bathrooms
+			};
 		}
 
 		public async Task<ListingModel> CreateListingAsync(CreateListingDto listingDto, string userId)
