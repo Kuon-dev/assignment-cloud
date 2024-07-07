@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+/*using System.Collections.Generic;*/
 
 namespace Cloud.Models.DTO
 {
@@ -47,6 +48,73 @@ namespace Cloud.Models.DTO
 
 		[Range(1, 100, ErrorMessage = "Size must be between 1 and 100")]
 		public int PageSize { get; set; } = 10;
+	}
+
+
+	/// <summary>
+	/// Represents a listing response with additional property information.
+	/// </summary>
+	public class ListingResponseDto
+	{
+		/// <summary>
+		/// Gets or sets the unique identifier for the listing.
+		/// </summary>
+		public Guid Id { get; set; }
+
+		/// <summary>
+		/// Gets or sets the title of the listing.
+		/// </summary>
+		public string Title { get; set; } = string.Empty;
+
+		/// <summary>
+		/// Gets or sets the description of the listing.
+		/// </summary>
+		public string? Description { get; set; }
+
+		/// <summary>
+		/// Gets or sets the price of the listing.
+		/// </summary>
+		public decimal Price { get; set; }
+
+		/// <summary>
+		/// Gets or sets the start date of the listing.
+		/// </summary>
+		public DateTime StartDate { get; set; }
+
+		/// <summary>
+		/// Gets or sets the end date of the listing.
+		/// </summary>
+		public DateTime? EndDate { get; set; }
+
+		/// <summary>
+		/// Gets or sets whether the listing is active.
+		/// </summary>
+		public bool IsActive { get; set; }
+
+		/// <summary>
+		/// Gets or sets the number of views for the listing.
+		/// </summary>
+		public int Views { get; set; }
+
+		/// <summary>
+		/// Gets or sets the URLs of the property images.
+		/// </summary>
+		public List<string>? ImageUrls { get; set; }
+
+		/// <summary>
+		/// Gets or sets the location of the property as a single string.
+		/// </summary>
+		public string Location { get; set; } = string.Empty;
+
+		/// <summary>
+		/// Gets or sets the number of bedrooms in the property.
+		/// </summary>
+		public int Bedrooms { get; set; }
+
+		/// <summary>
+		/// Gets or sets the number of bathrooms in the property.
+		/// </summary>
+		public int Bathrooms { get; set; }
 	}
 
 	/*public class PaginationParams*/
