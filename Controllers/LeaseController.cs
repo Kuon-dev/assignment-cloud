@@ -1,4 +1,3 @@
-// LeaseController.cs
 using Microsoft.AspNetCore.Mvc;
 using Cloud.Models.DTO;
 using Cloud.Services;
@@ -35,8 +34,8 @@ namespace Cloud.Controllers
 		[HttpGet]
 		public async Task<IActionResult> GetAllLeases([FromQuery] int page = 1, [FromQuery] int size = 10)
 		{
-			var (leases, totalCount) = await _leaseService.GetAllLeasesAsync(page, size);
-			return Ok(new { Leases = leases, TotalCount = totalCount });
+			var result = await _leaseService.GetAllLeasesAsync(page, size);
+			return Ok(result);
 		}
 
 		/// <summary>
@@ -71,7 +70,7 @@ namespace Cloud.Controllers
 			try
 			{
 				var createdLease = await _leaseService.CreateLeaseAsync(leaseDto);
-				return CreatedAtAction(nameof(GetLeaseById), new { id = createdLease.Id }, createdLease);
+				return CreatedAtAction(nameof(GetLeaseById), new { id = createdLease.TenantId }, createdLease);
 			}
 			catch (ArgumentException ex)
 			{

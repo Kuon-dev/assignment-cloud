@@ -225,24 +225,9 @@ public class UserFactory
 		var roleSpecificModels = new List<object>(count);
 
 		// static users for testing
-		var tenantUser = _userFaker.Generate();
-		tenantUser.Email = "tenant@example.com";
-		tenantUser.Role = UserRole.Tenant;
-		users.Add(tenantUser);
-		roleSpecificModels.Add(new TenantModel { UserId = tenantUser.Id, User = tenantUser });
-
-		var ownerUser = _userFaker.Generate();
-		ownerUser.Email = "owner@example.com";
-		ownerUser.Role = UserRole.Owner;
-		users.Add(ownerUser);
-		roleSpecificModels.Add(new OwnerModel { UserId = ownerUser.Id, User = ownerUser });
-
-		var adminUser = _userFaker.Generate();
-		adminUser.Email = "admin@example.com";
-		adminUser.Role = UserRole.Admin;
-		users.Add(adminUser);
-		roleSpecificModels.Add(new AdminModel { UserId = adminUser.Id, User = adminUser });
-
+		await CreateTenantAsync("tenant@example.com", "Password123!", "Test", "Tenant");
+		await CreateOwnerAsync("owner@example.com", "Password123!", "Test", "Owner");
+		await CreateAdminAsync("admin@example.com", "Password123!", "Test", "Admin");
 		for (int i = 0; i < count; i++)
 		{
 			var user = _userFaker.Generate();
