@@ -11,162 +11,185 @@ namespace Cloud.Controllers
 	public class PropertyController : ControllerBase
 	{
 		private readonly IPropertyService _propertyService;
+		private readonly ILogger<PropertyController> _logger;
 
-		public PropertyController(IPropertyService propertyService)
+		public PropertyController(IPropertyService propertyService, ILogger<PropertyController> logger)
 		{
 			_propertyService = propertyService;
+			_logger = logger;
 		}
 
-		/// <summary>
-		/// Creates a new property
-		/// </summary>
-		/// <param name="createPropertyDto">The property details</param>
-		/// <returns>The created property</returns>
 		[HttpPost]
 		[Authorize(Roles = "Owner,Admin")]
 		public async Task<ActionResult<PropertyDto>> CreateProperty(CreatePropertyDto createPropertyDto)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-			if (userId == null)
-				return Unauthorized();
+			try
+			{
+				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				if (userId == null)
+					return Unauthorized();
 
-			var userGuid = Guid.Parse(userId);
+				var userGuid = Guid.Parse(userId);
 
-			// Ensure the user can only create properties for themselves unless they're an admin
-			if (!User.IsInRole("Admin") && createPropertyDto.OwnerId != userGuid)
-				return Forbid();
+				if (!User.IsInRole("Admin") && createPropertyDto.OwnerId != userGuid)
+					return Forbid();
 
-			var property = await _propertyService.CreatePropertyAsync(createPropertyDto);
-			return CreatedAtAction(nameof(GetProperty), new { id = property.Id }, property);
+				var property = await _propertyService.CreatePropertyAsync(createPropertyDto);
+				return CreatedAtAction(nameof(GetProperty), new { id = property.Id }, property);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error occurred while creating property");
+				return StatusCode(500, "An error occurred while processing your request.");
+			}
 		}
 
-		/// <summary>
-		/// Retrieves a specific property by id
-		/// </summary>
-		/// <param name="id">The id of the property</param>
-		/// <returns>The property details</returns>
 		[HttpGet("{id}")]
 		[Authorize]
 		public async Task<ActionResult<PropertyDto>> GetProperty(Guid id)
 		{
-			var property = await _propertyService.GetPropertyByIdAsync(id);
-			if (property == null)
-				return NotFound();
+			try
+			{
+				var property = await _propertyService.GetPropertyByIdAsync(id);
+				if (property == null)
+					return NotFound();
 
-			return Ok(property);
+				return Ok(property);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error occurred while retrieving property with ID: {PropertyId}", id);
+				return StatusCode(500, "An error occurred while processing your request.");
+			}
 		}
 
-		/// <summary>
-		/// Retrieves all properties
-		/// </summary>
-		/// <returns>A list of all properties</returns>
 		[HttpGet]
 		[Authorize]
 		public async Task<ActionResult<IEnumerable<PropertyDto>>> GetAllProperties()
 		{
-			var properties = await _propertyService.GetAllPropertiesAsync();
-			return Ok(properties);
+			try
+			{
+				var properties = await _propertyService.GetAllPropertiesAsync();
+				return Ok(properties);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error occurred while retrieving all properties");
+				return StatusCode(500, "An error occurred while processing your request.");
+			}
 		}
 
-		/// <summary>
-		/// Updates a specific property
-		/// </summary>
-		/// <param name="id">The id of the property to update</param>
-		/// <param name="updatePropertyDto">The updated property details</param>
-		/// <returns>The updated property</returns>
 		[HttpPut("{id}")]
 		[Authorize(Roles = "Owner,Admin")]
 		public async Task<ActionResult<PropertyDto>> UpdateProperty(Guid id, UpdatePropertyDto updatePropertyDto)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-			if (userId == null)
-				return Unauthorized();
+			try
+			{
+				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				if (userId == null)
+					return Unauthorized();
 
-			var property = await _propertyService.GetPropertyByIdAsync(id);
-			if (property == null)
-				return NotFound();
+				var property = await _propertyService.GetPropertyByIdAsync(id);
+				if (property == null)
+					return NotFound();
 
-			// Ensure the user can only update their own properties unless they're an admin
-			if (!User.IsInRole("Admin") && property.OwnerId != Guid.Parse(userId))
-				return Forbid();
+				if (!User.IsInRole("Admin") && property.OwnerId != Guid.Parse(userId))
+					return Forbid();
 
-			var updatedProperty = await _propertyService.UpdatePropertyAsync(id, updatePropertyDto);
-			if (updatedProperty == null)
-				return NotFound();
+				var updatedProperty = await _propertyService.UpdatePropertyAsync(id, updatePropertyDto);
+				if (updatedProperty == null)
+					return NotFound();
 
-			return Ok(updatedProperty);
+				return Ok(updatedProperty);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error occurred while updating property with ID: {PropertyId}", id);
+				return StatusCode(500, "An error occurred while processing your request.");
+			}
 		}
 
-		/// <summary>
-		/// Retrieves a paginated list of properties
-		/// </summary>
-		/// <param name="paginationParams">Pagination parameters</param>
-		/// <returns>A paginated list of properties</returns>
 		[HttpGet("paginated")]
 		[Authorize]
 		public async Task<ActionResult<CustomPaginatedResult<PropertyDto>>> GetPaginatedProperties([FromQuery] PaginationParams paginationParams)
 		{
-			var paginatedResult = await _propertyService.GetPaginatedPropertiesAsync(paginationParams);
-			return Ok(paginatedResult);
+			try
+			{
+				var paginatedResult = await _propertyService.GetPaginatedPropertiesAsync(paginationParams);
+				return Ok(paginatedResult);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error occurred while retrieving paginated properties");
+				return StatusCode(500, "An error occurred while processing your request.");
+			}
 		}
 
-		/// <summary>
-		/// Deletes a specific property
-		/// </summary>
-		/// <param name="id">The id of the property to delete</param>
-		/// <returns>No content if successful</returns>
 		[HttpDelete("{id}")]
 		[Authorize(Roles = "Owner,Admin")]
 		public async Task<IActionResult> DeleteProperty(Guid id)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-			if (userId == null)
-				return Unauthorized();
+			try
+			{
+				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				if (userId == null)
+					return Unauthorized();
 
-			var property = await _propertyService.GetPropertyByIdAsync(id);
-			if (property == null)
-				return NotFound();
+				var property = await _propertyService.GetPropertyByIdAsync(id);
+				if (property == null)
+					return NotFound();
 
-			// Ensure the user can only delete their own properties unless they're an admin
-			if (!User.IsInRole("Admin") && property.OwnerId != Guid.Parse(userId))
-				return Forbid();
+				if (!User.IsInRole("Admin") && property.OwnerId != Guid.Parse(userId))
+					return Forbid();
 
-			var result = await _propertyService.DeletePropertyAsync(id);
-			if (!result)
-				return NotFound();
+				var result = await _propertyService.DeletePropertyAsync(id);
+				if (!result)
+					return NotFound();
 
-			return NoContent();
+				return NoContent();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error occurred while deleting property with ID: {PropertyId}", id);
+				return StatusCode(500, "An error occurred while processing your request.");
+			}
 		}
-
 
 		[HttpPost("upload-images")]
 		[Authorize(Roles = "Owner,Admin")]
 		public async Task<ActionResult<List<string>>> UploadImages(List<IFormFile> images)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-			if (userId == null)
-				return Unauthorized();
-
-			var uploadedUrls = new List<string>();
-
-			foreach (var image in images)
+			try
 			{
-				if (image.Length > 0)
+				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				if (userId == null)
+					return Unauthorized();
+
+				var uploadedUrls = new List<string>();
+
+				foreach (var image in images)
 				{
-					var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
-					var filePath = Path.Combine("wwwroot", "images", "properties", fileName);
-
-					using (var stream = new FileStream(filePath, FileMode.Create))
+					if (image.Length > 0)
 					{
-						await image.CopyToAsync(stream);
+						var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+						var filePath = Path.Combine("wwwroot", "images", "properties", fileName);
+
+						using (var stream = new FileStream(filePath, FileMode.Create))
+						{
+							await image.CopyToAsync(stream);
+						}
+
+						uploadedUrls.Add("/images/properties/" + fileName);
 					}
-
-					uploadedUrls.Add("/images/properties/" + fileName);
 				}
+
+				return Ok(uploadedUrls);
 			}
-
-			return Ok(uploadedUrls);
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error occurred while uploading images");
+				return StatusCode(500, "An error occurred while processing your request.");
+			}
 		}
-
 	}
 }
