@@ -14,12 +14,14 @@ public class UserFactory
 	private readonly Faker<UserModel> _userFaker;
 	private readonly Randomizer _randomizer;
 	private readonly StripeCustomerValidator _stripeCustomerValidator;
+	private readonly UserValidator _userValidator;
 
 	/// <summary>
 	/// Initializes a new instance of the UserFactory class.
 	/// </summary>
 	/// <param name="userManager">The UserManager instance for managing user operations.</param>
 	/// <param name="dbContext">The database context for entity operations.</param>
+	/// <param name="stripeCustomerValidator">The validator for Stripe customers.</param>
 	public UserFactory(UserManager<UserModel> userManager, ApplicationDbContext dbContext, StripeCustomerValidator stripeCustomerValidator)
 	{
 		_userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
@@ -36,6 +38,14 @@ public class UserFactory
 
 		// Initialize Randomizer
 		_randomizer = new Randomizer();
+
+		// Initialize UserValidator
+		_userValidator = new UserValidator();
+		_userValidator.AddStrategy(new UserEmailValidationStrategy());
+		_userValidator.AddStrategy(new UserNameValidationStrategy());
+		_userValidator.AddStrategy(new UserDuplicateEmailValidationStrategy(dbContext));
+		_userValidator.AddStrategy(new UserRoleValidationStrategy());
+		/*_userValidator.AddStrategy(new UserPasswordValidationStrategy(userManager));*/
 	}
 
 	/// <summary>
