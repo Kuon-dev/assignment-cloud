@@ -1,22 +1,33 @@
 using Cloud.Models.DTO;
+using Cloud.Models;
 using Cloud.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Cloud.Filters;
+/*using Cloud.Exceptions;*/
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cloud.Controllers
 {
 	[ApiController]
 	[Route("api/[controller]")]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+	/*[ServiceFilter(typeof(ApiExceptionFilter))]*/
 	public class PropertyController : ControllerBase
 	{
 		private readonly IPropertyService _propertyService;
 		private readonly ILogger<PropertyController> _logger;
+		private readonly ApplicationDbContext _context;
+		private readonly S3Service _s3Service;
 
-		public PropertyController(IPropertyService propertyService, ILogger<PropertyController> logger)
+		public PropertyController(IPropertyService propertyService, ILogger<PropertyController> logger, ApplicationDbContext context, S3Service s3Service)
 		{
 			_propertyService = propertyService;
 			_logger = logger;
+			_context = context;
+			_s3Service = s3Service;
 		}
 
 		[HttpPost]
@@ -31,8 +42,17 @@ namespace Cloud.Controllers
 
 				var userGuid = Guid.Parse(userId);
 
-				if (!User.IsInRole("Admin") && createPropertyDto.OwnerId != userGuid)
-					return Forbid();
+				if (!User.IsInRole("Admin"))
+				{
+					// Get the OwnerModel for the authenticated user
+					var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+					if (owner == null)
+						return Forbid("User is not an owner.");
+
+					// Compare the OwnerModel's Id with the OwnerId in the DTO
+					if (createPropertyDto.OwnerId != owner.Id)
+						return Forbid("You can only create properties for yourself.");
+				}
 
 				var property = await _propertyService.CreatePropertyAsync(createPropertyDto);
 				return CreatedAtAction(nameof(GetProperty), new { id = property.Id }, property);
@@ -45,14 +65,14 @@ namespace Cloud.Controllers
 		}
 
 		[HttpGet("{id}")]
-		[Authorize]
+		[Authorize(Roles = "Owner,Admin")]
 		public async Task<ActionResult<PropertyDto>> GetProperty(Guid id)
 		{
 			try
 			{
 				var property = await _propertyService.GetPropertyByIdAsync(id);
 				if (property == null)
-					return NotFound();
+					throw new NotFoundException("Property not found.");
 
 				return Ok(property);
 			}
@@ -64,7 +84,7 @@ namespace Cloud.Controllers
 		}
 
 		[HttpGet]
-		[Authorize]
+		[Authorize(Roles = "Owner,Admin")]
 		public async Task<ActionResult<IEnumerable<PropertyDto>>> GetAllProperties()
 		{
 			try
@@ -162,6 +182,7 @@ namespace Cloud.Controllers
 			try
 			{
 				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				_logger.LogInformation("Uploading images for user: {UserId}", userId);
 				if (userId == null)
 					return Unauthorized();
 
@@ -171,15 +192,14 @@ namespace Cloud.Controllers
 				{
 					if (image.Length > 0)
 					{
-						var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
-						var filePath = Path.Combine("wwwroot", "images", "properties", fileName);
+						_logger.LogInformation("Uploading image: {ImageName}", image.FileName);
+						var fileName = $"properties/{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
 
-						using (var stream = new FileStream(filePath, FileMode.Create))
+						using (var stream = image.OpenReadStream())
 						{
-							await image.CopyToAsync(stream);
+							var url = await _s3Service.UploadFileAsync(stream, fileName, image.ContentType);
+							uploadedUrls.Add(url);
 						}
-
-						uploadedUrls.Add("/images/properties/" + fileName);
 					}
 				}
 
@@ -187,7 +207,7 @@ namespace Cloud.Controllers
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError(ex, "Error occurred while uploading images");
+				_logger.LogError(ex, "Error occurred while uploading images to S3");
 				return StatusCode(500, "An error occurred while processing your request.");
 			}
 		}

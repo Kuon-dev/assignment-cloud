@@ -4,12 +4,13 @@ using Cloud.Services;
 using Cloud.Models;
 using Cloud.Models.DTO;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace Cloud.Controllers
 {
 	[ApiController]
 	[Route("api/[controller]")]
-	[Authorize]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 	public class MaintenanceController : ControllerBase
 	{
 		private readonly IMaintenanceService _maintenanceService;
