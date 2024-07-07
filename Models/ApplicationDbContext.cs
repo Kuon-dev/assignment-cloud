@@ -19,6 +19,7 @@ namespace Cloud.Models
 		public DbSet<ApplicationDocumentModel> ApplicationDocuments { get; set; } = null!;
 		public DbSet<ActivityLogModel> ActivityLogs { get; set; } = null!;
 		public DbSet<ListingModel> Listings { get; set; } = null!;
+		public DbSet<MediaModel> Medias { get; set; } = null!;
 		public DbSet<RentalApplicationModel> RentalApplications { get; set; } = null!;
 
 		public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
@@ -29,7 +30,7 @@ namespace Cloud.Models
 		[MemberNotNull(nameof(Tenants), nameof(Owners), nameof(Admins), nameof(Properties),
 					   nameof(Leases), nameof(RentPayments), nameof(OwnerPayments), nameof(StripeCustomers),
 					   nameof(MaintenanceRequests), nameof(MaintenanceTasks), nameof(ApplicationDocuments),
-					   nameof(ActivityLogs), nameof(Listings), nameof(RentalApplications))]
+					   nameof(ActivityLogs), nameof(Listings), nameof(RentalApplications), nameof(Medias))]
 		private void EnsureDbSetsAreNotNull()
 		{
 			Tenants = Set<TenantModel>();
@@ -46,6 +47,7 @@ namespace Cloud.Models
 			ActivityLogs = Set<ActivityLogModel>();
 			Listings = Set<ListingModel>();
 			RentalApplications = Set<RentalApplicationModel>();
+			Medias = Set<MediaModel>();
 		}
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
