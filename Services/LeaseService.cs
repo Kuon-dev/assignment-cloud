@@ -1,4 +1,3 @@
-// LeaseService.cs
 using Cloud.Models;
 using Cloud.Models.DTO;
 using Cloud.Factories;
@@ -8,13 +7,13 @@ namespace Cloud.Services
 {
 	public interface ILeaseService
 	{
-		Task<(IEnumerable<LeaseModel> Leases, int TotalCount)> GetAllLeasesAsync(int page, int size);
-		Task<LeaseModel?> GetLeaseByIdAsync(Guid id);
-		Task<LeaseModel> CreateLeaseAsync(LeaseDto leaseDto);
-		Task<LeaseModel?> UpdateLeaseAsync(Guid id, LeaseDto leaseDto);
+		Task<CustomPaginatedResult<LeaseDto>> GetAllLeasesAsync(int page, int size);
+		Task<LeaseDto?> GetLeaseByIdAsync(Guid id);
+		Task<LeaseDto> CreateLeaseAsync(LeaseDto leaseDto);
+		Task<LeaseDto?> UpdateLeaseAsync(Guid id, LeaseDto leaseDto);
 		Task<bool> DeleteLeaseAsync(Guid id);
-		Task<IEnumerable<LeaseModel>> GetActiveLeasesAsync();
-		Task<IEnumerable<LeaseModel>> GetExpiredLeasesAsync();
+		Task<IEnumerable<LeaseDto>> GetActiveLeasesAsync();
+		Task<IEnumerable<LeaseDto>> GetExpiredLeasesAsync();
 	}
 
 	/// <summary>
@@ -31,6 +30,7 @@ namespace Cloud.Services
 		/// </summary>
 		/// <param name="context">The database context.</param>
 		/// <param name="leaseFactory">The lease factory.</param>
+		/// <param name="leaseValidator">The lease validator.</param>
 		public LeaseService(ApplicationDbContext context, LeaseFactory leaseFactory, LeaseValidator leaseValidator)
 		{
 			_context = context ?? throw new ArgumentNullException(nameof(context));
@@ -39,7 +39,7 @@ namespace Cloud.Services
 		}
 
 		/// <inheritdoc />
-		public async Task<(IEnumerable<LeaseModel> Leases, int TotalCount)> GetAllLeasesAsync(int page, int size)
+		public async Task<CustomPaginatedResult<LeaseDto>> GetAllLeasesAsync(int page, int size)
 		{
 			if (_context.Leases == null)
 			{
@@ -50,24 +50,32 @@ namespace Cloud.Services
 			var leases = await _context.Leases
 				.Skip((page - 1) * size)
 				.Take(size)
+				.Select(l => MapToDto(l))
 				.ToListAsync();
 
-			return (leases, totalCount);
+			return new CustomPaginatedResult<LeaseDto>
+			{
+				Items = leases,
+				TotalCount = totalCount,
+				PageNumber = page,
+				PageSize = size
+			};
 		}
 
 		/// <inheritdoc />
-		public async Task<LeaseModel?> GetLeaseByIdAsync(Guid id)
+		public async Task<LeaseDto?> GetLeaseByIdAsync(Guid id)
 		{
 			if (_context.Leases == null)
 			{
 				throw new InvalidOperationException("Lease DbSet is not initialized.");
 			}
 
-			return await _context.Leases.FindAsync(id);
+			var lease = await _context.Leases.FindAsync(id);
+			return lease != null ? MapToDto(lease) : null;
 		}
 
 		/// <inheritdoc />
-		public async Task<LeaseModel> CreateLeaseAsync(LeaseDto leaseDto)
+		public async Task<LeaseDto> CreateLeaseAsync(LeaseDto leaseDto)
 		{
 			if (_context.Leases == null)
 			{
@@ -84,11 +92,11 @@ namespace Cloud.Services
 				leaseDto.IsActive
 			);
 
-			return createdLease;
+			return MapToDto(createdLease);
 		}
 
 		/// <inheritdoc />
-		public async Task<LeaseModel?> UpdateLeaseAsync(Guid id, LeaseDto leaseDto)
+		public async Task<LeaseDto?> UpdateLeaseAsync(Guid id, LeaseDto leaseDto)
 		{
 			if (_context.Leases == null)
 			{
@@ -103,6 +111,7 @@ namespace Cloud.Services
 			}
 
 			existingLease.TenantId = leaseDto.TenantId;
+			existingLease.PropertyId = leaseDto.PropertyId;
 			existingLease.StartDate = leaseDto.StartDate;
 			existingLease.EndDate = leaseDto.EndDate;
 			existingLease.RentAmount = leaseDto.RentAmount;
@@ -113,7 +122,7 @@ namespace Cloud.Services
 			_leaseValidator.ValidateLease(existingLease);
 			await _context.SaveChangesAsync();
 
-			return existingLease;
+			return MapToDto(existingLease);
 		}
 
 		/// <inheritdoc />
@@ -140,7 +149,7 @@ namespace Cloud.Services
 		}
 
 		/// <inheritdoc />
-		public async Task<IEnumerable<LeaseModel>> GetActiveLeasesAsync()
+		public async Task<IEnumerable<LeaseDto>> GetActiveLeasesAsync()
 		{
 			if (_context.Leases == null)
 			{
@@ -149,11 +158,12 @@ namespace Cloud.Services
 
 			return await _context.Leases
 				.Where(l => l.IsActive && l.EndDate >= DateTime.UtcNow)
+				.Select(l => MapToDto(l))
 				.ToListAsync();
 		}
 
 		/// <inheritdoc />
-		public async Task<IEnumerable<LeaseModel>> GetExpiredLeasesAsync()
+		public async Task<IEnumerable<LeaseDto>> GetExpiredLeasesAsync()
 		{
 			if (_context.Leases == null)
 			{
@@ -162,7 +172,22 @@ namespace Cloud.Services
 
 			return await _context.Leases
 				.Where(l => l.EndDate < DateTime.UtcNow)
+				.Select(l => MapToDto(l))
 				.ToListAsync();
+		}
+
+		private static LeaseDto MapToDto(LeaseModel lease)
+		{
+			return new LeaseDto
+			{
+				TenantId = lease.TenantId,
+				PropertyId = lease.PropertyId,
+				StartDate = lease.StartDate,
+				EndDate = lease.EndDate,
+				RentAmount = lease.RentAmount,
+				SecurityDeposit = lease.SecurityDeposit,
+				IsActive = lease.IsActive
+			};
 		}
 	}
 }

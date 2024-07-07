@@ -1,3 +1,4 @@
+
 using Cloud.Factories;
 using Cloud.Models;
 using Microsoft.AspNetCore.Identity;
@@ -13,6 +14,7 @@ public class DataSeeder
 	private readonly PropertyFactory _propertyFactory;
 	private readonly ListingFactory _listingFactory;
 	private readonly RentalApplicationFactory _rentalApplicationFactory;
+	private readonly LeaseFactory _leaseFactory;
 
 	public DataSeeder(
 		IServiceProvider serviceProvider,
@@ -22,7 +24,8 @@ public class DataSeeder
 		UserFactory userFactory,
 		PropertyFactory propertyFactory,
 		ListingFactory listingFactory,
-		RentalApplicationFactory rentalApplicationFactory
+		RentalApplicationFactory rentalApplicationFactory,
+		LeaseFactory leaseFactory
 	  )
 	{
 		_serviceProvider = serviceProvider;
@@ -33,6 +36,7 @@ public class DataSeeder
 		_propertyFactory = propertyFactory;
 		_listingFactory = listingFactory;
 		_rentalApplicationFactory = rentalApplicationFactory;
+		_leaseFactory = leaseFactory;
 	}
 
 	public async Task SeedAsync()
@@ -49,6 +53,7 @@ public class DataSeeder
 		await SeedPropertiesAsync();
 		await SeedListingsAsync();
 		await SeedRentalApplicationsAsync();
+		await SeedLeasesAsync(); // Add call to seed leases
 	}
 
 	private async Task SeedRolesAsync()
@@ -153,4 +158,12 @@ public class DataSeeder
 		}
 	}
 
+	// Add the SeedLeasesAsync method
+	private async Task SeedLeasesAsync()
+	{
+		if (!await _dbContext.Leases.AnyAsync())
+		{
+			await _leaseFactory.SeedLeasesAsync(50);
+		}
+	}
 }
