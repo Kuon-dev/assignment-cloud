@@ -11,8 +11,8 @@ namespace Cloud.Services
 	/// </summary>
 	public interface IRentalApplicationService
 	{
-		Task<CustomPaginatedResult<RentalApplicationModel>> GetApplicationsAsync(int page, int size);
-		Task<RentalApplicationModel> GetApplicationByIdAsync(Guid id);
+		Task<CustomPaginatedResult<RentalApplicationDto>> GetApplicationsAsync(int page, int size);
+		Task<RentalApplicationDto> GetApplicationByIdAsync(Guid id);
 		Task<RentalApplicationModel> CreateApplicationAsync(CreateRentalApplicationDto applicationDto);
 		Task<bool> UpdateApplicationAsync(Guid id, UpdateRentalApplicationDto applicationDto);
 		Task<bool> DeleteApplicationAsync(Guid id);
@@ -55,22 +55,38 @@ namespace Cloud.Services
 		/// <param name="page">The page number.</param>
 		/// <param name="size">The page size.</param>
 		/// <returns>A paginated result of rental applications with user and tenant details.</returns>
-		public async Task<CustomPaginatedResult<RentalApplicationModel>> GetApplicationsAsync(int page, int size)
+		public async Task<CustomPaginatedResult<RentalApplicationDto>> GetApplicationsAsync(int page, int size)
 		{
+			/// <summary>
+			/// Retrieves a paginated list of rental applications
+			/// </summary>
+			/// <param name="page">The page number</param>
+			/// <param name="size">The number of items per page</param>
+			/// <returns>A CustomPaginatedResult of RentalApplicationDto objects</returns>
 			var query = _context.RentalApplications
 				.AsNoTracking()
-				.Include(a => a.Tenant)
-					.ThenInclude(t => t != null ? t.User : null)
+				.Select(a => new RentalApplicationDto
+				{
+					Id = a.Id,
+					ApplicationDate = a.ApplicationDate,
+					Status = a.Status,
+					EmploymentInfo = a.EmploymentInfo,
+					References = a.References,
+					AdditionalNotes = a.AdditionalNotes,
+					TenantId = a.TenantId,
+					TenantEmail = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.Email != null ? a.Tenant.User.Email : "",
+					TenantFirstName = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.FirstName != null ? a.Tenant.User.FirstName : "",
+					TenantLastName = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.LastName != null ? a.Tenant.User.LastName : ""
+				})
 				.OrderByDescending(a => a.ApplicationDate);
 
 			var totalCount = await query.CountAsync();
-
 			var applications = await query
 				.Skip((page - 1) * size)
 				.Take(size)
 				.ToListAsync();
 
-			return new CustomPaginatedResult<RentalApplicationModel>
+			return new CustomPaginatedResult<RentalApplicationDto>
 			{
 				Items = applications,
 				TotalCount = totalCount,
@@ -85,13 +101,27 @@ namespace Cloud.Services
 		/// <param name="id">The ID of the rental application.</param>
 		/// <returns>The rental application with user and tenant details.</returns>
 		/// <exception cref="NotFoundException">Thrown when the application is not found.</exception>
-		public async Task<RentalApplicationModel> GetApplicationByIdAsync(Guid id)
+		public async Task<RentalApplicationDto> GetApplicationByIdAsync(Guid id)
 		{
-			var result = await _context.RentalApplications
-				.Include(a => a.Tenant)
-					.ThenInclude(t => t != null ? t.User : null)
+			var query = _context.RentalApplications
+				.AsNoTracking()
+				// where tenant user email is not null
+				.Select(a => new RentalApplicationDto
+				{
+					Id = a.Id,
+					ApplicationDate = a.ApplicationDate,
+					Status = a.Status,
+					EmploymentInfo = a.EmploymentInfo,
+					References = a.References,
+					AdditionalNotes = a.AdditionalNotes,
+					TenantId = a.TenantId,
+					TenantEmail = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.Email != null ? a.Tenant.User.Email : "",
+					TenantFirstName = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.FirstName != null ? a.Tenant.User.FirstName : "",
+					TenantLastName = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.LastName != null ? a.Tenant.User.LastName : ""
+				})
 				.FirstOrDefaultAsync(a => a.Id == id);
 
+			var result = await query;
 			if (result == null) throw new NotFoundException("Rental application not found.");
 			return result;
 		}
