@@ -66,7 +66,7 @@ namespace Cloud.Services
 					FileType = file.ContentType,
 					FileSize = file.Length,
 					UploadedAt = DateTime.UtcNow,
-					UserId = Guid.Parse(userId)
+					UserId = (userId)
 				};
 
 				_context.Medias.Add(media);
@@ -94,7 +94,7 @@ namespace Cloud.Services
 		public async Task<MediaDto?> GetMediaByIdAsync(Guid id, string userId)
 		{
 			var media = await _context.Medias
-				.FirstOrDefaultAsync(m => m.Id == id && m.UserId == Guid.Parse(userId));
+				.FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
 
 			return media != null ? MapToDto(media) : null;
 		}
@@ -107,7 +107,7 @@ namespace Cloud.Services
 		public async Task<List<MediaDto>> GetAllMediaAsync(string userId)
 		{
 			var media = await _context.Medias
-				.Where(m => m.UserId == Guid.Parse(userId))
+				.Where(m => m.UserId == (userId))
 				.ToListAsync();
 
 			return media.Select(MapToDto).ToList();
@@ -122,7 +122,7 @@ namespace Cloud.Services
 		public async Task<bool> DeleteMediaAsync(Guid id, string userId)
 		{
 			var media = await _context.Medias
-				.FirstOrDefaultAsync(m => m.Id == id && m.UserId == Guid.Parse(userId));
+				.FirstOrDefaultAsync(m => m.Id == id && m.UserId == (userId));
 
 			if (media == null)
 			{

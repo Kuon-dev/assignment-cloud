@@ -9,7 +9,7 @@ namespace Cloud.Models
 	public class MediaModel : BaseEntity
 	{
 		[Required]
-		public Guid UserId { get; set; }
+		public String UserId { get; set; } = null!;
 
 		[ForeignKey("UserId")]
 		public UserModel? User { get; set; }

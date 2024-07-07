@@ -30,7 +30,7 @@ namespace Cloud.Models
 		[MemberNotNull(nameof(Tenants), nameof(Owners), nameof(Admins), nameof(Properties),
 					   nameof(Leases), nameof(RentPayments), nameof(OwnerPayments), nameof(StripeCustomers),
 					   nameof(MaintenanceRequests), nameof(MaintenanceTasks), nameof(ApplicationDocuments),
-					   nameof(ActivityLogs), nameof(Listings), nameof(RentalApplications))]
+					   nameof(ActivityLogs), nameof(Listings), nameof(RentalApplications), nameof(Medias))]
 		private void EnsureDbSetsAreNotNull()
 		{
 			Tenants = Set<TenantModel>();
@@ -47,7 +47,7 @@ namespace Cloud.Models
 			ActivityLogs = Set<ActivityLogModel>();
 			Listings = Set<ListingModel>();
 			RentalApplications = Set<RentalApplicationModel>();
-			Media = Set<MediaModel>();
+			Medias = Set<MediaModel>();
 		}
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
