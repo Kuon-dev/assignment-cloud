@@ -118,6 +118,12 @@ namespace Cloud.Controllers
 			if (result.Succeeded)
 			{
 				var token = GenerateJwtToken(user);
+				Response.Cookies.Append("auth_token", token, new CookieOptions
+				{
+					HttpOnly = true,
+					SameSite = SameSiteMode.Lax
+				});
+
 				return Ok(new { Token = token });
 			}
 			_logger.LogError(result.ToString());

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Cloud.Models;
+using Cloud.Models.DTO;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Cloud.Filters;
 using Cloud.Services;
@@ -203,15 +204,6 @@ namespace Cloud.Controllers
 		{
 			return _context.Properties.Any(e => e.Id == id);
 		}
-	}
-
-	public class PaginationParams
-	{
-		[Range(1, int.MaxValue, ErrorMessage = "Page must be greater than 0")]
-		public int Page { get; set; } = 1;
-
-		[Range(1, 100, ErrorMessage = "Size must be between 1 and 100")]
-		public int Size { get; set; } = 10;
 	}
 
 	public class SearchPropertyParams
