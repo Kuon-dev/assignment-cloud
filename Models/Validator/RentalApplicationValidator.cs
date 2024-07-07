@@ -44,10 +44,10 @@ namespace Cloud.Models.Validator
 		/// </summary>
 		public RentalApplicationValidator()
 		{
-			AddStrategy(new TenantIdValidationStrategy());
+			AddStrategy(new RentalTenantIdValidationStrategy());
 			AddStrategy(new ListingIdValidationStrategy());
 			AddStrategy(new ApplicationDateValidationStrategy());
-			AddStrategy(new StatusValidationStrategy());
+			AddStrategy(new RentalStatusValidationStrategy());
 			// Add more strategies as needed
 		}
 
@@ -109,7 +109,7 @@ namespace Cloud.Models.Validator
 	/// <summary>
 	/// Validates that the TenantId is not empty
 	/// </summary>
-	public class TenantIdValidationStrategy : IRentalApplicationValidationStrategy
+	public class RentalTenantIdValidationStrategy : IRentalApplicationValidationStrategy
 	{
 		public void Validate(RentalApplicationModel application, Dictionary<string, List<string>> errors)
 		{
@@ -151,7 +151,7 @@ namespace Cloud.Models.Validator
 	/// <summary>
 	/// Validates that the Status is valid
 	/// </summary>
-	public class StatusValidationStrategy : IRentalApplicationValidationStrategy
+	public class RentalStatusValidationStrategy : IRentalApplicationValidationStrategy
 	{
 		public void Validate(RentalApplicationModel application, Dictionary<string, List<string>> errors)
 		{
