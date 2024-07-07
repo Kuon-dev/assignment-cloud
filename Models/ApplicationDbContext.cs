@@ -19,6 +19,7 @@ namespace Cloud.Models
 		public DbSet<ApplicationDocumentModel> ApplicationDocuments { get; set; } = null!;
 		public DbSet<ActivityLogModel> ActivityLogs { get; set; } = null!;
 		public DbSet<ListingModel> Listings { get; set; } = null!;
+		public DbSet<MediaModel> Medias { get; set; } = null!;
 		public DbSet<RentalApplicationModel> RentalApplications { get; set; } = null!;
 
 		public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
@@ -46,6 +47,7 @@ namespace Cloud.Models
 			ActivityLogs = Set<ActivityLogModel>();
 			Listings = Set<ListingModel>();
 			RentalApplications = Set<RentalApplicationModel>();
+			Media = Set<MediaModel>();
 		}
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
