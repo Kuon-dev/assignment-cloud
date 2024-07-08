@@ -153,7 +153,7 @@ StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_K
 builder.Services.AddTransient<DataSeeder>();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+	options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 });
 
 var app = builder.Build();
@@ -188,7 +188,7 @@ app.UseCors("AllowFrontend");
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseHsts();
+	app.UseHsts();
 }
 
 app.UseForwardedHeaders();
