@@ -111,7 +111,7 @@ namespace Cloud.Controllers
 		// PUT: api/admin/properties/{id}/status
 		[HttpPut("properties/{id}/status")]
 		[Authorize(Roles = "Admin")]
-		public async Task<IActionResult> UpdatePropertyStatus(Guid id, [FromQuery] string status)
+		public async Task<IActionResult> UpdatePropertyStatus(Guid id, [FromQuery] bool status)
 		{
 			_logger.LogInformation("Updating status of property with ID {Id} to {Status}", id, status);
 

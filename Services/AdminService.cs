@@ -13,7 +13,7 @@ namespace Cloud.Services
 		Task<CustomPaginatedResult<MaintenanceRequestModel>> GetMaintenanceRequestAsync(PaginationParams paginationParams);
 		Task<CustomPaginatedResult<PropertyModel>> GetPropertiesAsync(PaginationParams paginationParams);
 		Task<bool> UpdateMaintenanceRequestStatusAsync(Guid id, string action);
-		Task<bool> UpdatePropertyStatusAsync(Guid id, string status);
+		Task<bool> UpdatePropertyStatusAsync(Guid id, bool status);
 		Task<CustomPaginatedResult<ActivityLogModel>> GetActivityLogsAsync(PaginationParams paginationParams);
 	}
 }
@@ -192,19 +192,19 @@ namespace Cloud.Services
 			};
 		}
 
-		// public async Task<bool> UpdatePropertyStatusAsync(Guid id, string status)
-		// {
-		//     var property = await _context.Properties.FindAsync(id);
-		//     if (property == null)
-		//     {
-		//         return false;
-		//     }
+		public async Task<bool> UpdatePropertyStatusAsync(Guid id, bool status)
+		{
+			var property = await _context.Properties.FindAsync(id);
+			if (property == null)
+			{
+				return false;
+			}
 
-		//     property.Status = status;
-		//     _context.Properties.Update(property);
-		//     await _context.SaveChangesAsync();
-		//     return true;
-		// }
+			property.IsAvailable = status;
+			_context.Properties.Update(property);
+			await _context.SaveChangesAsync();
+			return true;
+		}
 
 		public async Task<CustomPaginatedResult<ActivityLogModel>> GetActivityLogsAsync(PaginationParams paginationParams)
 		{
