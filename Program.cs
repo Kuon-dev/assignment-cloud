@@ -127,10 +127,10 @@ builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
 builder.Services.AddScoped<IStripeCustomerService, StripeCustomerService>();
 <<<<<<< HEAD
 builder.Services.AddScoped<IMediaService, MediaService>();
+
 =======
 builder.Services.AddScoped<IAdminService, AdminService>();
 >>>>>>> main
-
 builder.Services.AddScoped<PropertyFactory>();
 builder.Services.AddScoped<LeaseFactory>();
 builder.Services.AddScoped<UserFactory>();
