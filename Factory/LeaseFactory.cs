@@ -1,6 +1,7 @@
 using Bogus;
 using Cloud.Models;
 using Cloud.Models.DTO;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cloud.Factories
 {
@@ -23,9 +24,8 @@ namespace Cloud.Factories
 			_leaseValidator = leaseValidator ?? throw new ArgumentNullException(nameof(leaseValidator));
 			// Initialize Bogus for generating fake lease data
 			_leaseFaker = new Faker<LeaseModel>()
-				.RuleFor(l => l.TenantId, f => f.Random.Guid())
-				.RuleFor(l => l.StartDate, f => f.Date.Future())
-				.RuleFor(l => l.EndDate, (f, l) => l.StartDate.AddMonths(f.Random.Int(6, 24)))
+				.RuleFor(l => l.StartDate, f => f.Date.Future().ToUniversalTime())
+				.RuleFor(l => l.EndDate, (f, l) => l.StartDate.AddMonths(f.Random.Int(6, 24)).ToUniversalTime())
 				.RuleFor(l => l.RentAmount, f => f.Finance.Amount(500, 5000))
 				.RuleFor(l => l.SecurityDeposit, f => f.Finance.Amount(500, 5000))
 				.RuleFor(l => l.IsActive, f => f.Random.Bool());
@@ -99,6 +99,11 @@ namespace Cloud.Factories
 			for (int i = 0; i < count; i++)
 			{
 				var lease = _leaseFaker.Generate();
+				var Tenants = await _dbContext.Tenants.ToListAsync();
+				var Properties = await _dbContext.Properties.ToListAsync();
+				lease.TenantId = Tenants[new Random().Next(Tenants.Count)].Id;
+				lease.PropertyId = Properties[new Random().Next(Properties.Count)].Id;
+
 				_leaseValidator.ValidateLease(lease);
 				leases.Add(lease);
 			}

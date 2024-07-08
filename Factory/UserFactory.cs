@@ -14,12 +14,14 @@ public class UserFactory
 	private readonly Faker<UserModel> _userFaker;
 	private readonly Randomizer _randomizer;
 	private readonly StripeCustomerValidator _stripeCustomerValidator;
+	private readonly UserValidator _userValidator;
 
 	/// <summary>
 	/// Initializes a new instance of the UserFactory class.
 	/// </summary>
 	/// <param name="userManager">The UserManager instance for managing user operations.</param>
 	/// <param name="dbContext">The database context for entity operations.</param>
+	/// <param name="stripeCustomerValidator">The validator for Stripe customers.</param>
 	public UserFactory(UserManager<UserModel> userManager, ApplicationDbContext dbContext, StripeCustomerValidator stripeCustomerValidator)
 	{
 		_userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
@@ -36,6 +38,14 @@ public class UserFactory
 
 		// Initialize Randomizer
 		_randomizer = new Randomizer();
+
+		// Initialize UserValidator
+		_userValidator = new UserValidator();
+		_userValidator.AddStrategy(new UserEmailValidationStrategy());
+		_userValidator.AddStrategy(new UserNameValidationStrategy());
+		_userValidator.AddStrategy(new UserDuplicateEmailValidationStrategy(dbContext));
+		_userValidator.AddStrategy(new UserRoleValidationStrategy());
+		/*_userValidator.AddStrategy(new UserPasswordValidationStrategy(userManager));*/
 	}
 
 	/// <summary>
@@ -225,24 +235,9 @@ public class UserFactory
 		var roleSpecificModels = new List<object>(count);
 
 		// static users for testing
-		var tenantUser = _userFaker.Generate();
-		tenantUser.Email = "tenant@example.com";
-		tenantUser.Role = UserRole.Tenant;
-		users.Add(tenantUser);
-		roleSpecificModels.Add(new TenantModel { UserId = tenantUser.Id, User = tenantUser });
-
-		var ownerUser = _userFaker.Generate();
-		ownerUser.Email = "owner@example.com";
-		ownerUser.Role = UserRole.Owner;
-		users.Add(ownerUser);
-		roleSpecificModels.Add(new OwnerModel { UserId = ownerUser.Id, User = ownerUser });
-
-		var adminUser = _userFaker.Generate();
-		adminUser.Email = "admin@example.com";
-		adminUser.Role = UserRole.Admin;
-		users.Add(adminUser);
-		roleSpecificModels.Add(new AdminModel { UserId = adminUser.Id, User = adminUser });
-
+		await CreateTenantAsync("tenant@example.com", "Password123!", "Test", "Tenant");
+		await CreateOwnerAsync("owner@example.com", "Password123!", "Test", "Owner");
+		await CreateAdminAsync("admin@example.com", "Password123!", "Test", "Admin");
 		for (int i = 0; i < count; i++)
 		{
 			var user = _userFaker.Generate();

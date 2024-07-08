@@ -5,6 +5,7 @@
     "module": "esnext",
     "strict": true,
     "esModuleInterop": true,
+	"moduleResolution": "nodenext",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist"

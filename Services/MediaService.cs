@@ -113,6 +113,15 @@ namespace Cloud.Services
 			return media.Select(MapToDto).ToList();
 		}
 
+		// get media by path
+		public async Task<MediaDto?> GetMediaByPathAsync(string path, string userId)
+		{
+			var media = await _context.Medias
+				.FirstOrDefaultAsync(m => m.FilePath == path && m.UserId == userId);
+
+			return media != null ? MapToDto(media) : null;
+		}
+
 		/// <summary>
 		/// Deletes a media entry
 		/// </summary>

@@ -6,7 +6,7 @@ using Cloud.Models.DTO;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
-namespace Cloud.Controllers	
+namespace Cloud.Controllers
 {
 	[ApiController]
 	[Route("api/[controller]")]
