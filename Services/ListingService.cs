@@ -97,6 +97,7 @@ namespace Cloud.Services
 				Views = listing.Views,
 				ImageUrls = listing.Property.ImageUrls,
 				Location = $"{listing.Property.Address}, {listing.Property.City}, {listing.Property.State} {listing.Property.ZipCode}",
+				Amenities = listing.Property.Amenities,
 				Bedrooms = listing.Property.Bedrooms,
 				Bathrooms = listing.Property.Bathrooms
 			};
