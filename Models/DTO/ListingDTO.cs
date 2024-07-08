@@ -107,6 +107,11 @@ namespace Cloud.Models.DTO
 		public string Location { get; set; } = string.Empty;
 
 		/// <summary>
+		/// Gets or sets the amenities of the property.
+		/// </summary>
+		public List<string>? Amenities { get; set; }
+
+		/// <summary>
 		/// Gets or sets the number of bedrooms in the property.
 		/// </summary>
 		public int Bedrooms { get; set; }
