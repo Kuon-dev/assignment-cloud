@@ -6,6 +6,7 @@ using Cloud.Models;
 using Cloud.Services;
 using Cloud.Filters;
 using Cloud.Models.DTO;
+using Microsoft.AspNetCore.Identity;
 /*using System.Security.Claims;*/
 
 namespace Cloud.Controllers
@@ -18,21 +19,94 @@ namespace Cloud.Controllers
 	{
 		private readonly IAdminService _adminService;
 		private readonly ILogger<AdminController> _logger;
+		private readonly UserManager<UserModel> _userManager;
 
-		public AdminController(IAdminService adminService, ILogger<AdminController> logger)
+		public AdminController(IAdminService adminService, ILogger<AdminController> logger, UserManager<UserModel> userManager)
 		{
 			_adminService = adminService ?? throw new ArgumentNullException(nameof(adminService));
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+			_userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
 		}
 
 		// GET: api/admin/users
 		[HttpGet("users")]
 		[Authorize(Roles = "Admin")]
-		public async Task<ActionResult<CustomPaginatedResult<UserModel>>> GetUsers([FromQuery] Cloud.Models.DTO.PaginationParams paginationParams)
+		public async Task<ActionResult<CustomPaginatedResult<UserInfoDto>>> GetUsers([FromQuery] Cloud.Models.DTO.PaginationParams paginationParams)
 		{
 			_logger.LogInformation("Getting admin with pagination parameters: {@PaginationParams}", paginationParams);
 			var users = await _adminService.GetUsersAsync(paginationParams);
 			return Ok(users);
+		}
+
+		// // GET: api/admin/{id}
+		[HttpGet("users/{id}")]
+		[Authorize(Roles = "Admin")]
+		public async Task<ActionResult<UserInfoDto>> GetUser(string id)
+		{
+			var user = await _adminService.GetUserByIdAsync(id);
+			if (user == null)
+			{
+				return NotFound("User not found");
+			}
+
+			return Ok(user);
+		}
+
+		// POST: api/admin/users
+		[HttpPost("users")]
+		public async Task<IActionResult> CreateUser(CreateUserDto createUserDto)
+		{
+			var user = new UserModel
+			{
+				FirstName = createUserDto.FirstName,
+				LastName = createUserDto.LastName,
+				Email = createUserDto.Email,
+				UserName = createUserDto.Email,
+				Role = (UserRole)createUserDto.Role,
+				ProfilePictureUrl = createUserDto.ProfilePictureUrl
+			};
+
+			var result = await _userManager.CreateAsync(user, createUserDto.Password);
+
+			if (!result.Succeeded)
+			{
+				return BadRequest(result.Errors);
+			}
+
+			return Ok("User created successfully");
+		}
+
+		// PUT: api/admin/users/{id}
+		[HttpPut("users/{id}")]
+		public async Task<ActionResult<UserInfoDto>> UpdateUser(Guid id, [FromBody] UpdateUserDto updateUserDto)
+		{
+			try
+			{
+				var updatedUser = await _adminService.UpdateUserAsync(id, updateUserDto);
+				return Ok(updatedUser);
+			}
+			catch (KeyNotFoundException)
+			{
+				return NotFound("User not found");
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error occurred while updating user");
+				return StatusCode(500, "An error occurred while processing your request.");
+			}
+		}
+
+		// DELETE: api/admin/users/{id}
+		[HttpDelete("users/{id}")]
+		[Authorize(Roles = "Admin")]
+		public async Task<IActionResult> SoftDeleteUser(string id)
+		{
+			var result = await _adminService.SoftDeleteUserAsync(id);
+			if (!result)
+			{
+				return NotFound("User not found");
+			}
+			return NoContent();
 		}
 
 		// GET: api/admin/reports

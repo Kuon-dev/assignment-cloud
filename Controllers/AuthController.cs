@@ -92,7 +92,7 @@ namespace Cloud.Controllers
 				var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 				var confirmationLink = Url.Action("ConfirmEmail", "Auth", new { userId = user.Id, token = token }, Request.Scheme);
 
-				_emailService.SendEmail(user.Email, "Confirm your email", $"Please confirm your account by clicking this link: {confirmationLink}");
+				// _emailService.SendEmail(user.Email, "Confirm your email", $"Please confirm your account by clicking this link: {confirmationLink}");
 
 				return Ok(new { message = $"User created successfully as {user.Role}. Please check your email to confirm your account." });
 			}
