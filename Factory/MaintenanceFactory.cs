@@ -202,8 +202,8 @@ namespace Cloud.Factories
 				.RuleFor(t => t.Description, (f, t) => $"Task for maintenance request: {f.Lorem.Sentence()}")
 				.RuleFor(t => t.EstimatedCost, f => f.Random.Decimal(50, 1000))
 				.RuleFor(t => t.ActualCost, f => f.Random.Decimal(50, 1000))
-				.RuleFor(t => t.StartDate, f => f.Date.Past())
-				.RuleFor(t => t.CompletionDate, (f, t) => f.Date.Between(t.StartDate ?? DateTime.Now, DateTime.Now.AddDays(30)))
+				.RuleFor(t => t.StartDate, f => f.Date.Past().ToUniversalTime())
+				.RuleFor(t => t.CompletionDate, (f, t) => f.Date.Between(t.StartDate ?? DateTime.Now, DateTime.Now.AddDays(30)).ToUniversalTime())
 				.RuleFor(t => t.Status, f => f.PickRandom<Cloud.Models.TaskStatus>());
 
 			return faker.Generate();
