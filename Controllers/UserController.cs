@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Cloud.Models;
+using Cloud.Models.DTO;
 using Cloud.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
@@ -219,6 +220,47 @@ namespace Cloud.Controllers
 			}
 
 			return NoContent();
+		}
+
+		[HttpGet("listings")]
+		public async Task<ActionResult<IEnumerable<ListingResponseDto>>> GetUserListings()
+		{
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (userId == null)
+			{
+				return Unauthorized("User not authenticated");
+			}
+
+			var user = await _context.Users.FindAsync(userId);
+			if (user == null)
+			{
+				return NotFound($"User with ID {userId} not found");
+			}
+
+			if (user.Owner == null)
+			{
+				return BadRequest("User is not an owner");
+			}
+
+			var listings = await _context.Listings
+				.Where(l => l.Property != null && l.Property.OwnerId == user.Owner.Id && !l.IsDeleted)
+				.Include(l => l!.Property)
+				.Select(l => new ListingResponseDto
+				{
+					Id = l.Id,
+					Title = l.Title,
+					Description = l.Description,
+					Price = l.Price,
+					ImageUrls = l.Property!.ImageUrls ?? new List<string>(),
+					Location = $"{l.Property!.Address}, {l.Property!.City}, {l.Property!.State} {l.Property!.ZipCode}",
+					StartDate = l.StartDate,
+					EndDate = l.EndDate,
+					Bedrooms = l.Property!.Bedrooms,
+					Bathrooms = l.Property!.Bathrooms,
+				})
+				.ToListAsync();
+
+			return listings;
 		}
 
 		private bool UserExists(string id)

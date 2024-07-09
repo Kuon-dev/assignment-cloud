@@ -26,7 +26,8 @@ public class PropertyFactory
 		  .RuleFor(p => p.Description, f => f.Lorem.Paragraph())
 		  .RuleFor(p => p.Amenities, f => f.Make(3, () => f.Commerce.Product()))
 		  .RuleFor(p => p.IsAvailable, f => f.Random.Bool())
-		  .RuleFor(p => p.RoomType, f => f.PickRandom<RoomType>());
+		  .RuleFor(p => p.RoomType, f => f.PickRandom<RoomType>())
+		.RuleFor(p => p.ImageUrls, f => f.Random.ListItems(_context.Medias.Select(m => m.FilePath).ToList(), f.Random.Int(3, 7)));
 
 		_randomizer = new Randomizer();
 	}
