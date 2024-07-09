@@ -15,7 +15,7 @@ namespace Cloud.Models.DTO
 		public UserInfoDto UserInfo { get; set; } = null!;
 		public Guid? CurrentPropertyId { get; set; }
 		public PropertyModel? CurrentProperty { get; set; }
-		public ICollection<LeaseModel>? Leases { get; set; }
+		public ICollection<LeaseDto>? Leases { get; set; }
 	}
 
 	public class TenantCreateUpdateDto
@@ -33,8 +33,8 @@ namespace Cloud.Services
 	{
 		Task<CustomPaginatedResult<TenantDto>> GetTenantsAsync(PaginationParams paginationParams);
 		Task<TenantDto?> GetTenantByIdAsync(Guid id);
-		Task<TenantDto> CreateTenantAsync(TenantCreateUpdateDto tenantDto);
-		Task<TenantDto> UpdateTenantAsync(Guid id, TenantCreateUpdateDto tenantDto);
+		/*Task<TenantDto> CreateTenantAsync(TenantCreateUpdateDto tenantDto);*/
+		/*Task<TenantDto> UpdateTenantAsync(Guid id, TenantCreateUpdateDto tenantDto);*/
 		Task<bool> SoftDeleteTenantAsync(Guid id);
 		Task<IEnumerable<LeaseModel>> GetTenantLeasesAsync(Guid tenantId);
 	}
@@ -78,8 +78,17 @@ namespace Cloud.Services
 					},
 					CurrentPropertyId = t.CurrentPropertyId,
 					CurrentProperty = t.CurrentProperty,
-					Leases = t.Leases
+					Leases = t.Leases == null ? new List<LeaseDto>() : t.Leases.Select(l => new LeaseDto
+					{
+						PropertyId = l.PropertyId,
+						StartDate = l.StartDate,
+						EndDate = l.EndDate,
+						RentAmount = l.RentAmount,
+						SecurityDeposit = l.SecurityDeposit,
+						IsActive = l.IsActive
+					}).ToList()
 				});
+
 
 			var totalCount = await query.CountAsync();
 			var items = await query
@@ -98,114 +107,43 @@ namespace Cloud.Services
 
 		public async Task<TenantDto?> GetTenantByIdAsync(Guid id)
 		{
-			var tenant = await _context.Tenants
+			var t = await _context.Tenants
 				.Include(t => t.User)
 				.Include(t => t.CurrentProperty)
 				.Include(t => t.Leases)
 				.FirstOrDefaultAsync(t => t.Id == id);
 
-			if (tenant == null)
+			if (t == null)
 			{
 				return null;
 			}
 
 			return new TenantDto
 			{
-				Id = tenant.Id,
-				UserId = tenant.UserId,
+				Id = t.Id,
+				UserId = t.UserId,
 				UserInfo = new UserInfoDto
 				{
-					Id = Guid.Parse(tenant.UserId),
-					FirstName = tenant.User!.FirstName,
-					LastName = tenant.User!.LastName,
-					Role = tenant.User!.Role,
-					IsVerified = tenant.User!.IsVerified,
-					ProfilePictureUrl = tenant.User!.ProfilePictureUrl,
-					Tenant = new TenantInfoDto { Id = tenant.Id }
+					Id = Guid.Parse(t.UserId),
+					FirstName = t.User!.FirstName,
+					LastName = t.User!.LastName,
+					Role = t.User!.Role,
+					IsVerified = t.User!.IsVerified,
+					ProfilePictureUrl = t.User!.ProfilePictureUrl,
+					Tenant = new TenantInfoDto { Id = t.Id }
 				},
-				CurrentPropertyId = tenant.CurrentPropertyId,
-				CurrentProperty = tenant.CurrentProperty,
-				Leases = tenant.Leases
-			};
-		}
-
-		public async Task<TenantDto> CreateTenantAsync(TenantCreateUpdateDto tenantDto)
-		{
-			var user = new UserModel
-			{
-				FirstName = tenantDto.FirstName,
-				LastName = tenantDto.LastName,
-				Email = tenantDto.Email,
-				UserName = tenantDto.Email,
-				Role = UserRole.Tenant,
-				ProfilePictureUrl = tenantDto.ProfilePictureUrl
-			};
-
-			var tenant = new TenantModel
-			{
-				User = user
-			};
-
-			_context.Users.Add(user);
-			_context.Tenants.Add(tenant);
-			await _context.SaveChangesAsync();
-
-			return new TenantDto
-			{
-				Id = tenant.Id,
-				UserId = tenant.UserId,
-				UserInfo = new UserInfoDto
+				CurrentPropertyId = t.CurrentPropertyId,
+				CurrentProperty = t.CurrentProperty,
+				Leases = t.Leases == null ? new List<LeaseDto>() : t.Leases.Select(l => new LeaseDto
 				{
-					Id = Guid.Parse(user.Id),
-					FirstName = user.FirstName,
-					LastName = user.LastName,
-					Role = user.Role,
-					IsVerified = user.IsVerified,
-					ProfilePictureUrl = user.ProfilePictureUrl,
-					Tenant = new TenantInfoDto { Id = tenant.Id }
-				},
-				CurrentPropertyId = null,
-				CurrentProperty = null,
-				Leases = new List<LeaseModel>()
-			};
-		}
+					PropertyId = l.PropertyId,
+					StartDate = l.StartDate,
+					EndDate = l.EndDate,
+					RentAmount = l.RentAmount,
+					SecurityDeposit = l.SecurityDeposit,
+					IsActive = l.IsActive
+				}).ToList()
 
-		public async Task<TenantDto> UpdateTenantAsync(Guid id, TenantCreateUpdateDto tenantDto)
-		{
-			var tenant = await _context.Tenants
-				.Include(t => t.User)
-				.FirstOrDefaultAsync(t => t.Id == id);
-
-			if (tenant == null)
-			{
-				throw new KeyNotFoundException($"Tenant with ID {id} not found.");
-			}
-
-			tenant.User!.FirstName = tenantDto.FirstName;
-			tenant.User!.LastName = tenantDto.LastName;
-			tenant.User!.Email = tenantDto.Email;
-			tenant.User!.UserName = tenantDto.Email;
-			tenant.User!.ProfilePictureUrl = tenantDto.ProfilePictureUrl;
-
-			await _context.SaveChangesAsync();
-
-			return new TenantDto
-			{
-				Id = tenant.Id,
-				UserId = tenant.UserId,
-				UserInfo = new UserInfoDto
-				{
-					Id = Guid.Parse(tenant.UserId),
-					FirstName = tenant.User!.FirstName,
-					LastName = tenant.User!.LastName,
-					Role = tenant.User!.Role,
-					IsVerified = tenant.User!.IsVerified,
-					ProfilePictureUrl = tenant.User!.ProfilePictureUrl,
-					Tenant = new TenantInfoDto { Id = tenant.Id }
-				},
-				CurrentPropertyId = tenant.CurrentPropertyId,
-				CurrentProperty = tenant.CurrentProperty,
-				Leases = tenant.Leases
 			};
 		}
 

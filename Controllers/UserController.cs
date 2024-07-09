@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Cloud.Models;
+using Cloud.Models.DTO;
 using Cloud.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
@@ -48,7 +49,7 @@ namespace Cloud.Controllers
 		}
 
 		[HttpGet("payment-history")]
-		public async Task<ActionResult<IEnumerable<RentPaymentModel>>> GetPaymentHistory([FromQuery] int page = 1, [FromQuery] int size = 10)
+		public async Task<ActionResult<IEnumerable<RentPaymentModel>>> GetPaymentHistory()
 		{
 			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (userId == null)
@@ -58,7 +59,7 @@ namespace Cloud.Controllers
 
 			try
 			{
-				var paymentHistory = await _userService.GetPaymentHistoryAsync(userId, page, size);
+				var paymentHistory = await _userService.GetPaymentHistoryAsync(userId);
 				return Ok(paymentHistory);
 			}
 			catch (BadRequestException ex)
@@ -72,7 +73,7 @@ namespace Cloud.Controllers
 		}
 
 		[HttpGet("maintenance-requests")]
-		public async Task<ActionResult<IEnumerable<MaintenanceRequestModel>>> GetMaintenanceRequests([FromQuery] int page = 1, [FromQuery] int size = 10)
+		public async Task<ActionResult<IEnumerable<MaintenanceRequestModel>>> GetMaintenanceRequests()
 		{
 			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (userId == null)
@@ -82,7 +83,7 @@ namespace Cloud.Controllers
 
 			try
 			{
-				var maintenanceRequests = await _userService.GetMaintenanceRequestsAsync(userId, page, size);
+				var maintenanceRequests = await _userService.GetMaintenanceRequestsAsync(userId);
 				return Ok(maintenanceRequests);
 			}
 			catch (BadRequestException ex)
@@ -96,7 +97,7 @@ namespace Cloud.Controllers
 		}
 
 		[HttpGet("applications")]
-		public async Task<ActionResult<IEnumerable<RentalApplicationModel>>> GetApplications([FromQuery] int page = 1, [FromQuery] int size = 10)
+		public async Task<ActionResult<IEnumerable<RentalApplicationModel>>> GetApplications()
 		{
 			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (userId == null)
@@ -106,7 +107,7 @@ namespace Cloud.Controllers
 
 			try
 			{
-				var applications = await _userService.GetApplicationsAsync(userId, page, size);
+				var applications = await _userService.GetApplicationsAsync(userId);
 				return Ok(applications);
 			}
 			catch (BadRequestException ex)
@@ -219,6 +220,47 @@ namespace Cloud.Controllers
 			}
 
 			return NoContent();
+		}
+
+		[HttpGet("listings")]
+		public async Task<ActionResult<IEnumerable<ListingResponseDto>>> GetUserListings()
+		{
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (userId == null)
+			{
+				return Unauthorized("User not authenticated");
+			}
+
+			var user = await _context.Users.FindAsync(userId);
+			if (user == null)
+			{
+				return NotFound($"User with ID {userId} not found");
+			}
+
+			if (user.Owner == null)
+			{
+				return BadRequest("User is not an owner");
+			}
+
+			var listings = await _context.Listings
+				.Where(l => l.Property != null && l.Property.OwnerId == user.Owner.Id && !l.IsDeleted)
+				.Include(l => l!.Property)
+				.Select(l => new ListingResponseDto
+				{
+					Id = l.Id,
+					Title = l.Title,
+					Description = l.Description,
+					Price = l.Price,
+					ImageUrls = l.Property!.ImageUrls ?? new List<string>(),
+					Location = $"{l.Property!.Address}, {l.Property!.City}, {l.Property!.State} {l.Property!.ZipCode}",
+					StartDate = l.StartDate,
+					EndDate = l.EndDate,
+					Bedrooms = l.Property!.Bedrooms,
+					Bathrooms = l.Property!.Bathrooms,
+				})
+				.ToListAsync();
+
+			return listings;
 		}
 
 		private bool UserExists(string id)

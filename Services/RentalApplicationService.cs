@@ -76,7 +76,8 @@ namespace Cloud.Services
 					TenantId = a.TenantId,
 					TenantEmail = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.Email != null ? a.Tenant.User.Email : "",
 					TenantFirstName = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.FirstName != null ? a.Tenant.User.FirstName : "",
-					TenantLastName = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.LastName != null ? a.Tenant.User.LastName : ""
+					TenantLastName = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.LastName != null ? a.Tenant.User.LastName : "",
+					ListingAddress = a.Listing != null && a.Listing.Property != null && a.Listing.Property.Address != null ? a.Listing.Property.Address : ""
 				})
 				.OrderByDescending(a => a.ApplicationDate);
 
@@ -117,7 +118,8 @@ namespace Cloud.Services
 					TenantId = a.TenantId,
 					TenantEmail = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.Email != null ? a.Tenant.User.Email : "",
 					TenantFirstName = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.FirstName != null ? a.Tenant.User.FirstName : "",
-					TenantLastName = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.LastName != null ? a.Tenant.User.LastName : ""
+					TenantLastName = a.Tenant != null && a.Tenant.User != null && a.Tenant.User.LastName != null ? a.Tenant.User.LastName : "",
+					ListingAddress = a.Listing != null && a.Listing.Property != null && a.Listing.Property.Address != null ? a.Listing.Property.Address : ""
 				})
 				.FirstOrDefaultAsync(a => a.Id == id);
 

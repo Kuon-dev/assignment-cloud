@@ -1,4 +1,5 @@
 using Cloud.Models;
+using Cloud.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 
@@ -7,9 +8,9 @@ namespace Cloud.Services
 	public interface IUserService
 	{
 		Task<PropertyModel> GetRentedPropertyAsync(string userId);
-		Task<IEnumerable<RentPaymentModel>> GetPaymentHistoryAsync(string userId, int page, int size);
-		Task<IEnumerable<MaintenanceRequestModel>> GetMaintenanceRequestsAsync(string userId, int page, int size);
-		Task<IEnumerable<RentalApplicationModel>> GetApplicationsAsync(string userId, int page, int size);
+		Task<IEnumerable<RentPaymentResponseDto>> GetPaymentHistoryAsync(string userId);
+		Task<IEnumerable<MaintenanceRequestResponseDto>> GetMaintenanceRequestsAsync(string userId);
+		Task<IEnumerable<RentalApplicationDto>> GetApplicationsAsync(string userId);
 		Task<IdentityResult> UpdateUserAsync(UserModel user, UpdateUserDto updateUserDto);
 	}
 
@@ -77,18 +78,19 @@ namespace Cloud.Services
 			return lease.PropertyModel ?? throw new NotFoundException($"No property found for the active lease of user with ID {userId}");
 		}
 
-		public async Task<IEnumerable<RentPaymentModel>> GetPaymentHistoryAsync(string userId, int page, int size)
+		public async Task<IEnumerable<RentPaymentResponseDto>> GetPaymentHistoryAsync(string userId)
 		{
-			if (page < 1 || size < 1)
-			{
-				throw new BadRequestException("Page and size must be positive integers");
-			}
-
 			var payments = await _context.RentPayments
 				.Where(p => p.Tenant != null && p.Tenant.UserId == userId)
 				.OrderByDescending(p => p.CreatedAt)
-				.Skip((page - 1) * size)
-				.Take(size)
+				.Select(p => new RentPaymentResponseDto
+				{
+					Id = p.Id,
+					Amount = p.Amount,
+					Currency = p.Currency,
+					Status = p.Status,
+					PaymentDate = p.CreatedAt
+				})
 				.ToListAsync();
 
 			if (!payments.Any())
@@ -99,19 +101,20 @@ namespace Cloud.Services
 			return payments;
 		}
 
-		public async Task<IEnumerable<MaintenanceRequestModel>> GetMaintenanceRequestsAsync(string userId, int page, int size)
+		public async Task<IEnumerable<MaintenanceRequestResponseDto>> GetMaintenanceRequestsAsync(string userId)
 		{
-			if (page < 1 || size < 1)
-			{
-				throw new BadRequestException("Page and size must be positive integers");
-			}
-
 			var requests = await _context.MaintenanceRequests
 				.Include(m => m.Property)
 				.Where(m => m.Tenant != null && m.Tenant.UserId == userId)
 				.OrderByDescending(m => m.CreatedAt)
-				.Skip((page - 1) * size)
-				.Take(size)
+				.Select(m => new MaintenanceRequestResponseDto
+				{
+					Id = m.Id,
+					Description = m.Description,
+					Status = m.Status,
+					CreatedAt = m.CreatedAt,
+					PropertyAddress = m.Property != null ? m.Property.Address : null
+				})
 				.ToListAsync();
 
 			if (!requests.Any())
@@ -122,20 +125,29 @@ namespace Cloud.Services
 			return requests;
 		}
 
-		public async Task<IEnumerable<RentalApplicationModel>> GetApplicationsAsync(string userId, int page, int size)
+		public async Task<IEnumerable<RentalApplicationDto>> GetApplicationsAsync(string userId)
 		{
-			if (page < 1 || size < 1)
-			{
-				throw new BadRequestException("Page and size must be positive integers");
-			}
-
 			var applications = await _context.RentalApplications
+				.Include(a => a.Tenant)
+				.ThenInclude(t => t!.User)
 				.Include(a => a.Listing)
 				.ThenInclude(l => l!.Property)
 				.Where(a => a.Tenant != null && a.Tenant.UserId == userId)
 				.OrderByDescending(a => a.ApplicationDate)
-				.Skip((page - 1) * size)
-				.Take(size)
+				.Select(a => new RentalApplicationDto
+				{
+					Id = a.Id,
+					ApplicationDate = a.ApplicationDate,
+					Status = a.Status,
+					EmploymentInfo = a.EmploymentInfo,
+					References = a.References,
+					AdditionalNotes = a.AdditionalNotes,
+					TenantId = a.TenantId,
+					TenantFirstName = a.Tenant!.User!.FirstName,
+					TenantLastName = a.Tenant.User.LastName,
+					TenantEmail = a.Tenant.User.Email!,
+					ListingAddress = a.Listing != null && a.Listing.Property != null && a.Listing.Property.Address != null ? a.Listing.Property.Address : ""
+				})
 				.ToListAsync();
 
 			if (!applications.Any())
@@ -146,15 +158,14 @@ namespace Cloud.Services
 			return applications;
 		}
 
-
 		public async Task<IdentityResult> UpdateUserAsync(UserModel user, UpdateUserDto updateUserDto)
 		{
 			if (!string.IsNullOrWhiteSpace(updateUserDto.FirstName))
 				user.FirstName = updateUserDto.FirstName;
 			if (!string.IsNullOrWhiteSpace(updateUserDto.LastName))
 				user.LastName = updateUserDto.LastName;
-			if (!string.IsNullOrWhiteSpace(updateUserDto.Email))
-				user.Email = updateUserDto.Email;
+			/*if (!string.IsNullOrWhiteSpace(updateUserDto.Email))*/
+			/*    user.Email = updateUserDto.Email;*/
 			if (!string.IsNullOrWhiteSpace(updateUserDto.PhoneNumber))
 				user.PhoneNumber = updateUserDto.PhoneNumber;
 
@@ -179,4 +190,33 @@ namespace Cloud.Services
 		}
 	}
 
+	public class RentPaymentResponseDto
+	{
+		public Guid Id { get; set; }
+		public int Amount { get; set; }
+		public string Currency { get; set; } = string.Empty;
+		public PaymentStatus Status { get; set; }
+		public DateTime PaymentDate { get; set; }
+	}
+
+	public class MaintenanceRequestResponseDto
+	{
+		public Guid Id { get; set; }
+		public string Description { get; set; } = string.Empty;
+		public MaintenanceStatus Status { get; set; }
+		public string Priority { get; set; } = string.Empty;
+		public DateTime CreatedAt { get; set; }
+		public string? PropertyAddress { get; set; }
+	}
+
+	public class LeaseResponseDto
+	{
+		public Guid Id { get; set; }
+		public DateTime StartDate { get; set; }
+		public DateTime EndDate { get; set; }
+		public decimal RentAmount { get; set; }
+		public decimal SecurityDeposit { get; set; }
+		public bool IsActive { get; set; }
+		public string PropertyAddress { get; set; } = string.Empty;
+	}
 }
