@@ -43,6 +43,25 @@ namespace Cloud.Services
 				.FirstOrDefaultAsync();
 		}
 
+		public async Task<UserInfoDto?> GetUserInfoAsync(String email)
+		{
+			return await _context.Users
+				.Where(u => u.Email == email && !u.IsDeleted)
+				.Select(u => new UserInfoDto
+				{
+					Id = Guid.Parse(u.Id),
+					FirstName = u.FirstName,
+					LastName = u.LastName,
+					Role = u.Role,
+					IsVerified = u.IsVerified,
+					ProfilePictureUrl = u.ProfilePictureUrl,
+					Owner = u.Owner != null ? new OwnerInfoDto { Id = u.Owner.Id } : null,
+					Tenant = u.Tenant != null ? new TenantInfoDto { Id = u.Tenant.Id } : null,
+					Admin = u.Admin != null ? new AdminInfoDto { Id = u.Admin.Id } : null
+				})
+				.FirstOrDefaultAsync();
+		}
+
 		public async Task<PropertyModel> GetRentedPropertyAsync(string userId)
 		{
 			var lease = await _context.Leases
