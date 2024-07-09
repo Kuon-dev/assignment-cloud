@@ -60,7 +60,8 @@ namespace Cloud.Services
 					ImageUrls = l.Property!.ImageUrls,
 					Location = $"{l.Property!.Address}, {l.Property.City}, {l.Property.State} {l.Property.ZipCode}",
 					Bedrooms = l.Property.Bedrooms,
-					Bathrooms = l.Property.Bathrooms
+					Bathrooms = l.Property.Bathrooms,
+					Amenities = l.Property.Amenities
 				})
 				.ToListAsync();
 
