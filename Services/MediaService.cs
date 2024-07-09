@@ -22,19 +22,17 @@ namespace Cloud.Services
 	public class MediaService : IMediaService
 	{
 		private readonly ApplicationDbContext _context;
-		private readonly S3Service _s3Service;
-		private readonly CreateMediaDtoValidator _validator;
+		private readonly IS3Service _s3Service;
 
 		/// <summary>
 		/// Initializes a new instance of the MediaService class
 		/// </summary>
 		/// <param name="context">The database context</param>
 		/// <param name="s3Service">The S3 service for file operations</param>
-		public MediaService(ApplicationDbContext context, S3Service s3Service, CreateMediaDtoValidator validator)
+		public MediaService(ApplicationDbContext context, IS3Service s3Service)
 		{
 			_context = context;
 			_s3Service = s3Service;
-			_validator = new CreateMediaDtoValidator();
 		}
 
 		/// <summary>
@@ -47,6 +45,7 @@ namespace Cloud.Services
 		{
 			try
 			{
+				var _validator = new CreateMediaDtoValidator();
 				_validator.ValidateMedia(createMediaDto);
 				var file = createMediaDto.File;
 				var fileName = string.IsNullOrEmpty(createMediaDto.CustomFileName)
@@ -111,6 +110,15 @@ namespace Cloud.Services
 				.ToListAsync();
 
 			return media.Select(MapToDto).ToList();
+		}
+
+		// get media by path
+		public async Task<MediaDto?> GetMediaByPathAsync(string path, string userId)
+		{
+			var media = await _context.Medias
+				.FirstOrDefaultAsync(m => m.FilePath == path && m.UserId == userId);
+
+			return media != null ? MapToDto(media) : null;
 		}
 
 		/// <summary>

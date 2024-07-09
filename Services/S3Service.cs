@@ -1,97 +1,147 @@
-// File: S3Service.cs
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
-// using Microsoft.Extensions.Configuration;
-// using System.IO;
-// using System.Threading.Tasks;
 
-public class S3Service
+namespace Cloud.Services
 {
-	private readonly IAmazonS3 _s3Client;
-	private readonly string? _bucketName;
-
-	public S3Service(IConfiguration configuration)
+	/// <summary>
+	/// Interface for S3 service operations
+	/// </summary>
+	public interface IS3Service
 	{
-		_bucketName = configuration["AWS:BucketName"];
-		if (string.IsNullOrEmpty(_bucketName))
-		{
-			throw new ArgumentException("AWS:BucketName configuration value is required.");
-		}
+		/// <summary>
+		/// Uploads a file to S3
+		/// </summary>
+		/// <param name="inputStream">The input stream of the file</param>
+		/// <param name="fileName">The name of the file</param>
+		/// <param name="contentType">The content type of the file</param>
+		/// <returns>The URL of the uploaded file</returns>
+		Task<string> UploadFileAsync(Stream inputStream, string fileName, string contentType = "image/jpeg");
 
-		var regionName = configuration["AWS:Region"];
-		if (string.IsNullOrEmpty(regionName))
-		{
-			throw new ArgumentException("AWS:Region configuration value is required.");
-		}
+		/// <summary>
+		/// Gets a file from S3
+		/// </summary>
+		/// <param name="fileName">The name of the file to retrieve</param>
+		/// <returns>The S3 object response</returns>
+		Task<GetObjectResponse> GetFileAsync(string fileName);
 
-		var region = RegionEndpoint.GetBySystemName(regionName);
-		_s3Client = new AmazonS3Client(region);
+		/// <summary>
+		/// Updates an existing file in S3
+		/// </summary>
+		/// <param name="inputStream">The input stream of the updated file</param>
+		/// <param name="fileName">The name of the file to update</param>
+		/// <param name="contentType">The content type of the file</param>
+		/// <returns>True if the update was successful, false otherwise</returns>
+		Task<bool> UpdateFileAsync(Stream inputStream, string fileName, string contentType = "image/jpeg");
+
+		/// <summary>
+		/// Deletes a file from S3
+		/// </summary>
+		/// <param name="fileName">The name of the file to delete</param>
+		/// <returns>True if the deletion was successful, false otherwise</returns>
+		Task<bool> DeleteFileAsync(string fileName);
 	}
 
-	public async Task<string> UploadFileAsync(Stream inputStream, string fileName, string contentType = "image/jpeg")
+	/// <summary>
+	/// Service for interacting with Amazon S3
+	/// </summary>
+	public class S3Service : IS3Service
 	{
-		if (_bucketName == null)
+		private readonly IAmazonS3 _s3Client;
+		private readonly string? _bucketName;
+
+		/// <summary>
+		/// Initializes a new instance of the S3Service
+		/// </summary>
+		/// <param name="configuration">The configuration to use for S3 settings</param>
+		public S3Service(IConfiguration configuration)
 		{
-			throw new InvalidOperationException("Bucket name is not set.");
+			_bucketName = configuration["AWS:BucketName"];
+			if (string.IsNullOrEmpty(_bucketName))
+			{
+				throw new ArgumentException("AWS:BucketName configuration value is required.");
+			}
+
+			var regionName = configuration["AWS:Region"];
+			if (string.IsNullOrEmpty(regionName))
+			{
+				throw new ArgumentException("AWS:Region configuration value is required.");
+			}
+
+			var region = RegionEndpoint.GetBySystemName(regionName);
+			_s3Client = new AmazonS3Client(region);
 		}
 
-		var fileTransferUtility = new TransferUtility(_s3Client);
-
-		var fileTransferUtilityRequest = new TransferUtilityUploadRequest
+		/// <inheritdoc/>
+		public async Task<string> UploadFileAsync(Stream inputStream, string fileName, string contentType = "image/jpeg")
 		{
-			InputStream = inputStream,
-			Key = fileName,
-			BucketName = _bucketName,
-			ContentType = contentType
-		};
+			if (_bucketName == null)
+			{
+				throw new InvalidOperationException("Bucket name is not set.");
+			}
 
-		await fileTransferUtility.UploadAsync(fileTransferUtilityRequest);
-		return $"https://{_bucketName}.s3.{_s3Client.Config.RegionEndpoint.SystemName}.amazonaws.com/{fileName}";
-	}
+			var fileTransferUtility = new TransferUtility(_s3Client);
+			var fileTransferUtilityRequest = new TransferUtilityUploadRequest
+			{
+				InputStream = inputStream,
+				Key = fileName,
+				BucketName = _bucketName,
+				ContentType = contentType
+			};
 
-	public async Task<GetObjectResponse> GetFileAsync(string fileName)
-	{
-		if (_bucketName == null)
-		{
-			throw new InvalidOperationException("Bucket name is not set.");
+			await fileTransferUtility.UploadAsync(fileTransferUtilityRequest);
+			return $"https://{_bucketName}.s3.{_s3Client.Config.RegionEndpoint.SystemName}.amazonaws.com/{fileName}";
 		}
 
-		var request = new GetObjectRequest
+		/// <inheritdoc/>
+		public async Task<GetObjectResponse> GetFileAsync(string fileName)
 		{
-			BucketName = _bucketName,
-			Key = fileName
-		};
+			if (_bucketName == null)
+			{
+				throw new InvalidOperationException("Bucket name is not set.");
+			}
 
-		return await _s3Client.GetObjectAsync(request);
-	}
+			var request = new GetObjectRequest
+			{
+				BucketName = _bucketName,
+				Key = fileName
+			};
 
-	public async Task<bool> UpdateFileAsync(Stream inputStream, string fileName, string contentType = "image/jpeg")
-	{
-		var existingFile = await GetFileAsync(fileName);
-		if (existingFile == null)
-		{
-			return false;
-		}
-		await UploadFileAsync(inputStream, fileName, contentType);
-		return true;
-	}
-
-	public async Task<bool> DeleteFileAsync(string fileName)
-	{
-		if (_bucketName == null)
-		{
-			throw new InvalidOperationException("Bucket name is not set.");
+			return await _s3Client.GetObjectAsync(request);
 		}
 
-		var deleteObjectRequest = new DeleteObjectRequest
+		/// <inheritdoc/>
+		public async Task<bool> UpdateFileAsync(Stream inputStream, string fileName, string contentType = "image/jpeg")
 		{
-			BucketName = _bucketName,
-			Key = fileName
-		};
+			try
+			{
+				var existingFile = await GetFileAsync(fileName);
+				await UploadFileAsync(inputStream, fileName, contentType);
+				return true;
+			}
+			catch (AmazonS3Exception)
+			{
+				return false;
+			}
+		}
 
-		var response = await _s3Client.DeleteObjectAsync(deleteObjectRequest);
-		return response.HttpStatusCode == System.Net.HttpStatusCode.NoContent;
+		/// <inheritdoc/>
+		public async Task<bool> DeleteFileAsync(string fileName)
+		{
+			if (_bucketName == null)
+			{
+				throw new InvalidOperationException("Bucket name is not set.");
+			}
+
+			var deleteObjectRequest = new DeleteObjectRequest
+			{
+				BucketName = _bucketName,
+				Key = fileName
+			};
+
+			var response = await _s3Client.DeleteObjectAsync(deleteObjectRequest);
+			return response.HttpStatusCode == System.Net.HttpStatusCode.NoContent;
+		}
 	}
 }

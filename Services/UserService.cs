@@ -1,5 +1,6 @@
 using Cloud.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace Cloud.Services
 {
@@ -9,15 +10,18 @@ namespace Cloud.Services
 		Task<IEnumerable<RentPaymentModel>> GetPaymentHistoryAsync(string userId, int page, int size);
 		Task<IEnumerable<MaintenanceRequestModel>> GetMaintenanceRequestsAsync(string userId, int page, int size);
 		Task<IEnumerable<RentalApplicationModel>> GetApplicationsAsync(string userId, int page, int size);
+		Task<IdentityResult> UpdateUserAsync(UserModel user, UpdateUserDto updateUserDto);
 	}
 
 	public class UserService : IUserService
 	{
 		private readonly ApplicationDbContext _context;
+		private readonly UserManager<UserModel> _userManager;
 
-		public UserService(ApplicationDbContext context)
+		public UserService(ApplicationDbContext context, UserManager<UserModel> userManager)
 		{
 			_context = context;
+			_userManager = userManager;
 		}
 
 		public async Task<UserInfoDto?> GetUserInfoAsync(Guid userId)
@@ -39,6 +43,24 @@ namespace Cloud.Services
 				.FirstOrDefaultAsync();
 		}
 
+		public async Task<UserInfoDto?> GetUserInfoAsync(String email)
+		{
+			return await _context.Users
+				.Where(u => u.Email == email && !u.IsDeleted)
+				.Select(u => new UserInfoDto
+				{
+					Id = Guid.Parse(u.Id),
+					FirstName = u.FirstName,
+					LastName = u.LastName,
+					Role = u.Role,
+					IsVerified = u.IsVerified,
+					ProfilePictureUrl = u.ProfilePictureUrl,
+					Owner = u.Owner != null ? new OwnerInfoDto { Id = u.Owner.Id } : null,
+					Tenant = u.Tenant != null ? new TenantInfoDto { Id = u.Tenant.Id } : null,
+					Admin = u.Admin != null ? new AdminInfoDto { Id = u.Admin.Id } : null
+				})
+				.FirstOrDefaultAsync();
+		}
 
 		public async Task<PropertyModel> GetRentedPropertyAsync(string userId)
 		{
@@ -123,5 +145,38 @@ namespace Cloud.Services
 
 			return applications;
 		}
+
+
+		public async Task<IdentityResult> UpdateUserAsync(UserModel user, UpdateUserDto updateUserDto)
+		{
+			if (!string.IsNullOrWhiteSpace(updateUserDto.FirstName))
+				user.FirstName = updateUserDto.FirstName;
+			if (!string.IsNullOrWhiteSpace(updateUserDto.LastName))
+				user.LastName = updateUserDto.LastName;
+			if (!string.IsNullOrWhiteSpace(updateUserDto.Email))
+				user.Email = updateUserDto.Email;
+			if (!string.IsNullOrWhiteSpace(updateUserDto.PhoneNumber))
+				user.PhoneNumber = updateUserDto.PhoneNumber;
+
+			user.UpdatedAt = DateTime.UtcNow;
+
+			var result = await _userManager.UpdateAsync(user);
+
+			if (result.Succeeded && !string.IsNullOrEmpty(updateUserDto.CurrentPassword) && !string.IsNullOrEmpty(updateUserDto.NewPassword))
+			{
+				var passwordCheck = await _userManager.CheckPasswordAsync(user, updateUserDto.CurrentPassword);
+				if (passwordCheck)
+				{
+					result = await _userManager.ChangePasswordAsync(user, updateUserDto.CurrentPassword, updateUserDto.NewPassword);
+				}
+				else
+				{
+					result = IdentityResult.Failed(new IdentityError { Description = "Current password is incorrect." });
+				}
+			}
+
+			return result;
+		}
 	}
+
 }

@@ -13,6 +13,8 @@ public class DataSeeder
 	private readonly PropertyFactory _propertyFactory;
 	private readonly ListingFactory _listingFactory;
 	private readonly RentalApplicationFactory _rentalApplicationFactory;
+	private readonly LeaseFactory _leaseFactory;
+	private readonly MaintenanceFactory _maintenanceFactory;
 
 	public DataSeeder(
 		IServiceProvider serviceProvider,
@@ -22,8 +24,9 @@ public class DataSeeder
 		UserFactory userFactory,
 		PropertyFactory propertyFactory,
 		ListingFactory listingFactory,
-		RentalApplicationFactory rentalApplicationFactory
-	  )
+		RentalApplicationFactory rentalApplicationFactory,
+		LeaseFactory leaseFactory,
+		MaintenanceFactory maintenanceFactory)
 	{
 		_serviceProvider = serviceProvider;
 		_dbContext = dbContext;
@@ -33,6 +36,8 @@ public class DataSeeder
 		_propertyFactory = propertyFactory;
 		_listingFactory = listingFactory;
 		_rentalApplicationFactory = rentalApplicationFactory;
+		_leaseFactory = leaseFactory;
+		_maintenanceFactory = maintenanceFactory;
 	}
 
 	public async Task SeedAsync()
@@ -49,6 +54,8 @@ public class DataSeeder
 		await SeedPropertiesAsync();
 		await SeedListingsAsync();
 		await SeedRentalApplicationsAsync();
+		await SeedLeasesAsync();
+		await SeedMaintenanceRequestsAndTasksAsync(); // Add call to seed maintenance requests and tasks
 	}
 
 	private async Task SeedRolesAsync()
@@ -81,12 +88,11 @@ public class DataSeeder
 				.Include(u => u.Owner)
 				.Where(u => u.Role == UserRole.Owner && u.Owner != null)
 				.Select(u => u.Owner)
-				.Where(o => o != null) // Filter out null owners here
+				.Where(o => o != null)
 				.ToListAsync();
 
 			if (owners.Count > 0)
 			{
-				// Now 'owners' is of type List<OwnerModel> (non-nullable)
 				await SeedPropertiesForOwnersAsync(owners, 50);
 			}
 			else
@@ -153,4 +159,19 @@ public class DataSeeder
 		}
 	}
 
+	private async Task SeedLeasesAsync()
+	{
+		if (!await _dbContext.Leases.AnyAsync())
+		{
+			await _leaseFactory.SeedLeasesAsync(50);
+		}
+	}
+
+	private async Task SeedMaintenanceRequestsAndTasksAsync()
+	{
+		if (!await _dbContext.MaintenanceRequests.AnyAsync())
+		{
+			await _maintenanceFactory.SeedRequestsAndTasksAsync(50);
+		}
+	}
 }

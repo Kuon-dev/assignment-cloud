@@ -3,7 +3,7 @@ using Cloud.Models;
 using Cloud.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Cloud.Filters;
+/*using Cloud.Filters;*/
 /*using Cloud.Exceptions;*/
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -20,14 +20,14 @@ namespace Cloud.Controllers
 		private readonly IPropertyService _propertyService;
 		private readonly ILogger<PropertyController> _logger;
 		private readonly ApplicationDbContext _context;
-		private readonly S3Service _s3Service;
+		private readonly IMediaService _mediaService;
 
-		public PropertyController(IPropertyService propertyService, ILogger<PropertyController> logger, ApplicationDbContext context, S3Service s3Service)
+		public PropertyController(IPropertyService propertyService, ILogger<PropertyController> logger, ApplicationDbContext context, IMediaService mediaService)
 		{
 			_propertyService = propertyService;
 			_logger = logger;
 			_context = context;
-			_s3Service = s3Service;
+			_mediaService = mediaService;
 		}
 
 		[HttpPost]
@@ -177,7 +177,7 @@ namespace Cloud.Controllers
 
 		[HttpPost("upload-images")]
 		[Authorize(Roles = "Owner,Admin")]
-		public async Task<ActionResult<List<string>>> UploadImages(List<IFormFile> images)
+		public async Task<ActionResult> UploadImages(List<IFormFile> images)
 		{
 			try
 			{
@@ -186,24 +186,21 @@ namespace Cloud.Controllers
 				if (userId == null)
 					return Unauthorized();
 
-				var uploadedUrls = new List<string>();
 
 				foreach (var image in images)
 				{
 					if (image.Length > 0)
 					{
-						_logger.LogInformation("Uploading image: {ImageName}", image.FileName);
-						var fileName = $"properties/{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
-
-						using (var stream = image.OpenReadStream())
+						// convert to media dto
+						var mediaDto = new CreateMediaDto
 						{
-							var url = await _s3Service.UploadFileAsync(stream, fileName, image.ContentType);
-							uploadedUrls.Add(url);
-						}
+							File = image,
+						};
+						var imageUrl = await _mediaService.CreateMediaAsync(mediaDto, userId);
+						/*uploadedUrls.Add(imageUrl);	*/
 					}
 				}
-
-				return Ok(uploadedUrls);
+				return Ok("Images uploaded successfully");
 			}
 			catch (Exception ex)
 			{
