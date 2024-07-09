@@ -114,20 +114,6 @@ builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddScoped<ApiExceptionFilter>();
 builder.Services.AddScoped<PaymentIntentService>();
 
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IListingService, ListingService>();
-builder.Services.AddScoped<IRentalApplicationService, RentalApplicationService>();
-builder.Services.AddScoped<IPropertyService, PropertyService>();
-builder.Services.AddScoped<ILeaseService, LeaseService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
-builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
-builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
-builder.Services.AddScoped<IStripeCustomerService, StripeCustomerService>();
-builder.Services.AddScoped<IMediaService, MediaService>();
-builder.Services.AddScoped<IAdminService, AdminService>();
-
 builder.Services.AddScoped<PropertyFactory>();
 builder.Services.AddScoped<LeaseFactory>();
 builder.Services.AddScoped<UserFactory>();
@@ -147,6 +133,20 @@ builder.Services.AddScoped<OwnerPaymentValidator>();
 builder.Services.AddScoped<StripeCustomerValidator>();
 builder.Services.AddScoped<CreateMediaDtoValidator>();
 builder.Services.AddScoped<UserValidator>();
+
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IListingService, ListingService>();
+builder.Services.AddScoped<IRentalApplicationService, RentalApplicationService>();
+builder.Services.AddScoped<IPropertyService, PropertyService>();
+builder.Services.AddScoped<ILeaseService, LeaseService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
+builder.Services.AddScoped<IStripeCustomerService, StripeCustomerService>();
+builder.Services.AddScoped<IMediaService, MediaService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ?? throw new InvalidOperationException("Stripe secret key not found.");
 

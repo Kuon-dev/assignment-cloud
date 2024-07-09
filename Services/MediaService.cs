@@ -23,18 +23,16 @@ namespace Cloud.Services
 	{
 		private readonly ApplicationDbContext _context;
 		private readonly S3Service _s3Service;
-		private readonly CreateMediaDtoValidator _validator;
 
 		/// <summary>
 		/// Initializes a new instance of the MediaService class
 		/// </summary>
 		/// <param name="context">The database context</param>
 		/// <param name="s3Service">The S3 service for file operations</param>
-		public MediaService(ApplicationDbContext context, S3Service s3Service, CreateMediaDtoValidator validator)
+		public MediaService(ApplicationDbContext context, S3Service s3Service)
 		{
 			_context = context;
 			_s3Service = s3Service;
-			_validator = new CreateMediaDtoValidator();
 		}
 
 		/// <summary>
@@ -47,6 +45,7 @@ namespace Cloud.Services
 		{
 			try
 			{
+				var _validator = new CreateMediaDtoValidator();
 				_validator.ValidateMedia(createMediaDto);
 				var file = createMediaDto.File;
 				var fileName = string.IsNullOrEmpty(createMediaDto.CustomFileName)
