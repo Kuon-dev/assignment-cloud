@@ -22,14 +22,14 @@ namespace Cloud.Services
 	public class MediaService : IMediaService
 	{
 		private readonly ApplicationDbContext _context;
-		private readonly S3Service _s3Service;
+		private readonly IS3Service _s3Service;
 
 		/// <summary>
 		/// Initializes a new instance of the MediaService class
 		/// </summary>
 		/// <param name="context">The database context</param>
 		/// <param name="s3Service">The S3 service for file operations</param>
-		public MediaService(ApplicationDbContext context, S3Service s3Service)
+		public MediaService(ApplicationDbContext context, IS3Service s3Service)
 		{
 			_context = context;
 			_s3Service = s3Service;

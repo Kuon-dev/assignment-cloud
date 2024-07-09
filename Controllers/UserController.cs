@@ -15,18 +15,15 @@ namespace Cloud.Controllers
 	{
 		private readonly ApplicationDbContext _context;
 		private readonly IUserService _userService;
-		private readonly S3Service _s3Service;
+		private readonly IS3Service _s3Service;
 
-		public UserController(ApplicationDbContext context, IUserService userService, S3Service s3Service)
+		public UserController(ApplicationDbContext context, IUserService userService, IS3Service s3Service)
 		{
 			_context = context;
 			_userService = userService;
 			_s3Service = s3Service;
 		}
 
-		/// <summary>
-		/// Get all users with pagination.
-		/// </summary>
 		[HttpGet]
 		[Authorize(Roles = "Admin")]
 		public async Task<ActionResult<IEnumerable<UserInfoDto>>> GetUsers([FromQuery] int page = 1, [FromQuery] int size = 10)
@@ -62,9 +59,6 @@ namespace Cloud.Controllers
 			return Ok(users);
 		}
 
-		/// <summary>
-		/// Get a specific user by ID.
-		/// </summary>
 		[HttpGet("{id}")]
 		public async Task<ActionResult<UserInfoDto>> GetUser(string id)
 		{
@@ -92,9 +86,6 @@ namespace Cloud.Controllers
 			return user;
 		}
 
-		/// <summary>
-		/// Create a new user.
-		/// </summary>
 		[HttpPost]
 		[Authorize(Roles = "Admin")]
 		public async Task<ActionResult<UserInfoDto>> CreateUser(UserModel user)
@@ -122,9 +113,6 @@ namespace Cloud.Controllers
 			return CreatedAtAction(nameof(GetUser), new { id = user.Id }, createdUser);
 		}
 
-		/// <summary>
-		/// Update an existing user.
-		/// </summary>
 		[HttpPut("{id}")]
 		public async Task<IActionResult> UpdateUser(string id, UserModel user)
 		{
@@ -155,9 +143,6 @@ namespace Cloud.Controllers
 			return NoContent();
 		}
 
-		/// <summary>
-		/// Soft delete a user.
-		/// </summary>
 		[HttpDelete("{id}")]
 		[Authorize(Roles = "Admin")]
 		public async Task<IActionResult> DeleteUser(string id)
@@ -175,9 +160,6 @@ namespace Cloud.Controllers
 			return NoContent();
 		}
 
-		/// <summary>
-		/// Get a specific user by email.
-		/// </summary>
 		[HttpGet("email/{email}")]
 		public async Task<ActionResult<UserInfoDto>> GetUserByEmail(string email)
 		{
@@ -205,12 +187,74 @@ namespace Cloud.Controllers
 			return user;
 		}
 
-		// Other methods (GetRentedProperty, GetPaymentHistory, GetMaintenanceRequests, GetApplications)
-		// should be updated in the IUserService interface and its implementation to return appropriate DTOs.
+		[HttpGet("{id}/rented-property")]
+		public async Task<ActionResult<PropertyModel>> GetRentedProperty(string id)
+		{
+			try
+			{
+				var rentedProperty = await _userService.GetRentedPropertyAsync(id);
+				return Ok(rentedProperty);
+			}
+			catch (NotFoundException ex)
+			{
+				return NotFound(ex.Message);
+			}
+		}
 
-		/// <summary>
-		/// Upload a profile picture for a user
-		/// </summary>
+		[HttpGet("{id}/payment-history")]
+		public async Task<ActionResult<IEnumerable<RentPaymentModel>>> GetPaymentHistory(string id, [FromQuery] int page = 1, [FromQuery] int size = 10)
+		{
+			try
+			{
+				var paymentHistory = await _userService.GetPaymentHistoryAsync(id, page, size);
+				return Ok(paymentHistory);
+			}
+			catch (BadRequestException ex)
+			{
+				return BadRequest(ex.Message);
+			}
+			catch (NotFoundException ex)
+			{
+				return NotFound(ex.Message);
+			}
+		}
+
+		[HttpGet("{id}/maintenance-requests")]
+		public async Task<ActionResult<IEnumerable<MaintenanceRequestModel>>> GetMaintenanceRequests(string id, [FromQuery] int page = 1, [FromQuery] int size = 10)
+		{
+			try
+			{
+				var maintenanceRequests = await _userService.GetMaintenanceRequestsAsync(id, page, size);
+				return Ok(maintenanceRequests);
+			}
+			catch (BadRequestException ex)
+			{
+				return BadRequest(ex.Message);
+			}
+			catch (NotFoundException ex)
+			{
+				return NotFound(ex.Message);
+			}
+		}
+
+		[HttpGet("{id}/applications")]
+		public async Task<ActionResult<IEnumerable<RentalApplicationModel>>> GetApplications(string id, [FromQuery] int page = 1, [FromQuery] int size = 10)
+		{
+			try
+			{
+				var applications = await _userService.GetApplicationsAsync(id, page, size);
+				return Ok(applications);
+			}
+			catch (BadRequestException ex)
+			{
+				return BadRequest(ex.Message);
+			}
+			catch (NotFoundException ex)
+			{
+				return NotFound(ex.Message);
+			}
+		}
+
 		[HttpPost("{id}/profile-picture")]
 		public async Task<IActionResult> UploadProfilePicture(string id, IFormFile file)
 		{
@@ -225,7 +269,6 @@ namespace Cloud.Controllers
 				return BadRequest("No file uploaded");
 			}
 
-			// Generate a unique file name
 			var fileName = $"profile-pictures/{id}/{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
 
 			try
@@ -247,9 +290,6 @@ namespace Cloud.Controllers
 			}
 		}
 
-		/// <summary>
-		/// Get the current user profile based on the JWT token.
-		/// </summary>
 		[HttpGet("profile")]
 		public async Task<ActionResult<UserInfoDto>> GetCurrentUserProfile()
 		{

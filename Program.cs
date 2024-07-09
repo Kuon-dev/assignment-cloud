@@ -109,7 +109,7 @@ builder.Services.AddCors(options =>
 // Add logging
 builder.Services.AddLogging();
 
-builder.Services.AddSingleton<S3Service>();
+/*builder.Services.AddSingleton<S3Service>();*/
 builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddScoped<ApiExceptionFilter>();
 builder.Services.AddScoped<PaymentIntentService>();
@@ -135,6 +135,7 @@ builder.Services.AddScoped<CreateMediaDtoValidator>();
 builder.Services.AddScoped<UserValidator>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IS3Service, S3Service>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IListingService, ListingService>();
 builder.Services.AddScoped<IRentalApplicationService, RentalApplicationService>();

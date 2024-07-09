@@ -26,7 +26,7 @@ namespace Cloud.Services
 	public class RentalApplicationService : IRentalApplicationService
 	{
 		private readonly ApplicationDbContext _context;
-		private readonly S3Service _s3Service;
+		private readonly IS3Service _s3Service;
 		private readonly RentalApplicationFactory _applicationFactory;
 		private readonly RentalApplicationValidator _applicationValidator;
 
@@ -39,7 +39,7 @@ namespace Cloud.Services
 		/// <param name="applicationValidator">The validator for rental applications.</param>
 		public RentalApplicationService(
 			ApplicationDbContext context,
-			S3Service s3Service,
+			IS3Service s3Service,
 			RentalApplicationFactory applicationFactory,
 			RentalApplicationValidator applicationValidator)
 		{

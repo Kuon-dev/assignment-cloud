@@ -5,10 +5,12 @@ import { join } from 'path';
 import { fileURLToPath } from 'url';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+//const HOST_URL = 'https://100.29.48.143';
+const HOST_URL = 'http://localhost:5266';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 // Configuration
-const API_URL = 'https://100.29.48.143/api/property/upload-images'; // Replace with your API URL
+const API_URL = `${HOST_URL}/api/property/upload-images`; // Replace with your API URL
 const TEMP_FOLDER: string = join(__dirname, './temp');
 
 async function uploadImages() {
@@ -27,7 +29,7 @@ async function uploadImages() {
       }
     });
 
-    const login = await axios.post('https://100.29.48.143/api/auth/login', {
+    const login = await axios.post(`${HOST_URL}/api/auth/login`, {
         email: 'admin@example.com',
         password: 'Password123!'
     });

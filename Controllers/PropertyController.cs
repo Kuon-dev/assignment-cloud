@@ -20,15 +20,13 @@ namespace Cloud.Controllers
 		private readonly IPropertyService _propertyService;
 		private readonly ILogger<PropertyController> _logger;
 		private readonly ApplicationDbContext _context;
-		private readonly S3Service _s3Service;
-		private readonly MediaService _mediaService;
+		private readonly IMediaService _mediaService;
 
-		public PropertyController(IPropertyService propertyService, ILogger<PropertyController> logger, ApplicationDbContext context, S3Service s3Service, MediaService mediaService)
+		public PropertyController(IPropertyService propertyService, ILogger<PropertyController> logger, ApplicationDbContext context, IMediaService mediaService)
 		{
 			_propertyService = propertyService;
 			_logger = logger;
 			_context = context;
-			_s3Service = s3Service;
 			_mediaService = mediaService;
 		}
 

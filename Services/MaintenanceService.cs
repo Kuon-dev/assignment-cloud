@@ -36,7 +36,7 @@ namespace Cloud.Services
 		private readonly MaintenanceFactory _maintenanceFactory;
 		private readonly MaintenanceRequestValidator _requestValidator;
 		private readonly MaintenanceTaskValidator _taskValidator;
-		private readonly S3Service _s3Service;
+		private readonly IS3Service _s3Service;
 
 		/// <summary>
 		/// Initializes a new instance of the MaintenanceService class.
@@ -46,7 +46,7 @@ namespace Cloud.Services
 			MaintenanceFactory maintenanceFactory,
 			MaintenanceRequestValidator requestValidator,
 			MaintenanceTaskValidator taskValidator,
-			S3Service s3Service)
+			IS3Service s3Service)
 		{
 			_dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 			_maintenanceFactory = maintenanceFactory ?? throw new ArgumentNullException(nameof(maintenanceFactory));
