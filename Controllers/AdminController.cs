@@ -6,7 +6,7 @@ using Cloud.Models;
 using Cloud.Services;
 using Cloud.Filters;
 using Cloud.Models.DTO;
-using System.Security.Claims;
+/*using System.Security.Claims;*/
 
 namespace Cloud.Controllers
 {
