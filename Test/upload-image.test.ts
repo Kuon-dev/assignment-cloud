@@ -5,8 +5,8 @@ import { join } from 'path';
 import { fileURLToPath } from 'url';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-//const HOST_URL = 'https://100.29.48.143';
-const HOST_URL = 'http://localhost:5266';
+const HOST_URL = 'https://100.29.48.143';
+//const HOST_URL = 'http://localhost:5266';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 // Configuration
