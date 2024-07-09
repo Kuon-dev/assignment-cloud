@@ -16,7 +16,7 @@ namespace Cloud.Models.DTO
 		public Guid Id { get; set; }
 		public string UserId { get; set; } = string.Empty;
 		public UserInfoDto UserInfo { get; set; } = null!;
-		public ICollection<PropertyModel>? Properties { get; set; }
+		public ICollection<PropertyDto>? Properties { get; set; }
 	}
 
 	/// <summary>
@@ -90,7 +90,6 @@ namespace Cloud.Services
 						ProfilePictureUrl = o.User!.ProfilePictureUrl,
 						Owner = new OwnerInfoDto { Id = o.Id }
 					},
-					Properties = o.Properties
 				});
 
 			var totalCount = await query.CountAsync();
@@ -139,7 +138,27 @@ namespace Cloud.Services
 					ProfilePictureUrl = owner.User!.ProfilePictureUrl,
 					Owner = new OwnerInfoDto { Id = owner.Id }
 				},
-				Properties = owner.Properties
+				Properties = owner.Properties == null ? new List<PropertyDto>() : owner.Properties.Select(p => new PropertyDto
+				{
+					Id = p.Id,
+					Description = p.Description,
+					OwnerId = p.OwnerId,
+					ImageUrls = p.ImageUrls,
+					Address = p.Address,
+					City = p.City,
+					State = p.State,
+					ZipCode = p.ZipCode,
+					PropertyType = p.PropertyType,
+					Bedrooms = p.Bedrooms,
+					Bathrooms = p.Bathrooms,
+					RentAmount = p.RentAmount,
+					Amenities = p.Amenities,
+					IsAvailable = p.IsAvailable,
+					RoomType = p.RoomType,
+					CreatedAt = p.CreatedAt,
+					UpdatedAt = p.UpdatedAt
+				}).ToList()
+
 			};
 		}
 
@@ -183,7 +202,26 @@ namespace Cloud.Services
 					ProfilePictureUrl = user.ProfilePictureUrl,
 					Owner = new OwnerInfoDto { Id = owner.Id }
 				},
-				Properties = new List<PropertyModel>()
+				Properties = owner.Properties == null ? new List<PropertyDto>() : owner.Properties.Select(p => new PropertyDto
+				{
+					Id = p.Id,
+					Description = p.Description,
+					OwnerId = p.OwnerId,
+					ImageUrls = p.ImageUrls,
+					Address = p.Address,
+					City = p.City,
+					State = p.State,
+					ZipCode = p.ZipCode,
+					PropertyType = p.PropertyType,
+					Bedrooms = p.Bedrooms,
+					Bathrooms = p.Bathrooms,
+					RentAmount = p.RentAmount,
+					Amenities = p.Amenities,
+					IsAvailable = p.IsAvailable,
+					RoomType = p.RoomType,
+					CreatedAt = p.CreatedAt,
+					UpdatedAt = p.UpdatedAt
+				}).ToList()
 			};
 		}
 
@@ -226,7 +264,6 @@ namespace Cloud.Services
 					ProfilePictureUrl = owner.User!.ProfilePictureUrl,
 					Owner = new OwnerInfoDto { Id = owner.Id }
 				},
-				Properties = owner.Properties
 			};
 		}
 
