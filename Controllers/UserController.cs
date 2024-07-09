@@ -48,7 +48,7 @@ namespace Cloud.Controllers
 		}
 
 		[HttpGet("payment-history")]
-		public async Task<ActionResult<IEnumerable<RentPaymentModel>>> GetPaymentHistory([FromQuery] int page = 1, [FromQuery] int size = 10)
+		public async Task<ActionResult<IEnumerable<RentPaymentModel>>> GetPaymentHistory()
 		{
 			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (userId == null)
@@ -58,7 +58,7 @@ namespace Cloud.Controllers
 
 			try
 			{
-				var paymentHistory = await _userService.GetPaymentHistoryAsync(userId, page, size);
+				var paymentHistory = await _userService.GetPaymentHistoryAsync(userId);
 				return Ok(paymentHistory);
 			}
 			catch (BadRequestException ex)
@@ -72,7 +72,7 @@ namespace Cloud.Controllers
 		}
 
 		[HttpGet("maintenance-requests")]
-		public async Task<ActionResult<IEnumerable<MaintenanceRequestModel>>> GetMaintenanceRequests([FromQuery] int page = 1, [FromQuery] int size = 10)
+		public async Task<ActionResult<IEnumerable<MaintenanceRequestModel>>> GetMaintenanceRequests()
 		{
 			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (userId == null)
@@ -82,7 +82,7 @@ namespace Cloud.Controllers
 
 			try
 			{
-				var maintenanceRequests = await _userService.GetMaintenanceRequestsAsync(userId, page, size);
+				var maintenanceRequests = await _userService.GetMaintenanceRequestsAsync(userId);
 				return Ok(maintenanceRequests);
 			}
 			catch (BadRequestException ex)
@@ -96,7 +96,7 @@ namespace Cloud.Controllers
 		}
 
 		[HttpGet("applications")]
-		public async Task<ActionResult<IEnumerable<RentalApplicationModel>>> GetApplications([FromQuery] int page = 1, [FromQuery] int size = 10)
+		public async Task<ActionResult<IEnumerable<RentalApplicationModel>>> GetApplications()
 		{
 			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (userId == null)
@@ -106,7 +106,7 @@ namespace Cloud.Controllers
 
 			try
 			{
-				var applications = await _userService.GetApplicationsAsync(userId, page, size);
+				var applications = await _userService.GetApplicationsAsync(userId);
 				return Ok(applications);
 			}
 			catch (BadRequestException ex)
