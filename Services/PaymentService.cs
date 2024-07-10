@@ -63,6 +63,7 @@ namespace Cloud.Services
 		{
 			var tenant = await _context.Tenants
 				.Include(t => t.User)
+				.ThenInclude(u => u.StripeCustomer)
 				.FirstOrDefaultAsync(t => t.Id == tenantId);
 
 			if (tenant == null)
@@ -73,8 +74,9 @@ namespace Cloud.Services
 			var options = new PaymentIntentCreateOptions
 			{
 				Amount = amount,
-				Currency = "usd",
+				Currency = "myr",
 				Customer = tenant.User?.StripeCustomer?.StripeCustomerId,
+				SetupFutureUsage = "off_session",
 				Metadata = new Dictionary<string, string>
 				{
 					{ "TenantId", tenantId.ToString() }
@@ -84,7 +86,7 @@ namespace Cloud.Services
 			var service = new PaymentIntentService();
 			var paymentIntent = await service.CreateAsync(options);
 
-			var rentPayment = _rentPaymentFactory.Create(tenantId, amount, "myr", paymentIntent.Id, MapStripeStatusToPaymentStatus(paymentIntent.Status));
+			var rentPayment = _rentPaymentFactory.Create(tenantId, amount, "usd", paymentIntent.Id, MapStripeStatusToPaymentStatus(paymentIntent.Status));
 			_context.RentPayments?.Add(rentPayment);
 			await _context.SaveChangesAsync();
 

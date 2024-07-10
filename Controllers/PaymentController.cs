@@ -44,6 +44,11 @@ namespace Cloud.Controllers
 			{
 				return BadRequest(ex.Message);
 			}
+			catch (Exception ex)
+			{
+				// Log the exception
+				return StatusCode(500, "An error occurred while processing your request.");
+			}
 		}
 
 		/// <summary>
