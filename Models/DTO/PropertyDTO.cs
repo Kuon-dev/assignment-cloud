@@ -114,7 +114,7 @@ namespace Cloud.Models.DTO
 		public List<string>? Amenities { get; set; }
 		public bool IsAvailable { get; set; }
 		public RoomType RoomType { get; set; }
-		public DateTime CreatedAt { get; set; }
+		public DateTime? CreatedAt { get; set; }
 		public DateTime? UpdatedAt { get; set; }
 		public List<string>? ImageUrls { get; set; }
 	}
