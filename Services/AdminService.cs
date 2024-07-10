@@ -2,11 +2,27 @@ using Cloud.Models;
 using Cloud.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 
+namespace Cloud.Models.DTO
+{
+	public class UserCreateUpdateDto
+	{
+		public string FirstName { get; set; } = string.Empty;
+		public string LastName { get; set; } = string.Empty;
+		public string Email { get; set; } = string.Empty;
+		public string? ProfilePictureUrl { get; set; }
+		public UserRole Role { get; set; }
+	}
+}
+
 namespace Cloud.Services
 {
 	public interface IAdminService
 	{
-		Task<CustomPaginatedResult<UserModel>> GetUsersAsync(PaginationParams paginationParams);
+		Task<CustomPaginatedResult<UserInfoDto>> GetUsersAsync(PaginationParams paginationParams);
+		Task<UserInfoDto?> GetUserByIdAsync(string userId);
+		// Task<UserInfoDto> CreateUserAsync(UserModel user);
+		Task<UserInfoDto> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto);
+		Task<bool> SoftDeleteUserAsync(string id);
 		Task<PerformanceAnalytics> GetPerformanceAnalyticsAsync();
 		Task<IEnumerable<ListingAnalytics>> GetListingAnalyticsAsync();
 		Task<object> GetFinancialReconciliationDataAsync();
@@ -32,7 +48,7 @@ namespace Cloud.Services
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 		}
 
-		public async Task<CustomPaginatedResult<UserModel>> GetUsersAsync(PaginationParams paginationParams)
+		public async Task<CustomPaginatedResult<UserInfoDto>> GetUsersAsync(PaginationParams paginationParams)
 		{
 			if (paginationParams == null)
 			{
@@ -45,15 +61,104 @@ namespace Cloud.Services
 			var items = await query
 				.Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
 				.Take(paginationParams.PageSize)
+				.Select(user => new UserInfoDto
+				{
+					Id = Guid.Parse(user.Id),
+					FirstName = user.FirstName,
+					LastName = user.LastName,
+					Role = user.Role,
+					IsVerified = user.IsVerified,
+					ProfilePictureUrl = user.ProfilePictureUrl,
+					Email = user.Email,
+					PhoneNumber = user.PhoneNumber,
+					Owner = user.Owner != null ? new OwnerInfoDto { Id = user.Owner.Id } : null,
+					Tenant = user.Tenant != null ? new TenantInfoDto { Id = user.Tenant.Id } : null,
+					Admin = user.Admin != null ? new AdminInfoDto { Id = user.Admin.Id } : null
+				})
 				.ToListAsync();
 
-			return new CustomPaginatedResult<UserModel>
+			return new CustomPaginatedResult<UserInfoDto>
 			{
 				Items = items,
 				TotalCount = totalCount,
 				PageNumber = paginationParams.PageNumber,
 				PageSize = paginationParams.PageSize
 			};
+		}
+
+
+		public async Task<UserInfoDto?> GetUserByIdAsync(string id)
+		{
+			var user = await _context.Users
+				.Include(u => u.Tenant)
+				.Include(u => u.Owner)
+				.Include(u => u.Admin)
+				.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+
+			if (user == null)
+			{
+				return null;
+			}
+
+			return new UserInfoDto
+			{
+				Id = Guid.Parse(user.Id),
+				FirstName = user.FirstName,
+				LastName = user.LastName,
+				Role = user.Role,
+				IsVerified = user.IsVerified,
+				ProfilePictureUrl = user.ProfilePictureUrl,
+				Email = user.Email,
+				PhoneNumber = user.PhoneNumber,
+				Owner = user.Owner != null ? new OwnerInfoDto { Id = user.Owner.Id } : null,
+				Tenant = user.Tenant != null ? new TenantInfoDto { Id = user.Tenant.Id } : null,
+				Admin = user.Admin != null ? new AdminInfoDto { Id = user.Admin.Id } : null
+			};
+		}
+
+		public async Task<UserInfoDto> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto)
+		{
+			var user = await _context.Users.FindAsync(id.ToString());
+			if (user == null)
+			{
+				throw new KeyNotFoundException($"User with ID {id} not found.");
+			}
+
+			user.FirstName = updateUserDto.FirstName ?? user.FirstName;
+			user.LastName = updateUserDto.LastName ?? user.LastName;
+			user.Email = updateUserDto.Email ?? user.Email;
+			user.PhoneNumber = updateUserDto.PhoneNumber ?? user.PhoneNumber;
+			user.UpdatedAt = DateTime.UtcNow;
+
+			_context.Users.Update(user);
+			await _context.SaveChangesAsync();
+
+			return new UserInfoDto
+			{
+				Id = Guid.Parse(user.Id),
+				FirstName = user.FirstName,
+				LastName = user.LastName,
+				Role = user.Role,
+				IsVerified = user.IsVerified,
+				ProfilePictureUrl = user.ProfilePictureUrl,
+				PhoneNumber = user.PhoneNumber,
+				Owner = user.Owner != null ? new OwnerInfoDto { Id = user.Owner.Id } : null,
+				Tenant = user.Tenant != null ? new TenantInfoDto { Id = user.Tenant.Id } : null,
+				Admin = user.Admin != null ? new AdminInfoDto { Id = user.Admin.Id } : null
+			};
+		}
+
+		public async Task<bool> SoftDeleteUserAsync(string id)
+		{
+			var user = await _context.Users.FindAsync(id);
+			if (user == null)
+			{
+				return false;
+			}
+
+			user.UpdateIsDeleted(DateTime.UtcNow, true);
+			await _context.SaveChangesAsync();
+			return true;
 		}
 
 		public async Task<PerformanceAnalytics> GetPerformanceAnalyticsAsync()

@@ -368,6 +368,7 @@ namespace Cloud.Controllers
 					EndDate = l.EndDate,
 					Bedrooms = l.Property!.Bedrooms,
 					Bathrooms = l.Property!.Bathrooms,
+					PropertyId = l.Property!.Id,
 				})
 				.ToListAsync();
 
