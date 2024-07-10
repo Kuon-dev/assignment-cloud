@@ -113,7 +113,10 @@ namespace Cloud.Services
 					Description = m.Description,
 					Status = m.Status,
 					CreatedAt = m.CreatedAt,
-					PropertyAddress = m.Property != null ? m.Property.Address : null
+					PropertyAddress = m.Property != null ? m.Property.Address : null,
+					TenantFirstName = m.Tenant != null ? m.Tenant.User!.FirstName : "",
+					TenantLastName = m.Tenant != null ? m.Tenant.User!.LastName : "",
+					TenantEmail = m.Tenant != null ? m.Tenant.User!.Email : ""
 				})
 				.ToListAsync();
 
@@ -207,7 +210,11 @@ namespace Cloud.Services
 		public string Priority { get; set; } = string.Empty;
 		public DateTime CreatedAt { get; set; }
 		public string? PropertyAddress { get; set; }
+		public string? TenantFirstName { get; set; }
+		public string? TenantLastName { get; set; }
+		public string? TenantEmail { get; set; }
 	}
+
 
 	public class LeaseResponseDto
 	{
