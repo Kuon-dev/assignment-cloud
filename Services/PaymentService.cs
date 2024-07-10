@@ -1,221 +1,180 @@
-// PaymentService.cs
-using Cloud.Factories;
-using Cloud.Models;
-using Cloud.Models.DTO;
-/*using Cloud.Models.Validator;*/
 using Microsoft.EntityFrameworkCore;
 using Stripe;
+using Cloud.Models;
+using Cloud.Factories;
 
 namespace Cloud.Services
 {
 	/// <summary>
-	/// Interface for payment-related operations.
+	/// Service for handling rent payments using Stripe
 	/// </summary>
 	public interface IPaymentService
 	{
 		/// <summary>
-		/// Get all payments with pagination.
+		/// Creates a payment intent for rent payment
 		/// </summary>
-		/// <param name="page">The page number.</param>
-		/// <param name="size">The number of items per page.</param>
-		/// <returns>A paginated list of payments.</returns>
-		Task<(IEnumerable<RentPaymentModel> Payments, int TotalCount)> GetAllPaymentsAsync(int page, int size);
+		/// <param name="tenantId">The ID of the tenant making the payment</param>
+		/// <param name="amount">The amount to be paid in cents</param>
+		/// <returns>The created PaymentIntent client secret</returns>
+		Task<string> CreatePaymentIntentAsync(Guid tenantId, int amount);
 
 		/// <summary>
-		/// Get a specific payment by ID.
+		/// Processes a successful payment
 		/// </summary>
-		/// <param name="id">The ID of the payment.</param>
-		/// <returns>The payment if found, null otherwise.</returns>
-		Task<RentPaymentModel> GetPaymentByIdAsync(Guid id);
+		/// <param name="paymentIntentId">The ID of the successful PaymentIntent</param>
+		/// <returns>True if the payment was processed successfully, false otherwise</returns>
+		Task<bool> ProcessSuccessfulPaymentAsync(string paymentIntentId);
 
 		/// <summary>
-		/// Create a new payment.
+		/// Cancels a payment intent
 		/// </summary>
-		/// <param name="payment">The payment to create.</param>
-		/// <returns>The created payment.</returns>
-		Task<RentPaymentModel> CreatePaymentAsync(CreateRentPaymentDto paymentDto, String userId);
+		/// <param name="paymentIntentId">The ID of the PaymentIntent to cancel</param>
+		/// <returns>True if the payment was cancelled successfully, false otherwise</returns>
+		Task<bool> CancelPaymentAsync(string paymentIntentId);
 
 		/// <summary>
-		/// Update an existing payment.
+		/// Gets a rent payment by its ID
 		/// </summary>
-		/// <param name="id">The ID of the payment to update.</param>
-		/// <param name="payment">The updated payment information.</param>
-		/// <returns>The updated payment if found, null otherwise.</returns>
-		Task<RentPaymentModel> UpdatePaymentAsync(Guid id, RentPaymentModel payment);
+		/// <param name="paymentId">The ID of the rent payment</param>
+		/// <param name="tenantId">The ID of the tenant</param>
+		/// <returns>The rent payment if found, null otherwise</returns>
+		Task<RentPaymentModel?> GetRentPaymentByIdAsync(Guid paymentId, Guid tenantId);
 
 		/// <summary>
-		/// Delete a payment.
+		/// Gets all rent payments for a tenant
 		/// </summary>
-		/// <param name="id">The ID of the payment to delete.</param>
-		/// <returns>True if the payment was deleted, false otherwise.</returns>
-		Task<bool> DeletePaymentAsync(Guid id);
-
-		/// <summary>
-		/// Get all payments for a specific user with pagination.
-		/// </summary>
-		/// <param name="userId">The ID of the user.</param>
-		/// <param name="page">The page number.</param>
-		/// <param name="size">The number of items per page.</param>
-		/// <returns>A paginated list of payments for the specified user.</returns>
-		Task<(IEnumerable<RentPaymentModel> Payments, int TotalCount)> GetPaymentsByUserIdAsync(string userId, int page, int size);
-
-		/// <summary>
-		/// Get all payments for a specific property with pagination.
-		/// </summary>
-		/// <param name="propertyId">The ID of the property.</param>
-		/// <param name="page">The page number.</param>
-		/// <param name="size">The number of items per page.</param>
-		/// <returns>A paginated list of payments for the specified property.</returns>
-		Task<(IEnumerable<RentPaymentModel> Payments, int TotalCount)> GetPaymentsByPropertyIdAsync(Guid propertyId, int page, int size);
-
-		/// <summary>
-		/// Handle Stripe webhook events.
-		/// </summary>
-		/// <param name="json">The JSON payload from Stripe.</param>
-		/// <param name="signature">The Stripe signature header.</param>
-		/// <returns>A task representing the asynchronous operation.</returns>
-		/*Task HandleStripeWebhookAsync(string json, string signature);*/
+		/// <param name="tenantId">The ID of the tenant</param>
+		/// <returns>A list of rent payments for the tenant</returns>
+		Task<List<RentPaymentModel>> GetRentPaymentsForTenantAsync(Guid tenantId);
 	}
-	/// <summary>
-	/// Service for handling payment-related operations.
-	/// </summary>
+
 	public class PaymentService : IPaymentService
 	{
 		private readonly ApplicationDbContext _context;
-		private readonly RentPaymentFactory? _rentPaymentFactory;
+		private readonly IRentPaymentFactory _rentPaymentFactory;
 
-		/// <summary>
-		/// Initializes a new instance of the PaymentService class.
-		/// </summary>
-		/// <param name="context">The database context.</param>
-		/// <param name="configuration">The configuration to get Stripe settings.</param>
-		public PaymentService(ApplicationDbContext context, IConfiguration configuration)
+		public PaymentService(ApplicationDbContext context, IRentPaymentFactory rentPaymentFactory)
 		{
-			_context = context ?? throw new ArgumentNullException(nameof(context));
-			_rentPaymentFactory = null;
+			_context = context;
+			_rentPaymentFactory = rentPaymentFactory;
 		}
 
-		/// <inheritdoc />
-		public async Task<(IEnumerable<RentPaymentModel> Payments, int TotalCount)> GetAllPaymentsAsync(int page, int size)
+		public async Task<string> CreatePaymentIntentAsync(Guid tenantId, int amount)
 		{
-			var totalCount = await _context.RentPayments.CountAsync();
-			var payments = await _context.RentPayments
-				.Skip((page - 1) * size)
-				.Take(size)
-				.ToListAsync();
+			var tenant = await _context.Tenants
+				.Include(t => t.User)
+				.FirstOrDefaultAsync(t => t.Id == tenantId);
 
-			return (payments, totalCount);
-		}
-
-		/// <inheritdoc />
-		public async Task<RentPaymentModel> GetPaymentByIdAsync(Guid id)
-		{
-			var payments = await _context.RentPayments.FindAsync(id);
-			if (payments == null) throw new InvalidOperationException("Payment not found");
-			return payments;
-		}
-
-		/// <inheritdoc />
-		public async Task<RentPaymentModel> CreatePaymentAsync(CreateRentPaymentDto paymentDto, string createdBy)
-		{
-			if (paymentDto == null || _rentPaymentFactory == null)
+			if (tenant == null)
 			{
-				if (_rentPaymentFactory == null)
+				throw new ArgumentException("Tenant not found");
+			}
+
+			var options = new PaymentIntentCreateOptions
+			{
+				Amount = amount,
+				Currency = "usd",
+				Customer = tenant.User?.StripeCustomer?.StripeCustomerId,
+				Metadata = new Dictionary<string, string>
 				{
-					throw new ArgumentNullException(nameof(_rentPaymentFactory));
+					{ "TenantId", tenantId.ToString() }
 				}
-				throw new ArgumentNullException(nameof(paymentDto));
-			}
+			};
 
-			var tenant = await _context.Tenants.FindAsync(paymentDto.TenantId);
-			if (tenant == null || tenant.Id.ToString() != createdBy)
+			var service = new PaymentIntentService();
+			var paymentIntent = await service.CreateAsync(options);
+
+			var rentPayment = _rentPaymentFactory.Create(tenantId, amount, "myr", paymentIntent.Id, MapStripeStatusToPaymentStatus(paymentIntent.Status));
+			_context.RentPayments?.Add(rentPayment);
+			await _context.SaveChangesAsync();
+
+			return paymentIntent.ClientSecret;
+		}
+
+		public async Task<bool> ProcessSuccessfulPaymentAsync(string paymentIntentId)
+		{
+			if (_context.RentPayments == null)
 			{
-				throw new InvalidOperationException("Invalid tenant");
+				throw new InvalidOperationException("RentPayments DbSet is null");
 			}
 
-			var payment = await _rentPaymentFactory.CreatePaymentAsync(paymentDto);
-			payment.UpdateCreationProperties(DateTime.UtcNow);
+			var rentPayment = await _context.RentPayments
+				.FirstOrDefaultAsync(rp => rp.PaymentIntentId == paymentIntentId);
 
-			await _context.SaveChangesAsync();
-			return payment;
-		}
-
-		/// <inheritdoc />
-		public async Task<RentPaymentModel> UpdatePaymentAsync(Guid id, RentPaymentModel payment)
-		{
-			var existingPayment = await _context.RentPayments.FindAsync(id);
-
-			if (existingPayment == null) throw new InvalidOperationException("Payment not found");
-
-			existingPayment.Amount = payment.Amount;
-			existingPayment.Currency = payment.Currency;
-			existingPayment.PaymentIntentId = payment.PaymentIntentId;
-			existingPayment.PaymentMethodId = payment.PaymentMethodId;
-			existingPayment.Status = payment.Status;
-			existingPayment.UpdateModifiedProperties(DateTime.UtcNow);
-
-			await _context.SaveChangesAsync();
-
-			return existingPayment;
-		}
-
-		/// <inheritdoc />
-		public async Task<bool> DeletePaymentAsync(Guid id)
-		{
-			var payment = await _context.RentPayments.FindAsync(id);
-
-			if (payment == null)
+			if (rentPayment == null)
 			{
 				return false;
 			}
 
-			payment.UpdateIsDeleted(DateTime.UtcNow, true);
+			var service = new PaymentIntentService();
+			var paymentIntent = await service.GetAsync(paymentIntentId);
+
+			rentPayment.Status = MapStripeStatusToPaymentStatus(paymentIntent.Status);
 			await _context.SaveChangesAsync();
 
 			return true;
 		}
 
-		/// <inheritdoc />
-		public async Task<(IEnumerable<RentPaymentModel> Payments, int TotalCount)> GetPaymentsByUserIdAsync(string userId, int page, int size)
+		public async Task<bool> CancelPaymentAsync(string paymentIntentId)
 		{
-			var query = _context.RentPayments
-			  .Where(p => p.Tenant != null && p.Tenant.UserId != null && p.Tenant.UserId == userId);
-
-			var totalCount = await query.CountAsync();
-			var payments = await query
-				.Skip((page - 1) * size)
-				.Take(size)
-				.ToListAsync();
-
-			return (payments, totalCount);
-		}
-
-		/// <inheritdoc />
-		public async Task<(IEnumerable<RentPaymentModel> Payments, int TotalCount)> GetPaymentsByPropertyIdAsync(Guid propertyId, int page, int size)
-		{
-			var query = _context.RentPayments
-				.Where(p => p.Tenant != null && p.Tenant.CurrentPropertyId.HasValue && p.Tenant.CurrentPropertyId == propertyId);
-
-			var totalCount = await query.CountAsync();
-			var payments = await query
-				.Skip((page - 1) * size)
-				.Take(size)
-				.ToListAsync();
-
-			return (payments, totalCount);
-		}
-
-		private async Task HandlePaymentIntentSucceededAsync(PaymentIntent paymentIntent)
-		{
-			var payment = await _context.RentPayments
-				.FirstOrDefaultAsync(p => p.PaymentIntentId == paymentIntent.Id);
-
-			if (payment != null)
+			if (_context.RentPayments == null)
 			{
-				payment.Status = PaymentStatus.Succeeded;
-				payment.UpdateModifiedProperties(DateTime.UtcNow);
-				await _context.SaveChangesAsync();
+				throw new InvalidOperationException("RentPayments DbSet is null");
 			}
+
+			var rentPayment = await _context.RentPayments
+				.FirstOrDefaultAsync(rp => rp.PaymentIntentId == paymentIntentId);
+
+			if (rentPayment == null)
+			{
+				return false;
+			}
+
+			var service = new PaymentIntentService();
+			await service.CancelAsync(paymentIntentId);
+
+			rentPayment.Status = PaymentStatus.Cancelled;
+			await _context.SaveChangesAsync();
+
+			return true;
+		}
+
+		public async Task<RentPaymentModel?> GetRentPaymentByIdAsync(Guid paymentId, Guid tenantId)
+		{
+			if (_context.RentPayments == null)
+			{
+				throw new InvalidOperationException("RentPayments DbSet is null");
+			}
+
+			return await _context.RentPayments
+				.FirstOrDefaultAsync(rp => rp.Id == paymentId && rp.TenantId == tenantId);
+		}
+
+		public async Task<List<RentPaymentModel>> GetRentPaymentsForTenantAsync(Guid tenantId)
+		{
+			if (_context.RentPayments == null)
+			{
+				throw new InvalidOperationException("RentPayments DbSet is null");
+			}
+
+			return await _context.RentPayments
+				.Where(rp => rp.TenantId == tenantId)
+				.ToListAsync();
+		}
+
+		private PaymentStatus MapStripeStatusToPaymentStatus(string stripeStatus)
+		{
+			return stripeStatus switch
+			{
+				"requires_payment_method" => PaymentStatus.RequiresPaymentMethod,
+				"requires_confirmation" => PaymentStatus.RequiresConfirmation,
+				"requires_action" => PaymentStatus.RequiresAction,
+				"processing" => PaymentStatus.Processing,
+				"requires_capture" => PaymentStatus.RequiresCapture,
+				"canceled" => PaymentStatus.Cancelled,
+				"succeeded" => PaymentStatus.Succeeded,
+				_ => throw new ArgumentException($"Unknown Stripe status: {stripeStatus}")
+			};
 		}
 	}
 }

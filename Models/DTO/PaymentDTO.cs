@@ -1,18 +1,37 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Cloud.Models.DTO
 {
-	public class CreateRentPaymentDto
+	public class CreatePaymentIntentDto
 	{
-		public Guid TenantId { get; set; }
-		public int Amount { get; set; } // Amount in cents
-		public string Currency { get; set; } = "usd";
-		public string PaymentIntentId { get; set; } = string.Empty;
-		public string? PaymentMethodId { get; set; }
-		public PaymentStatus Status { get; set; }
+		[Required]
+		[Range(1, int.MaxValue, ErrorMessage = "Amount must be greater than 0")]
+		public int Amount { get; set; }
 	}
 
-	public class UpdateRentPaymentDto
+	public class CreatePaymentIntentResponseDto
 	{
-		public PaymentStatus? Status { get; set; }
-		public string? PaymentMethodId { get; set; }
+		public string ClientSecret { get; set; } = string.Empty;
+	}
+
+	public class ProcessPaymentDto
+	{
+		[Required]
+		public string PaymentIntentId { get; set; } = string.Empty;
+	}
+
+	public class CancelPaymentDto
+	{
+		[Required]
+		public string PaymentIntentId { get; set; } = string.Empty;
+	}
+
+	public class RentPaymentDto
+	{
+		public Guid Id { get; set; }
+		public int Amount { get; set; }
+		public string Currency { get; set; } = string.Empty;
+		public string Status { get; set; } = string.Empty;
+		public DateTime CreatedAt { get; set; }
 	}
 }
