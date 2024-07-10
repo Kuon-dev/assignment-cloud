@@ -161,6 +161,83 @@ namespace Cloud.Controllers
 			}
 		}
 
+		// tenant get their own leases
+		[HttpGet("leases")]
+		public async Task<ActionResult<IEnumerable<LeaseDto>>> GetLeases()
+		{
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (userId == null)
+			{
+				return Unauthorized("User not authenticated");
+			}
+			var tenantId = await _context.Tenants
+				.Where(t => t.UserId == userId)
+				.Select(t => t.Id)
+				.FirstOrDefaultAsync();
+
+			var ownerId = await _context.Owners
+				.Where(o => o.UserId == userId)
+				.Select(o => o.Id)
+				.FirstOrDefaultAsync();
+
+			if (tenantId != Guid.Empty)
+			{
+				return Ok(await GetTenantLeases(tenantId));
+			}
+
+			if (ownerId != Guid.Empty)
+			{
+				return Ok(await GetOwnerLeases(ownerId));
+			}
+
+			return NotFound("User not found");
+		}
+
+		private async Task<IEnumerable<LeaseDto>> GetTenantLeases(Guid tenantId)
+		{
+			return await _context.Leases
+				.Where(l => l.TenantId == tenantId && !l.IsDeleted)
+				.Select(l => new LeaseDto
+				{
+					StartDate = l.StartDate,
+					EndDate = l.EndDate,
+					IsActive = l.IsActive,
+					Property = l.PropertyModel != null ?
+					new PropertyDto
+					{
+						Id = l.PropertyModel.Id,
+						Address = l.PropertyModel.Address,
+						City = l.PropertyModel.City,
+						State = l.PropertyModel.State,
+						ZipCode = l.PropertyModel.ZipCode
+					} : null,
+				})
+				.ToListAsync();
+		}
+
+		private async Task<IEnumerable<LeaseDto>> GetOwnerLeases(Guid ownerId)
+		{
+			return await _context.Leases
+				.Where(l => l.PropertyModel != null && l.PropertyModel.OwnerId == ownerId && !l.IsDeleted)
+				.Select(l => new LeaseDto
+				{
+					StartDate = l.StartDate,
+					EndDate = l.EndDate,
+					IsActive = l.IsActive,
+					Property = l.PropertyModel != null ?
+					new PropertyDto
+					{
+						Id = l.PropertyModel.Id,
+						Address = l.PropertyModel.Address,
+						City = l.PropertyModel.City,
+						State = l.PropertyModel.State,
+						ZipCode = l.PropertyModel.ZipCode
+					} : null,
+				})
+				.ToListAsync();
+		}
+
+
 		[HttpGet("profile")]
 		public async Task<ActionResult<UserInfoDto>> GetCurrentUserProfile()
 		{
