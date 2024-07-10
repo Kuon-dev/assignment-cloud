@@ -56,5 +56,6 @@ namespace Cloud.Models.DTO
 		public string TenantLastName { get; set; } = string.Empty;
 		public string TenantEmail { get; set; } = string.Empty;
 		public string ListingAddress { get; set; } = string.Empty;
+		public Guid PropertyId { get; set; } = Guid.Empty;
 	}
 }

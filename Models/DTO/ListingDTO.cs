@@ -120,6 +120,11 @@ namespace Cloud.Models.DTO
 		/// Gets or sets the number of bathrooms in the property.
 		/// </summary>
 		public int Bathrooms { get; set; }
+
+		/// <summary>
+		/// Gets or sets the property id.
+		/// </summary>
+		public Guid PropertyId { get; set; }
 	}
 
 	/*public class PaginationParams*/
