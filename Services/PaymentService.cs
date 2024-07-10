@@ -86,7 +86,7 @@ namespace Cloud.Services
 			var service = new PaymentIntentService();
 			var paymentIntent = await service.CreateAsync(options);
 
-			var rentPayment = _rentPaymentFactory.Create(tenantId, amount, "usd", paymentIntent.Id, MapStripeStatusToPaymentStatus(paymentIntent.Status));
+			var rentPayment = _rentPaymentFactory.Create(tenantId, amount, "myr", paymentIntent.Id, MapStripeStatusToPaymentStatus(paymentIntent.Status));
 			_context.RentPayments?.Add(rentPayment);
 			await _context.SaveChangesAsync();
 
