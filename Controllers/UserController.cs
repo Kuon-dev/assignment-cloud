@@ -196,11 +196,12 @@ namespace Cloud.Controllers
 		private async Task<IEnumerable<LeaseDto>> GetTenantLeases(Guid tenantId)
 		{
 			return await _context.Leases
-				.Where(l => l.TenantId == tenantId)
+				.Where(l => l.TenantId == tenantId && !l.IsDeleted)
 				.Select(l => new LeaseDto
 				{
 					StartDate = l.StartDate,
 					EndDate = l.EndDate,
+					IsActive = l.IsActive,
 					Property = l.PropertyModel != null ?
 					new PropertyDto
 					{
@@ -222,6 +223,7 @@ namespace Cloud.Controllers
 				{
 					StartDate = l.StartDate,
 					EndDate = l.EndDate,
+					IsActive = l.IsActive,
 					Property = l.PropertyModel != null ?
 					new PropertyDto
 					{
