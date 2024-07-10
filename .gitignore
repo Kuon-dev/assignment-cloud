@@ -482,5 +482,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+input.txt
 
 /wwwroot/lib
