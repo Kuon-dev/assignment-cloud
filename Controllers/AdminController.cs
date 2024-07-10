@@ -20,12 +20,14 @@ namespace Cloud.Controllers
 		private readonly IAdminService _adminService;
 		private readonly ILogger<AdminController> _logger;
 		private readonly UserManager<UserModel> _userManager;
+		private readonly ApplicationDbContext _context;
 
-		public AdminController(IAdminService adminService, ILogger<AdminController> logger, UserManager<UserModel> userManager)
+		public AdminController(IAdminService adminService, ILogger<AdminController> logger, UserManager<UserModel> userManager, ApplicationDbContext context)
 		{
 			_adminService = adminService ?? throw new ArgumentNullException(nameof(adminService));
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 			_userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+			_context = context ?? throw new ArgumentNullException(nameof(context));
 		}
 
 		// GET: api/admin/users
@@ -54,26 +56,68 @@ namespace Cloud.Controllers
 
 		// POST: api/admin/users
 		[HttpPost("users")]
-		public async Task<IActionResult> CreateUser(CreateUserDto createUserDto)
+		public async Task<IActionResult> CreateUser([FromBody] RegisterModel model)
 		{
-			var user = new UserModel
+			if (!ModelState.IsValid)
 			{
-				FirstName = createUserDto.FirstName,
-				LastName = createUserDto.LastName,
-				Email = createUserDto.Email,
-				UserName = createUserDto.Email,
-				Role = (UserRole)createUserDto.Role,
-				ProfilePictureUrl = createUserDto.ProfilePictureUrl
-			};
-
-			var result = await _userManager.CreateAsync(user, createUserDto.Password);
-
-			if (!result.Succeeded)
-			{
-				return BadRequest(result.Errors);
+				return BadRequest(ModelState);
 			}
 
-			return Ok("User created successfully");
+			if (model.Role != UserRole.Tenant && model.Role != UserRole.Owner && model.Role != UserRole.Admin)
+			{
+				return BadRequest(new { message = "Invalid role. Must be either Tenant or Owner." });
+			}
+
+			var user = new UserModel
+			{
+				UserName = model.Email,
+				Email = model.Email,
+				FirstName = model.FirstName,
+				LastName = model.LastName,
+				Role = model.Role // Set the role from the model
+			};
+
+			var result = await _userManager.CreateAsync(user, model.Password);
+
+			if (result.Succeeded)
+			{
+				// Create the role-specific model
+				if (user.Role == UserRole.Tenant)
+				{
+					var tenant = new TenantModel
+					{
+						UserId = user.Id
+					};
+					await _context.Tenants.AddAsync(tenant);
+				}
+				else if (user.Role == UserRole.Owner)
+				{
+					var owner = new OwnerModel
+					{
+						UserId = user.Id
+					};
+					await _context.Owners.AddAsync(owner);
+				}
+				else if (user.Role == UserRole.Admin)
+				{
+					var admin = new AdminModel
+					{
+						UserId = user.Id
+					};
+					await _context.Admins.AddAsync(admin);
+				}
+
+				await _context.SaveChangesAsync();
+
+				var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+				var confirmationLink = Url.Action("ConfirmEmail", "Auth", new { userId = user.Id, token = token }, Request.Scheme);
+
+				// _emailService.SendEmail(user.Email, "Confirm your email", $"Please confirm your account by clicking this link: {confirmationLink}");
+
+				return Ok(new { message = $"User created successfully as {user.Role}. Please check your email to confirm your account." });
+			}
+
+			return BadRequest(new { message = "User registration failed.", errors = result.Errors });
 		}
 
 		// PUT: api/admin/users/{id}
