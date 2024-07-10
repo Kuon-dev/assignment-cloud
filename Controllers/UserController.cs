@@ -199,17 +199,34 @@ namespace Cloud.Controllers
 				.Where(l => l.TenantId == tenantId && !l.IsDeleted)
 				.Select(l => new LeaseDto
 				{
+					TenantId = l.TenantId,
+					PropertyId = l.PropertyId,
 					StartDate = l.StartDate,
 					EndDate = l.EndDate,
+					RentAmount = l.RentAmount,
+					SecurityDeposit = l.SecurityDeposit,
 					IsActive = l.IsActive,
 					Property = l.PropertyModel != null ?
 					new PropertyDto
 					{
 						Id = l.PropertyModel.Id,
+						OwnerId = l.PropertyModel.OwnerId,
 						Address = l.PropertyModel.Address,
 						City = l.PropertyModel.City,
+						PropertyType = l.PropertyModel.PropertyType,
+						Bedrooms = l.PropertyModel.Bedrooms,
+						Bathrooms = l.PropertyModel.Bathrooms,
+						RentAmount = l.PropertyModel.RentAmount,
 						State = l.PropertyModel.State,
-						ZipCode = l.PropertyModel.ZipCode
+						ZipCode = l.PropertyModel.ZipCode,
+						Amenities = l.PropertyModel.Amenities,
+
+						CreatedAt = l.PropertyModel.CreatedAt,
+						UpdatedAt = l.PropertyModel.UpdatedAt,
+						IsAvailable = l.PropertyModel.IsAvailable,
+						Description = l.PropertyModel.Description,
+						RoomType = l.PropertyModel.RoomType,
+						ImageUrls = l.PropertyModel.ImageUrls
 					} : null,
 				})
 				.ToListAsync();
@@ -221,17 +238,34 @@ namespace Cloud.Controllers
 				.Where(l => l.PropertyModel != null && l.PropertyModel.OwnerId == ownerId && !l.IsDeleted)
 				.Select(l => new LeaseDto
 				{
+					TenantId = l.TenantId,
+					PropertyId = l.PropertyId,
 					StartDate = l.StartDate,
 					EndDate = l.EndDate,
+					RentAmount = l.RentAmount,
+					SecurityDeposit = l.SecurityDeposit,
 					IsActive = l.IsActive,
 					Property = l.PropertyModel != null ?
 					new PropertyDto
 					{
 						Id = l.PropertyModel.Id,
+						OwnerId = l.PropertyModel.OwnerId,
 						Address = l.PropertyModel.Address,
 						City = l.PropertyModel.City,
+						PropertyType = l.PropertyModel.PropertyType,
+						Bedrooms = l.PropertyModel.Bedrooms,
+						Bathrooms = l.PropertyModel.Bathrooms,
+						RentAmount = l.PropertyModel.RentAmount,
 						State = l.PropertyModel.State,
-						ZipCode = l.PropertyModel.ZipCode
+						ZipCode = l.PropertyModel.ZipCode,
+						Amenities = l.PropertyModel.Amenities,
+
+						CreatedAt = l.PropertyModel.CreatedAt,
+						UpdatedAt = l.PropertyModel.UpdatedAt,
+						IsAvailable = l.PropertyModel.IsAvailable,
+						Description = l.PropertyModel.Description,
+						RoomType = l.PropertyModel.RoomType,
+						ImageUrls = l.PropertyModel.ImageUrls
 					} : null,
 				})
 				.ToListAsync();
