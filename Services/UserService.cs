@@ -149,7 +149,8 @@ namespace Cloud.Services
 					TenantFirstName = a.Tenant!.User!.FirstName,
 					TenantLastName = a.Tenant.User.LastName,
 					TenantEmail = a.Tenant.User.Email!,
-					ListingAddress = a.Listing != null && a.Listing.Property != null && a.Listing.Property.Address != null ? a.Listing.Property.Address : ""
+					ListingAddress = a.Listing != null && a.Listing.Property != null && a.Listing.Property.Address != null ? a.Listing.Property.Address : "",
+					PropertyId = a.Listing != null && a.Listing.Property != null ? a.Listing.Property.Id : Guid.Empty,
 				})
 				.ToListAsync();
 
