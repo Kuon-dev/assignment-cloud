@@ -113,6 +113,7 @@ namespace Cloud.Services
 					Description = m.Description,
 					Status = m.Status,
 					CreatedAt = m.CreatedAt,
+					PropertyId = m.Property != null ? m.Property.Id : null,
 					PropertyAddress = m.Property != null ? m.Property.Address : null,
 					TenantFirstName = m.Tenant != null ? m.Tenant.User!.FirstName : "",
 					TenantLastName = m.Tenant != null ? m.Tenant.User!.LastName : "",
@@ -210,6 +211,7 @@ namespace Cloud.Services
 		public MaintenanceStatus Status { get; set; }
 		public string Priority { get; set; } = string.Empty;
 		public DateTime CreatedAt { get; set; }
+		public Guid? PropertyId { get; set; }
 		public string? PropertyAddress { get; set; }
 		public string? TenantFirstName { get; set; }
 		public string? TenantLastName { get; set; }
