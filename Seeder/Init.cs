@@ -1,7 +1,9 @@
 using Cloud.Factories;
 using Cloud.Models;
+using Cloud.Models.DTO;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Cloud.Services;
 
 public class DataSeeder
 {
@@ -15,6 +17,8 @@ public class DataSeeder
 	private readonly RentalApplicationFactory _rentalApplicationFactory;
 	private readonly LeaseFactory _leaseFactory;
 	private readonly MaintenanceFactory _maintenanceFactory;
+	private readonly IMediaService _mediaService;
+	private readonly string _testImagePath = Path.Combine(".", "test", "temp");
 
 	public DataSeeder(
 		IServiceProvider serviceProvider,
@@ -26,7 +30,9 @@ public class DataSeeder
 		ListingFactory listingFactory,
 		RentalApplicationFactory rentalApplicationFactory,
 		LeaseFactory leaseFactory,
-		MaintenanceFactory maintenanceFactory)
+		MaintenanceFactory maintenanceFactory,
+		IMediaService mediaService
+		)
 	{
 		_serviceProvider = serviceProvider;
 		_dbContext = dbContext;
@@ -38,6 +44,7 @@ public class DataSeeder
 		_rentalApplicationFactory = rentalApplicationFactory;
 		_leaseFactory = leaseFactory;
 		_maintenanceFactory = maintenanceFactory;
+		_mediaService = mediaService;
 	}
 
 	public async Task SeedAsync()
@@ -49,13 +56,14 @@ public class DataSeeder
 			throw new InvalidOperationException("Database context is not initialized.");
 		}
 
-		/*await SeedRolesAsync();*/
-		/*await SeedUsersAsync();*/
+		await SeedRolesAsync();
+		await SeedUsersAsync();
+		await SeedMediaAsync();
 		await SeedPropertiesAsync();
-		/*await SeedListingsAsync();*/
-		/*await SeedRentalApplicationsAsync();*/
-		/*await SeedLeasesAsync();*/
-		/*await SeedMaintenanceRequestsAndTasksAsync(); // Add call to seed maintenance requests and tasks*/
+		await SeedListingsAsync();
+		await SeedRentalApplicationsAsync();
+		await SeedLeasesAsync();
+		await SeedMaintenanceRequestsAndTasksAsync(); // Add call to seed maintenance requests and tasks
 	}
 
 	private async Task SeedRolesAsync()
@@ -196,4 +204,53 @@ public class DataSeeder
 			await _maintenanceFactory.SeedRequestsAndTasksAsync(50);
 		}
 	}
+
+	private async Task SeedMediaAsync()
+	{
+		if (!await _dbContext.Medias.AnyAsync())
+		{
+			var imageFiles = Directory.GetFiles(_testImagePath, "*.png");
+			var users = await _dbContext.Users.ToListAsync();
+
+			if (!users.Any())
+			{
+				Console.WriteLine("No users found to associate with media. Skipping media seeding.");
+				return;
+			}
+
+			foreach (var imagePath in imageFiles)
+			{
+				try
+				{
+					var fileName = Path.GetFileName(imagePath);
+					var user = users[new Random().Next(users.Count)];
+
+					using var stream = new FileStream(imagePath, FileMode.Open);
+					var file = new FormFile(stream, 0, stream.Length, null, fileName)
+					{
+						Headers = new HeaderDictionary(),
+						ContentType = "image/png"
+					};
+
+					var createMediaDto = new CreateMediaDto
+					{
+						File = file,
+						CustomFileName = null // Use original filename
+					};
+
+					await _mediaService.CreateMediaAsync(createMediaDto, user.Id);
+					Console.WriteLine($"Seeded media: {fileName}");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"Error seeding media {imagePath}: {ex.Message}");
+				}
+			}
+		}
+		else
+		{
+			Console.WriteLine("Media already exist in the database.");
+		}
+	}
+
 }
