@@ -53,15 +53,15 @@ public class UserFactory
 	/// Creates a fake user with random data.
 	/// </summary>
 	/// <returns>The created UserModel.</returns>
-	public async Task<UserModel> CreateFakeUserAsync()
+	public async Task<UserModel> CreateFakeUserAsync(UserRole? specificRole = null)
 	{
 		var user = _userFaker.Generate();
-		var roles = Enum.GetValues<UserRole>();
-		user.Role = _randomizer.ArrayElement(roles);
+		user.Role = specificRole ?? _randomizer.ArrayElement(Enum.GetValues<UserRole>());
 
 		var result = await _userManager.CreateAsync(user, "Password123!");
 		if (result.Succeeded)
 		{
+			await _userManager.AddToRoleAsync(user, user.Role.ToString());
 			await CreateRoleSpecificModelAsync(user);
 			return user;
 		}

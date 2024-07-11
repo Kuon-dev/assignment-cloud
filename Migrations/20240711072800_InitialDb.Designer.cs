@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cloud.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240711063910_test")]
-    partial class test
+    [Migration("20240711072800_InitialDb")]
+    partial class InitialDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -664,8 +664,9 @@ namespace Cloud.Migrations
                     b.Property<string>("Metadata")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StripeCustomerId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("StripeCustomerId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

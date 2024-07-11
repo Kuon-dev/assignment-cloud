@@ -49,13 +49,13 @@ public class DataSeeder
 			throw new InvalidOperationException("Database context is not initialized.");
 		}
 
-		await SeedRolesAsync();
-		await SeedUsersAsync();
+		/*await SeedRolesAsync();*/
+		/*await SeedUsersAsync();*/
 		await SeedPropertiesAsync();
-		await SeedListingsAsync();
-		await SeedRentalApplicationsAsync();
-		await SeedLeasesAsync();
-		await SeedMaintenanceRequestsAndTasksAsync(); // Add call to seed maintenance requests and tasks
+		/*await SeedListingsAsync();*/
+		/*await SeedRentalApplicationsAsync();*/
+		/*await SeedLeasesAsync();*/
+		/*await SeedMaintenanceRequestsAndTasksAsync(); // Add call to seed maintenance requests and tasks*/
 	}
 
 	private async Task SeedRolesAsync()
@@ -91,19 +91,39 @@ public class DataSeeder
 				.Where(o => o != null)
 				.ToListAsync();
 
-			if (owners.Count > 0)
+			Console.WriteLine($"Number of owners found: {owners.Count}");
+
+			if (owners.Any())
 			{
-				await SeedPropertiesForOwnersAsync(owners, 50);
+				try
+				{
+					await SeedPropertiesForOwnersAsync(owners, 50);
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"Error in SeedPropertiesForOwnersAsync: {ex.Message}");
+					Console.WriteLine($"Stack trace: {ex.StackTrace}");
+				}
 			}
 			else
 			{
 				Console.WriteLine("No owners found to seed properties.");
 			}
 		}
+		else
+		{
+			Console.WriteLine("Properties already exist in the database.");
+		}
 	}
 
 	private async Task SeedPropertiesForOwnersAsync(List<OwnerModel?> owners, int count)
 	{
+		if (!owners.Any())
+		{
+			Console.WriteLine("No owners available to seed properties.");
+			return;
+		}
+
 		var random = new Random();
 		for (int i = 0; i < count; i++)
 		{
@@ -112,14 +132,16 @@ public class DataSeeder
 				var owner = owners[random.Next(owners.Count)];
 				if (owner == null)
 				{
-					Console.WriteLine("Owner is null.");
+					Console.WriteLine("Selected owner is null.");
 					continue;
 				}
+				Console.WriteLine($"Creating property for owner with ID: {owner.Id}");
 				await _propertyFactory.CreateFakePropertyAsync(owner.Id);
 			}
 			catch (Exception ex)
 			{
 				Console.WriteLine($"Error creating property: {ex.Message}");
+				Console.WriteLine($"Stack trace: {ex.StackTrace}");
 			}
 		}
 	}

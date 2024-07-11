@@ -14,7 +14,6 @@ public class PropertyFactory
 		// Initialize Bogus for generating fake property data
 		_propertyFaker = new Faker<PropertyModel>()
 		  .RuleFor(p => p.Id, f => Guid.NewGuid())
-		  .RuleFor(p => p.OwnerId, f => Guid.NewGuid()) // Assume you'll replace this with an actual owner ID from your database
 		  .RuleFor(p => p.Address, f => f.Address.StreetAddress())
 		  .RuleFor(p => p.City, f => f.Address.City())
 		  .RuleFor(p => p.State, f => f.Address.StateAbbr())
@@ -27,7 +26,13 @@ public class PropertyFactory
 		  .RuleFor(p => p.Amenities, f => f.Make(3, () => f.Commerce.Product()))
 		  .RuleFor(p => p.IsAvailable, f => f.Random.Bool())
 		  .RuleFor(p => p.RoomType, f => f.PickRandom<RoomType>())
-		.RuleFor(p => p.ImageUrls, f => f.Random.ListItems(_context.Medias.Select(m => m.FilePath).ToList(), f.Random.Int(3, 7)));
+		.RuleFor(p => p.ImageUrls, f =>
+		{
+			var mediaUrls = _context.Medias.Select(m => m.FilePath).ToList();
+			return mediaUrls.Any()
+				? f.Random.ListItems(mediaUrls, f.Random.Int(3, 7))
+				: new List<string>();
+		});
 
 		_randomizer = new Randomizer();
 	}
@@ -38,7 +43,7 @@ public class PropertyFactory
 		var property = _propertyFaker.Generate();
 		property.UpdateCreationProperties(DateTime.UtcNow);
 		property.UpdateModifiedProperties(DateTime.UtcNow);
-		property.OwnerId = ownerId; // Set the actual owner ID
+		property.OwnerId = ownerId;
 
 		await _context.Properties.AddAsync(property);
 		await _context.SaveChangesAsync();

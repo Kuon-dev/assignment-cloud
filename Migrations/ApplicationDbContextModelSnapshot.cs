@@ -661,8 +661,9 @@ namespace Cloud.Migrations
                     b.Property<string>("Metadata")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StripeCustomerId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("StripeCustomerId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

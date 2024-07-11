@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cloud.Migrations
 {
 	/// <inheritdoc />
-	public partial class test : Migration
+	public partial class InitialDb : Migration
 	{
 		/// <inheritdoc />
 		protected override void Up(MigrationBuilder migrationBuilder)
@@ -284,7 +284,7 @@ namespace Cloud.Migrations
 				{
 					Id = table.Column<Guid>(type: "uuid", nullable: false),
 					UserId = table.Column<string>(type: "text", nullable: false),
-					StripeCustomerId = table.Column<Guid>(type: "uuid", nullable: false),
+					StripeCustomerId = table.Column<string>(type: "text", nullable: false),
 					IsVerified = table.Column<bool>(type: "boolean", nullable: false),
 					DefaultPaymentMethodId = table.Column<string>(type: "text", nullable: true),
 					DefaultSourceId = table.Column<string>(type: "text", nullable: true),
