@@ -20,12 +20,11 @@ namespace Cloud.Services
 	{
 		Task<CustomPaginatedResult<UserInfoDto>> GetUsersAsync(PaginationParams paginationParams);
 		Task<UserInfoDto?> GetUserByIdAsync(string userId);
-		// Task<UserInfoDto> CreateUserAsync(UserModel user);
+		Task<CustomPaginatedResult<UserInfoDto>> GetOwnersAsync(PaginationParams paginationParams);
 		Task<UserInfoDto> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto);
 		Task<bool> SoftDeleteUserAsync(string id);
 		Task<PerformanceAnalytics> GetPerformanceAnalyticsAsync();
 		Task<IEnumerable<ListingAnalytics>> GetListingAnalyticsAsync();
-		Task<object> GetFinancialReconciliationDataAsync();
 		Task<CustomPaginatedResult<MaintenanceRequestModel>> GetMaintenanceRequestAsync(PaginationParams paginationParams);
 		Task<CustomPaginatedResult<PropertyModel>> GetPropertiesAsync(PaginationParams paginationParams);
 		Task<bool> UpdateMaintenanceRequestStatusAsync(Guid id, string action);
@@ -116,6 +115,44 @@ namespace Cloud.Services
 			};
 		}
 
+		public async Task<CustomPaginatedResult<UserInfoDto>> GetOwnersAsync(PaginationParams paginationParams)
+		{
+			if (paginationParams == null)
+			{
+				throw new ArgumentNullException(nameof(paginationParams));
+			}
+
+			var query = _context.Users.AsNoTracking().Where(o => !o.IsDeleted && o.Role == UserRole.Owner); ;
+			var totalCount = await query.CountAsync();
+
+			var items = await query
+				.Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
+				.Take(paginationParams.PageSize)
+				.Select(user => new UserInfoDto
+				{
+					Id = Guid.Parse(user.Id),
+					FirstName = user.FirstName,
+					LastName = user.LastName,
+					Role = user.Role,
+					IsVerified = user.IsVerified,
+					ProfilePictureUrl = user.ProfilePictureUrl,
+					Email = user.Email,
+					PhoneNumber = user.PhoneNumber,
+					Owner = user.Owner != null ? new OwnerInfoDto { Id = user.Owner.Id } : null,
+					Tenant = user.Tenant != null ? new TenantInfoDto { Id = user.Tenant.Id } : null,
+					Admin = user.Admin != null ? new AdminInfoDto { Id = user.Admin.Id } : null
+				})
+				.ToListAsync();
+
+			return new CustomPaginatedResult<UserInfoDto>
+			{
+				Items = items,
+				TotalCount = totalCount,
+				PageNumber = paginationParams.PageNumber,
+				PageSize = paginationParams.PageSize
+			};
+		}
+
 		public async Task<UserInfoDto> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto)
 		{
 			var user = await _context.Users.FindAsync(id.ToString());
@@ -186,41 +223,6 @@ namespace Cloud.Services
 					LastUpdated = l.UpdatedAt ?? DateTime.MinValue
 				})
 				.ToListAsync();
-		}
-
-		public async Task<object> GetFinancialReconciliationDataAsync()
-		{
-			var rentPayments = await _context.RentPayments
-				.Select(rp => new
-				{
-					rp.TenantId,
-					rp.Amount,
-					rp.Currency,
-					rp.PaymentIntentId,
-					Status = rp.Status.ToString()
-				})
-				.ToListAsync();
-
-			var ownerPayments = await _context.OwnerPayments
-				.Select(op => new
-				{
-					op.OwnerId,
-					op.PropertyId,
-					op.Amount,
-					op.PaymentDate,
-					op.AdminFee,
-					op.UtilityFees,
-					op.MaintenanceCost,
-					op.StripePaymentIntentId,
-					Status = op.Status.ToString()
-				})
-				.ToListAsync();
-
-			return new
-			{
-				RentPayments = rentPayments,
-				OwnerPayments = ownerPayments
-			};
 		}
 
 		public async Task<CustomPaginatedResult<MaintenanceRequestModel>> GetMaintenanceRequestAsync(PaginationParams paginationParams)
