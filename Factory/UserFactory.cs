@@ -57,7 +57,7 @@ public class UserFactory
 			.RuleFor(o => o.SwiftBicCode, f => f.Finance.Bic())
 			.RuleFor(o => o.BankName, f => f.Company.CompanyName() + " Bank")
 			.RuleFor(o => o.VerificationStatus, f => f.PickRandom<OwnerVerificationStatus>())
-			.RuleFor(o => o.VerificationDate, f => f.Date.Past());
+			.RuleFor(o => o.VerificationDate, f => f.Date.Past().ToUniversalTime());
 
 		// Initialize Randomizer
 		_randomizer = new Randomizer();
@@ -205,7 +205,7 @@ public class UserFactory
 			IsVerified = false,
 			Balance = 0,
 			Currency = "myr",
-			Created = DateTime.UtcNow,
+			Created = DateTime.UtcNow.ToUniversalTime(),
 			AccountType = "individual"
 		};
 

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Cloud.Services;
 using Cloud.Models;
 using System.Security.Claims;
@@ -8,7 +9,7 @@ namespace Cloud.Controllers
 {
 	[ApiController]
 	[Route("api/[controller]")]
-	[Authorize]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 	public class OwnerProfileController : ControllerBase
 	{
 		private readonly IOwnerProfileService _ownerProfileService;
@@ -34,7 +35,7 @@ namespace Cloud.Controllers
 				return BadRequest(ModelState);
 			}
 
-			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			var userId = (User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException());
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized("User ID not found in the token.");
@@ -77,6 +78,7 @@ namespace Cloud.Controllers
 		{
 			try
 			{
+				var userId = (User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException());
 				var owner = await _ownerProfileService.GetOwnerProfileAsync(id);
 				if (owner == null)
 				{
@@ -84,7 +86,7 @@ namespace Cloud.Controllers
 				}
 
 				// Ensure the user can only access their own profile unless they're an admin
-				if (!User.IsInRole("Admin") && owner.UserId != User.FindFirstValue(ClaimTypes.NameIdentifier))
+				if (!User.IsInRole("Admin") && owner.UserId != userId)
 				{
 					return Forbid();
 				}
@@ -136,12 +138,13 @@ namespace Cloud.Controllers
 			try
 			{
 				var existingOwner = await _ownerProfileService.GetOwnerProfileAsync(id);
+				var userId = (User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException());
 				if (existingOwner == null)
 				{
 					return NotFound();
 				}
 
-				if (existingOwner.UserId != User.FindFirstValue(ClaimTypes.NameIdentifier))
+				if (existingOwner.UserId != userId)
 				{
 					return Forbid();
 				}
@@ -202,7 +205,7 @@ namespace Cloud.Controllers
 		{
 			try
 			{
-				var verifiedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+				var verifiedBy = (User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException());
 				var verifiedOwner = await _ownerProfileService.VerifyOwnerAsync(id, verifiedBy);
 				return Ok(verifiedOwner);
 			}

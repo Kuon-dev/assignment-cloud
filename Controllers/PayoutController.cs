@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 /*using Microsoft.Extensions.Logging;*/
 using Cloud.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Cloud.Models.DTO;
 
 namespace Cloud.Controllers
@@ -11,6 +12,7 @@ namespace Cloud.Controllers
 	/// </summary>
 	[ApiController]
 	[Route("api/[controller]")]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 	[Authorize(Roles = "Admin")]
 	public class PayoutController : ControllerBase
 	{
