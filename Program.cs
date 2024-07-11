@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Stripe;
 using Cloud.Models.Validator;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Authentication.Cookies;
 /*using System.Text.Json;*/
 /*using System.Text.Json.Serialization;*/
 /*using Microsoft.Extensions.Logging;*/
@@ -79,7 +80,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 		  ValidAudience = jwtAudience,
 		  IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
 	  };
-  });
+  }
+  );
 
 builder.Services.AddIdentity<UserModel, IdentityRole>(options =>
 {
@@ -92,15 +94,47 @@ builder.Services.AddIdentity<UserModel, IdentityRole>(options =>
 	options.Password.RequireUppercase = true;
 	options.Password.RequireNonAlphanumeric = true;
 	options.Password.RequiredLength = 8;
+
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+	options.Events = new CookieAuthenticationEvents
+	{
+		OnRedirectToLogin = ctx =>
+		{
+			if (ctx.Request.Path.StartsWithSegments("/api") && ctx.Response.StatusCode == 200)
+			{
+				ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+			}
+			else
+			{
+				ctx.Response.Redirect(ctx.RedirectUri);
+			}
+			return Task.CompletedTask;
+		},
+		OnRedirectToAccessDenied = ctx =>
+		{
+			if (ctx.Request.Path.StartsWithSegments("/api") && ctx.Response.StatusCode == 200)
+			{
+				ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+			}
+			else
+			{
+				ctx.Response.Redirect(ctx.RedirectUri);
+			}
+			return Task.CompletedTask;
+		}
+	};
+});
 
 builder.Services.AddCors(options =>
 {
 	options.AddPolicy("AllowFrontend",
 		builder => builder
-			.WithOrigins(Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173")
+			.WithOrigins([Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "", "http://localhost:5173"])
 			.AllowAnyMethod()
 			.AllowAnyHeader()
 			.AllowCredentials());

@@ -31,7 +31,7 @@ namespace Cloud.Controllers
 		[HttpGet("requests/{id}")]
 		public async Task<IActionResult> GetMaintenanceRequestById(Guid id)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (userId == null)
 			{
 				return Unauthorized();
@@ -50,7 +50,7 @@ namespace Cloud.Controllers
 		[Authorize(Roles = "Tenant")]
 		public async Task<IActionResult> CreateMaintenanceRequest([FromBody] CreateMaintenanceRequestDto dto)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (userId == null)
 			{
 				return Unauthorized();
@@ -70,7 +70,7 @@ namespace Cloud.Controllers
 		[HttpPut("requests/{id}")]
 		public async Task<IActionResult> UpdateMaintenanceRequest(Guid id, [FromBody] UpdateMaintenanceRequestDto dto)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (userId == null)
 			{
 				return Unauthorized();

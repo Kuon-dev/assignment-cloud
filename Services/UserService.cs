@@ -8,6 +8,7 @@ namespace Cloud.Services
 	public interface IUserService
 	{
 		Task<PropertyModel> GetRentedPropertyAsync(string userId);
+		Task<IEnumerable<PropertyDto>> GetOwnedProperty(string ownerId);
 		Task<IEnumerable<RentPaymentResponseDto>> GetPaymentHistoryAsync(string userId);
 		Task<IEnumerable<MaintenanceRequestResponseDto>> GetMaintenanceRequestsAsync(string userId);
 		Task<IEnumerable<RentalApplicationDto>> GetApplicationsAsync(string userId);
@@ -76,6 +77,40 @@ namespace Cloud.Services
 			}
 
 			return lease.PropertyModel ?? throw new NotFoundException($"No property found for the active lease of user with ID {userId}");
+		}
+
+		public async Task<IEnumerable<PropertyDto>> GetOwnedProperty(string ownerId)
+		{
+			var properties = await _context.Properties
+				.Where(p => p.Owner != null && p.Owner.Id.ToString() == ownerId)
+				.Select(p => new PropertyDto
+				{
+					Id = p.Id,
+					OwnerId = p.Owner!.Id,
+					Address = p.Address,
+					City = p.City,
+					State = p.State,
+					ZipCode = p.ZipCode,
+					PropertyType = p.PropertyType,
+					Bedrooms = p.Bedrooms,
+					Bathrooms = p.Bathrooms,
+					RentAmount = p.RentAmount,
+					Description = p.Description,
+					Amenities = p.Amenities,
+					IsAvailable = p.IsAvailable,
+					RoomType = p.RoomType,
+					CreatedAt = p.CreatedAt,
+					UpdatedAt = p.UpdatedAt,
+					ImageUrls = p.ImageUrls
+				})
+				.ToListAsync();
+
+			if (properties == null)
+			{
+				throw new NotFoundException($"No property found for owner with ID {ownerId}");
+			}
+
+			return properties;
 		}
 
 		public async Task<IEnumerable<RentPaymentResponseDto>> GetPaymentHistoryAsync(string userId)

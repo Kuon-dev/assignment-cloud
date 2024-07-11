@@ -36,7 +36,7 @@ namespace Cloud.Controllers
 		{
 			try
 			{
-				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 				if (userId == null)
 					return Unauthorized();
 
@@ -105,7 +105,7 @@ namespace Cloud.Controllers
 		{
 			try
 			{
-				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 				if (userId == null)
 					return Unauthorized();
 
@@ -151,7 +151,7 @@ namespace Cloud.Controllers
 		{
 			try
 			{
-				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 				if (userId == null)
 					return Unauthorized();
 
@@ -181,7 +181,7 @@ namespace Cloud.Controllers
 		{
 			try
 			{
-				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 				_logger.LogInformation("Uploading images for user: {UserId}", userId);
 				if (userId == null)
 					return Unauthorized();
