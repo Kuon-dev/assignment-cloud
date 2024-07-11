@@ -154,7 +154,7 @@ builder.Services.AddScoped<UserFactory>();
 builder.Services.AddScoped<ListingFactory>();
 builder.Services.AddScoped<RentalApplicationFactory>();
 builder.Services.AddScoped<MaintenanceFactory>();
-
+builder.Services.AddScoped<PayoutFactory>();
 builder.Services.AddScoped<IRentPaymentFactory, RentPaymentFactory>();
 
 builder.Services.AddScoped<ListingValidator>();

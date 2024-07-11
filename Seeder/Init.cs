@@ -19,6 +19,7 @@ public class DataSeeder
 	private readonly MaintenanceFactory _maintenanceFactory;
 	private readonly IMediaService _mediaService;
 	private readonly string _testImagePath = Path.Combine(".", "test", "temp");
+	private readonly PayoutFactory _payoutSeeder;
 
 	public DataSeeder(
 		IServiceProvider serviceProvider,
@@ -31,7 +32,8 @@ public class DataSeeder
 		RentalApplicationFactory rentalApplicationFactory,
 		LeaseFactory leaseFactory,
 		MaintenanceFactory maintenanceFactory,
-		IMediaService mediaService
+		IMediaService mediaService,
+		PayoutFactory payoutSeeder
 		)
 	{
 		_serviceProvider = serviceProvider;
@@ -45,6 +47,7 @@ public class DataSeeder
 		_leaseFactory = leaseFactory;
 		_maintenanceFactory = maintenanceFactory;
 		_mediaService = mediaService;
+		_payoutSeeder = payoutSeeder;
 	}
 
 	public async Task SeedAsync()
@@ -105,7 +108,7 @@ public class DataSeeder
 			{
 				try
 				{
-					await SeedPropertiesForOwnersAsync(owners, 50);
+					await SeedPropertiesForOwnersAsync(owners, 500);
 				}
 				catch (Exception ex)
 				{
@@ -185,7 +188,7 @@ public class DataSeeder
 	{
 		if (!await _dbContext.RentalApplications.AnyAsync())
 		{
-			await _rentalApplicationFactory.SeedApplicationsAsync(50);
+			await _rentalApplicationFactory.SeedApplicationsAsync(2000);
 		}
 	}
 
@@ -193,7 +196,7 @@ public class DataSeeder
 	{
 		if (!await _dbContext.Leases.AnyAsync())
 		{
-			await _leaseFactory.SeedLeasesAsync(50);
+			await _leaseFactory.SeedLeasesAsync(1500);
 		}
 	}
 
@@ -201,7 +204,7 @@ public class DataSeeder
 	{
 		if (!await _dbContext.MaintenanceRequests.AnyAsync())
 		{
-			await _maintenanceFactory.SeedRequestsAndTasksAsync(50);
+			await _maintenanceFactory.SeedRequestsAndTasksAsync(5000);
 		}
 	}
 
@@ -253,4 +256,24 @@ public class DataSeeder
 		}
 	}
 
+	private async Task SeedPayoutsAsync()
+	{
+		if (!await _dbContext.PayoutPeriods.AnyAsync() && !await _dbContext.OwnerPayouts.AnyAsync())
+		{
+			try
+			{
+				await _payoutSeeder.SeedPayoutsAsync(12, 5); // Seed 12 payout periods with 5 owner payouts each
+				Console.WriteLine("Successfully seeded payouts.");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error seeding payouts: {ex.Message}");
+				Console.WriteLine($"Stack trace: {ex.StackTrace}");
+			}
+		}
+		else
+		{
+			Console.WriteLine("Payouts already exist in the database.");
+		}
+	}
 }

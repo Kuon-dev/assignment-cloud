@@ -1,20 +1,21 @@
 using Microsoft.EntityFrameworkCore;
 /*using Microsoft.Extensions.Logging;*/
 using Cloud.Models;
+using Cloud.Models.DTO;
 
 namespace Cloud.Services
 {
 	public interface IPayoutService
 	{
-		Task<PayoutPeriod> CreatePayoutPeriodAsync(DateTime startDate, DateTime endDate);
-		Task<IEnumerable<PayoutPeriod>> GetPayoutPeriodsAsync();
-		Task<PayoutPeriod?> GetPayoutPeriodAsync(Guid id);
-		Task<OwnerPayout> CreateOwnerPayoutAsync(Guid ownerId, Guid payoutPeriodId, decimal amount);
-		Task<IEnumerable<OwnerPayout>> GetOwnerPayoutsAsync(Guid ownerId);
-		Task<OwnerPayout?> GetOwnerPayoutAsync(Guid id);
-		Task<OwnerPayout> ProcessOwnerPayoutAsync(Guid payoutId);
-		Task<PayoutSettings> GetPayoutSettingsAsync();
-		Task<PayoutSettings> UpdatePayoutSettingsAsync(PayoutSettings settings);
+		Task<PayoutPeriodDto> CreatePayoutPeriodAsync(CreatePayoutPeriodDto dto);
+		Task<IEnumerable<PayoutPeriodDto>> GetPayoutPeriodsAsync();
+		Task<PayoutPeriodDto?> GetPayoutPeriodAsync(Guid id);
+		Task<OwnerPayoutDto> CreateOwnerPayoutAsync(CreateOwnerPayoutDto dto);
+		Task<IEnumerable<OwnerPayoutDto>> GetOwnerPayoutsAsync(Guid ownerId);
+		Task<OwnerPayoutDto?> GetOwnerPayoutAsync(Guid id);
+		Task<OwnerPayoutDto> ProcessOwnerPayoutAsync(Guid payoutId);
+		Task<PayoutSettingsDto> GetPayoutSettingsAsync();
+		Task<PayoutSettingsDto> UpdatePayoutSettingsAsync(UpdatePayoutSettingsDto dto);
 	}
 
 	public class PayoutService : IPayoutService
@@ -28,47 +29,49 @@ namespace Cloud.Services
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
 		}
 
-		public async Task<PayoutPeriod> CreatePayoutPeriodAsync(DateTime startDate, DateTime endDate)
+		public async Task<PayoutPeriodDto> CreatePayoutPeriodAsync(CreatePayoutPeriodDto dto)
 		{
 			var payoutPeriod = new PayoutPeriod
 			{
-				StartDate = startDate,
-				EndDate = endDate,
+				StartDate = dto.StartDate,
+				EndDate = dto.EndDate,
 				Status = PayoutPeriodStatus.Pending
 			};
 
 			_context.PayoutPeriods.Add(payoutPeriod);
 			await _context.SaveChangesAsync();
-			return payoutPeriod;
+			return MapToPayoutPeriodDto(payoutPeriod);
 		}
 
-		public async Task<IEnumerable<PayoutPeriod>> GetPayoutPeriodsAsync()
+		public async Task<IEnumerable<PayoutPeriodDto>> GetPayoutPeriodsAsync()
 		{
-			return await _context.PayoutPeriods.ToListAsync();
+			var payoutPeriods = await _context.PayoutPeriods.ToListAsync();
+			return payoutPeriods.Select(MapToPayoutPeriodDto);
 		}
 
-		public async Task<PayoutPeriod?> GetPayoutPeriodAsync(Guid id)
+		public async Task<PayoutPeriodDto?> GetPayoutPeriodAsync(Guid id)
 		{
-			return await _context.PayoutPeriods.FindAsync(id);
+			var payoutPeriod = await _context.PayoutPeriods.FindAsync(id);
+			return payoutPeriod != null ? MapToPayoutPeriodDto(payoutPeriod) : null;
 		}
 
-		public async Task<OwnerPayout> CreateOwnerPayoutAsync(Guid ownerId, Guid payoutPeriodId, decimal amount)
+		public async Task<OwnerPayoutDto> CreateOwnerPayoutAsync(CreateOwnerPayoutDto dto)
 		{
-			var owner = await _context.Owners.FindAsync(ownerId);
+			var owner = await _context.Owners.FindAsync(dto.OwnerId);
 			if (owner == null)
-				throw new ArgumentException("Owner not found", nameof(ownerId));
+				throw new ArgumentException("Owner not found", nameof(dto.OwnerId));
 
-			var payoutPeriod = await _context.PayoutPeriods.FindAsync(payoutPeriodId);
+			var payoutPeriod = await _context.PayoutPeriods.FindAsync(dto.PayoutPeriodId);
 			if (payoutPeriod == null)
-				throw new ArgumentException("Payout period not found", nameof(payoutPeriodId));
+				throw new ArgumentException("Payout period not found", nameof(dto.PayoutPeriodId));
 
 			var settings = await GetPayoutSettingsAsync();
 
 			var ownerPayout = new OwnerPayout
 			{
-				OwnerId = ownerId,
-				PayoutPeriodId = payoutPeriodId,
-				Amount = amount,
+				OwnerId = dto.OwnerId,
+				PayoutPeriodId = dto.PayoutPeriodId,
+				Amount = dto.Amount,
 				Currency = settings.DefaultCurrency,
 				Status = PayoutStatus.Pending,
 				CreatedAt = DateTime.UtcNow
@@ -76,22 +79,24 @@ namespace Cloud.Services
 
 			_context.OwnerPayouts.Add(ownerPayout);
 			await _context.SaveChangesAsync();
-			return ownerPayout;
+			return MapToOwnerPayoutDto(ownerPayout);
 		}
 
-		public async Task<IEnumerable<OwnerPayout>> GetOwnerPayoutsAsync(Guid ownerId)
+		public async Task<IEnumerable<OwnerPayoutDto>> GetOwnerPayoutsAsync(Guid ownerId)
 		{
-			return await _context.OwnerPayouts
+			var ownerPayouts = await _context.OwnerPayouts
 				.Where(op => op.OwnerId == ownerId)
 				.ToListAsync();
+			return ownerPayouts.Select(MapToOwnerPayoutDto);
 		}
 
-		public async Task<OwnerPayout?> GetOwnerPayoutAsync(Guid id)
+		public async Task<OwnerPayoutDto?> GetOwnerPayoutAsync(Guid id)
 		{
-			return await _context.OwnerPayouts.FindAsync(id);
+			var ownerPayout = await _context.OwnerPayouts.FindAsync(id);
+			return ownerPayout != null ? MapToOwnerPayoutDto(ownerPayout) : null;
 		}
 
-		public async Task<OwnerPayout> ProcessOwnerPayoutAsync(Guid payoutId)
+		public async Task<OwnerPayoutDto> ProcessOwnerPayoutAsync(Guid payoutId)
 		{
 			var payout = await _context.OwnerPayouts
 				.Include(op => op.Owner)
@@ -126,10 +131,10 @@ namespace Cloud.Services
 				throw;
 			}
 
-			return payout;
+			return MapToOwnerPayoutDto(payout);
 		}
 
-		public async Task<PayoutSettings> GetPayoutSettingsAsync()
+		public async Task<PayoutSettingsDto> GetPayoutSettingsAsync()
 		{
 			var settings = await _context.PayoutSettings.FirstOrDefaultAsync();
 			if (settings == null)
@@ -144,14 +149,65 @@ namespace Cloud.Services
 				_context.PayoutSettings.Add(settings);
 				await _context.SaveChangesAsync();
 			}
-			return settings;
+			return MapToPayoutSettingsDto(settings);
 		}
 
-		public async Task<PayoutSettings> UpdatePayoutSettingsAsync(PayoutSettings settings)
+		public async Task<PayoutSettingsDto> UpdatePayoutSettingsAsync(UpdatePayoutSettingsDto dto)
 		{
-			_context.PayoutSettings.Update(settings);
+			var settings = await _context.PayoutSettings.FirstOrDefaultAsync();
+			if (settings == null)
+			{
+				settings = new PayoutSettings();
+				_context.PayoutSettings.Add(settings);
+			}
+
+			settings.PayoutCutoffDay = dto.PayoutCutoffDay;
+			settings.ProcessingDay = dto.ProcessingDay;
+			settings.DefaultCurrency = dto.DefaultCurrency;
+			settings.MinimumPayoutAmount = dto.MinimumPayoutAmount;
+
 			await _context.SaveChangesAsync();
-			return settings;
+			return MapToPayoutSettingsDto(settings);
+		}
+
+		private static PayoutPeriodDto MapToPayoutPeriodDto(PayoutPeriod period)
+		{
+			return new PayoutPeriodDto
+			{
+				Id = period.Id,
+				StartDate = period.StartDate,
+				EndDate = period.EndDate,
+				Status = period.Status.ToString()
+			};
+		}
+
+		private static OwnerPayoutDto MapToOwnerPayoutDto(OwnerPayout payout)
+		{
+			return new OwnerPayoutDto
+			{
+				Id = payout.Id,
+				OwnerId = payout.OwnerId,
+				PayoutPeriodId = payout.PayoutPeriodId,
+				Amount = payout.Amount,
+				Currency = payout.Currency,
+				Status = payout.Status.ToString(),
+				CreatedAt = payout.CreatedAt,
+				ProcessedAt = payout.ProcessedAt,
+				TransactionReference = payout.TransactionReference,
+				Notes = payout.Notes
+			};
+		}
+
+		private static PayoutSettingsDto MapToPayoutSettingsDto(PayoutSettings settings)
+		{
+			return new PayoutSettingsDto
+			{
+				Id = settings.Id,
+				PayoutCutoffDay = settings.PayoutCutoffDay,
+				ProcessingDay = settings.ProcessingDay,
+				DefaultCurrency = settings.DefaultCurrency,
+				MinimumPayoutAmount = settings.MinimumPayoutAmount
+			};
 		}
 	}
 }
