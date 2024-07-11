@@ -82,7 +82,7 @@ namespace Cloud.Services
 		public async Task<IEnumerable<PropertyDto>> GetOwnedProperty(string ownerId)
 		{
 			var properties = await _context.Properties
-				.Where(p => p.Owner!= null && p.Owner.Id.ToString() == ownerId)
+				.Where(p => p.Owner != null && p.Owner.Id.ToString() == ownerId)
 				.Select(p => new PropertyDto
 				{
 					Id = p.Id,

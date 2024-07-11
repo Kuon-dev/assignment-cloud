@@ -57,7 +57,7 @@ namespace Cloud.Controllers
 				return BadRequest(ModelState);
 			}
 
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();
@@ -77,7 +77,7 @@ namespace Cloud.Controllers
 				return BadRequest(ModelState);
 			}
 
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();
@@ -96,7 +96,7 @@ namespace Cloud.Controllers
 		[Authorize(Roles = "Admin,Owner")]
 		public async Task<IActionResult> DeleteListing(Guid id)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();
@@ -124,7 +124,7 @@ namespace Cloud.Controllers
 		[Authorize(Roles = "Admin,Owner")]
 		public async Task<ActionResult<IEnumerable<RentalApplicationModel>>> GetListingApplications(Guid id)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();
@@ -155,7 +155,7 @@ namespace Cloud.Controllers
 		[Authorize(Roles = "Admin,Owner")]
 		public async Task<ActionResult<ListingAnalytics>> GetListingAnalytics(Guid id)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();

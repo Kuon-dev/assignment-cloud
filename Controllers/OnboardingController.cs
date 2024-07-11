@@ -32,7 +32,7 @@ namespace Cloud.Controllers
 		[HttpPost("initiate")]
 		public async Task<IActionResult> InitiateOnboarding()
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();
@@ -69,7 +69,7 @@ namespace Cloud.Controllers
 		[HttpGet("status")]
 		public async Task<IActionResult> GetOnboardingStatus()
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();
@@ -106,7 +106,7 @@ namespace Cloud.Controllers
 		[HttpPost("complete")]
 		public async Task<IActionResult> CompleteOnboarding()
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();

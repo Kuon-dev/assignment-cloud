@@ -35,7 +35,7 @@ namespace Cloud.Controllers
 		[HttpPost]
 		public async Task<ActionResult<MediaDto>> CreateMedia([FromForm] CreateMediaDto createMediaDto)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();
@@ -64,7 +64,7 @@ namespace Cloud.Controllers
 		[HttpGet("{id}")]
 		public async Task<ActionResult<MediaDto>> GetMediaById(Guid id)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();
@@ -86,7 +86,7 @@ namespace Cloud.Controllers
 		[HttpGet]
 		public async Task<ActionResult<List<MediaDto>>> GetAllMedia()
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();
@@ -104,7 +104,7 @@ namespace Cloud.Controllers
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeleteMedia(Guid id)
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			if (string.IsNullOrEmpty(userId))
 			{
 				return Unauthorized();

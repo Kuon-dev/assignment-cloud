@@ -101,33 +101,33 @@ builder.Services.AddIdentity<UserModel, IdentityRole>(options =>
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.Events = new CookieAuthenticationEvents
-    {
-        OnRedirectToLogin = ctx =>
-        {
-            if (ctx.Request.Path.StartsWithSegments("/api") && ctx.Response.StatusCode == 200)
-            {
-                ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            }
-            else
-            {
-                ctx.Response.Redirect(ctx.RedirectUri);
-            }
-            return Task.CompletedTask;
-        },
-        OnRedirectToAccessDenied = ctx =>
-        {
-            if (ctx.Request.Path.StartsWithSegments("/api") && ctx.Response.StatusCode == 200)
-            {
-                ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
-            }
-            else
-            {
-                ctx.Response.Redirect(ctx.RedirectUri);
-            }
-            return Task.CompletedTask;
-        }
-    };
+	options.Events = new CookieAuthenticationEvents
+	{
+		OnRedirectToLogin = ctx =>
+		{
+			if (ctx.Request.Path.StartsWithSegments("/api") && ctx.Response.StatusCode == 200)
+			{
+				ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+			}
+			else
+			{
+				ctx.Response.Redirect(ctx.RedirectUri);
+			}
+			return Task.CompletedTask;
+		},
+		OnRedirectToAccessDenied = ctx =>
+		{
+			if (ctx.Request.Path.StartsWithSegments("/api") && ctx.Response.StatusCode == 200)
+			{
+				ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+			}
+			else
+			{
+				ctx.Response.Redirect(ctx.RedirectUri);
+			}
+			return Task.CompletedTask;
+		}
+	};
 });
 
 builder.Services.AddCors(options =>
