@@ -142,6 +142,13 @@ namespace Cloud.Controllers
 			return Ok(activeLeases);
 		}
 
+		[HttpGet("activeWithTenantNames")]
+		public async Task<IActionResult> GetActiveLeasesWithTenantNames()
+		{
+			var activeLeases = await _leaseService.GetActiveLeasesWithTenantNamesAsync();
+			return Ok(activeLeases);
+		}
+
 		/// <summary>
 		/// Get all expired leases.
 		/// </summary>

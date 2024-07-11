@@ -50,6 +50,12 @@ namespace Cloud.Models.DTO
 				throw new ArgumentException("Security deposit cannot be negative.", nameof(lease.SecurityDeposit));
 			}
 		}
+	}
 
+	public class LeaseWithTenantNameDto : LeaseDto
+	{
+		public string TenantFirstName { get; set; } = string.Empty;
+		public string TenantLastName { get; set; } = string.Empty;
+		public string TenantEmail { get; set; } = string.Empty;
 	}
 }
