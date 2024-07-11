@@ -75,7 +75,7 @@ namespace Cloud.Services
 			{
 				Amount = amount,
 				Currency = "myr",
-				Customer = tenant.User?.StripeCustomer?.StripeCustomerId,
+				/*Customer = tenant.User?.StripeCustomer?.StripeCustomerId.ToString(),*/
 				SetupFutureUsage = "off_session",
 				Metadata = new Dictionary<string, string>
 				{
