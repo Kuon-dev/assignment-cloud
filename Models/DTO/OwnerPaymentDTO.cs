@@ -30,7 +30,10 @@ namespace Cloud.Models.DTO
 		public Guid OwnerId { get; set; }
 
 		[Required]
-		public Guid PropertyId { get; set; }
+		public int year { get; set; }
+
+		[Required]
+		public int month { get; set; }
 
 		[Required]
 		[Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than 0")]

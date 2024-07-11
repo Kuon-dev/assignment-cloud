@@ -10,7 +10,7 @@ namespace Cloud.Services
 	{
 		Task<IEnumerable<OwnerPaymentModel>> GetAllPaymentsAsync(int page, int size);
 		Task<OwnerPaymentModel> GetPaymentByIdAsync(Guid id);
-		Task<OwnerPaymentModel> CreatePaymentAsync(Guid ownerId, Guid propertyId, decimal amount);
+		Task<OwnerPaymentModel> CreatePaymentAsync(Guid ownerId, int year, int month, decimal amount);
 		Task<OwnerPaymentModel> UpdatePaymentAsync(Guid id, OwnerPaymentModel payment);
 		Task<bool> DeletePaymentAsync(Guid id);
 		Task<IEnumerable<OwnerPaymentModel>> GetPaymentsByOwnerIdAsync(Guid ownerId, int page, int size);
@@ -72,11 +72,11 @@ namespace Cloud.Services
 			}
 		}
 
-		public async Task<OwnerPaymentModel> CreatePaymentAsync(Guid ownerId, Guid propertyId, decimal amount)
+		public async Task<OwnerPaymentModel> CreatePaymentAsync(Guid ownerId, int year, int month, decimal amount)
 		{
 			try
 			{
-				var payment = await _paymentFactory.CreatePaymentAsync(ownerId, propertyId, amount, OwnerPaymentStatus.Pending);
+				var payment = await _paymentFactory.CreatePaymentAsync(ownerId, year, month, amount, OwnerPaymentStatus.Pending);
 				_paymentValidator.ValidatePayment(payment);
 				return payment;
 			}

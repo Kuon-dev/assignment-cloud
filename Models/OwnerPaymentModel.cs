@@ -21,6 +21,12 @@ namespace Cloud.Models
 		public PropertyModel Property { get; set; } = null!;
 
 		[Required]
+		public int Year { get; set; }
+
+		[Required]
+		public int Month { get; set; }
+
+		[Required]
 		[Column(TypeName = "decimal(18,2)")]
 		public decimal Amount { get; set; }
 

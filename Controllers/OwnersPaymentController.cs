@@ -68,7 +68,7 @@ namespace Cloud.Controllers
 		{
 			try
 			{
-				var createdPayment = await _ownerPaymentService.CreatePaymentAsync(paymentDto.OwnerId, paymentDto.PropertyId, paymentDto.Amount);
+				var createdPayment = await _ownerPaymentService.CreatePaymentAsync(paymentDto.OwnerId, paymentDto.year, paymentDto.month, paymentDto.Amount);
 				return CreatedAtAction(nameof(GetOwnerPayment), new { id = createdPayment.Id }, new OwnerPaymentDto(createdPayment));
 			}
 			catch (ValidationException ex)

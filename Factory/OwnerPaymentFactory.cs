@@ -44,12 +44,13 @@ namespace Cloud.Factories
 		/// <param name="amount">The payment amount.</param>
 		/// <param name="status">The payment status.</param>
 		/// <returns>The created OwnerPaymentModel.</returns>
-		public async Task<OwnerPaymentModel> CreatePaymentAsync(Guid ownerId, Guid propertyId, decimal amount, OwnerPaymentStatus status)
+		public async Task<OwnerPaymentModel> CreatePaymentAsync(Guid ownerId, int year, int month, decimal amount, OwnerPaymentStatus status)
 		{
 			var payment = new OwnerPaymentModel
 			{
 				OwnerId = ownerId,
-				PropertyId = propertyId,
+				Year = year,
+				Month = month,
 				Amount = amount,
 				Status = status,
 				PaymentDate = DateTime.UtcNow
