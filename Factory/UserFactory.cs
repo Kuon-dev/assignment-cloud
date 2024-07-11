@@ -3,6 +3,7 @@ using Cloud.Models;
 using Bogus;
 using Cloud.Models.Validator;
 using Stripe;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 /// <summary>
 /// Factory class for creating user models and related entities.
@@ -153,6 +154,8 @@ public class UserFactory
 			var result = await _userManager.CreateAsync(user, password);
 			if (!result.Succeeded)
 			{
+				var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+				Console.WriteLine($"Failed to create user: {errors}"); // Log errors for debugging
 				throw new InvalidOperationException($"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
 			}
 
@@ -172,8 +175,9 @@ public class UserFactory
 			await transaction.CommitAsync();
 			return user;
 		}
-		catch
+		catch (Exception ex)
 		{
+			Console.WriteLine($"Failed to create user: {ex}"); // Log errors for debugging
 			await transaction.RollbackAsync();
 			return null;
 		}
@@ -213,7 +217,7 @@ public class UserFactory
 		var customerStripe = new StripeCustomerModel
 		{
 			UserId = user.Id,
-			StripeCustomerId = stripeCustomerId
+			StripeCustomerId = Guid.Parse(stripeCustomerId)
 		};
 
 		_stripeCustomerValidator.AddStrategy(new UserIdValidationStrategy());
@@ -235,9 +239,9 @@ public class UserFactory
 		var roleSpecificModels = new List<object>(count);
 
 		// static users for testing
-		await CreateTenantAsync("tenant@example.com", "Password123!", "Test", "Tenant");
-		await CreateOwnerAsync("owner@example.com", "Password123!", "Test", "Owner");
-		await CreateAdminAsync("admin@example.com", "Password123!", "Test", "Admin");
+		await CreateTenantAsync("tenant@example.com", "Password123!", "Test111", "Tenant");
+		await CreateOwnerAsync("owner@example.com", "Password123!", "Test11", "Owner");
+		await CreateAdminAsync("admin@example.com", "Password123!", "Test23", "Admin");
 		for (int i = 0; i < count; i++)
 		{
 			var user = _userFaker.Generate();
