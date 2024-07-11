@@ -54,6 +54,15 @@ namespace Cloud.Controllers
 			return Ok(user);
 		}
 
+		[HttpGet("owners")]
+		[Authorize(Roles = "Admin")]
+		public async Task<ActionResult<CustomPaginatedResult<UserInfoDto>>> GetOwners([FromQuery] Cloud.Models.DTO.PaginationParams paginationParams)
+		{
+			_logger.LogInformation("Getting admin with pagination parameters: {@PaginationParams}", paginationParams);
+			var users = await _adminService.GetOwnersAsync(paginationParams);
+			return Ok(users);
+		}
+
 		// POST: api/admin/users
 		[HttpPost("users")]
 		public async Task<IActionResult> CreateUser([FromBody] RegisterModel model)
@@ -168,18 +177,6 @@ namespace Cloud.Controllers
 				PerformanceAnalytics = performanceAnalytics,
 				ListingAnalytics = listingAnalytics
 			});
-		}
-
-		// GET: api/admin/financials
-		[HttpGet("financials")]
-		[Authorize(Roles = "Admin")]
-		public async Task<IActionResult> GetFinancialReconciliationData()
-		{
-			_logger.LogInformation("Getting financial reconciliation data");
-
-			var financialData = await _adminService.GetFinancialReconciliationDataAsync();
-
-			return Ok(financialData);
 		}
 
 		// GET: api/admin/maintenance-requests
