@@ -16,7 +16,7 @@ namespace Cloud.Services
 		/// <param name="tenantId">The ID of the tenant making the payment</param>
 		/// <param name="amount">The amount to be paid in cents</param>
 		/// <returns>The created PaymentIntent client secret</returns>
-		Task<string> CreatePaymentIntentAsync(Guid tenantId, int amount);
+		Task<string> CreatePaymentIntentAsync(Guid tenantId, float amount);
 
 		/// <summary>
 		/// Processes a successful payment
@@ -59,10 +59,11 @@ namespace Cloud.Services
 			_rentPaymentFactory = rentPaymentFactory;
 		}
 
-		public async Task<string> CreatePaymentIntentAsync(Guid tenantId, int amount)
+		public async Task<string> CreatePaymentIntentAsync(Guid tenantId, float amount)
 		{
 			var tenant = await _context.Tenants
 				.Include(t => t.User)
+				.ThenInclude(u => u.StripeCustomer)
 				.FirstOrDefaultAsync(t => t.Id == tenantId);
 
 			if (tenant == null)
@@ -72,9 +73,10 @@ namespace Cloud.Services
 
 			var options = new PaymentIntentCreateOptions
 			{
-				Amount = amount,
-				Currency = "usd",
-				Customer = tenant.User?.StripeCustomer?.StripeCustomerId,
+				Amount = Convert.ToInt32(amount) * 100,
+				Currency = "myr",
+				/*Customer = tenant.User?.StripeCustomer?.StripeCustomerId.ToString(),*/
+				SetupFutureUsage = "off_session",
 				Metadata = new Dictionary<string, string>
 				{
 					{ "TenantId", tenantId.ToString() }
@@ -84,7 +86,7 @@ namespace Cloud.Services
 			var service = new PaymentIntentService();
 			var paymentIntent = await service.CreateAsync(options);
 
-			var rentPayment = _rentPaymentFactory.Create(tenantId, amount, "myr", paymentIntent.Id, MapStripeStatusToPaymentStatus(paymentIntent.Status));
+			var rentPayment = _rentPaymentFactory.Create(tenantId, Convert.ToInt32(amount), "myr", paymentIntent.Id, MapStripeStatusToPaymentStatus(paymentIntent.Status));
 			_context.RentPayments?.Add(rentPayment);
 			await _context.SaveChangesAsync();
 

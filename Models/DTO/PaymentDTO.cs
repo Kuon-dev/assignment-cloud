@@ -5,8 +5,8 @@ namespace Cloud.Models.DTO
 	public class CreatePaymentIntentDto
 	{
 		[Required]
-		[Range(1, int.MaxValue, ErrorMessage = "Amount must be greater than 0")]
-		public int Amount { get; set; }
+		[Range(1, float.MaxValue, ErrorMessage = "Amount must be greater than 0")]
+		public float Amount { get; set; }
 	}
 
 	public class CreatePaymentIntentResponseDto

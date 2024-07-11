@@ -1,7 +1,12 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Cloud.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Cloud.Models;
 using Cloud.Models.DTO;
+using Cloud.Services;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 
 namespace Cloud.Controllers
 {
@@ -10,14 +15,18 @@ namespace Cloud.Controllers
 	/// </summary>
 	[ApiController]
 	[Route("api/[controller]")]
-	[Authorize(Roles = "Tenant")]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 	public class PaymentController : ControllerBase
 	{
 		private readonly IPaymentService _paymentService;
+		private readonly ApplicationDbContext _context;
+		private readonly ILogger<PaymentController> _logger;
 
-		public PaymentController(IPaymentService paymentService)
+		public PaymentController(IPaymentService paymentService, ApplicationDbContext context, ILogger<PaymentController> logger)
 		{
 			_paymentService = paymentService;
+			_context = context;
+			_logger = logger;
 		}
 
 		/// <summary>
@@ -26,6 +35,7 @@ namespace Cloud.Controllers
 		/// <param name="createPaymentDto">The DTO containing payment details</param>
 		/// <returns>The client secret for the created payment intent</returns>
 		[HttpPost("create-intent")]
+		[Authorize(Roles = "Tenant")]
 		public async Task<ActionResult<CreatePaymentIntentResponseDto>> CreatePaymentIntent([FromBody] CreatePaymentIntentDto createPaymentDto)
 		{
 			if (!ModelState.IsValid)
@@ -33,7 +43,8 @@ namespace Cloud.Controllers
 				return BadRequest(ModelState);
 			}
 
-			var tenantId = Guid.Parse(User.FindFirst("TenantId")?.Value ?? throw new UnauthorizedAccessException());
+			var userId = (User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException());
+			var tenantId = _context.Tenants.FirstOrDefault(t => t.User != null && t.User.Id == userId)?.Id ?? throw new NotFoundException("Tenant not found");
 
 			try
 			{
@@ -43,6 +54,12 @@ namespace Cloud.Controllers
 			catch (ArgumentException ex)
 			{
 				return BadRequest(ex.Message);
+			}
+			catch (Exception ex)
+			{
+				// Log the exception
+				_logger.LogError(ex, "An error occurred while creating a payment intent");
+				return StatusCode(500, "An error occurred while processing your request.");
 			}
 		}
 

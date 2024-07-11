@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cloud.Migrations
 {
 	/// <inheritdoc />
-	public partial class Initial : Migration
+	public partial class InitialDb : Migration
 	{
 		/// <inheritdoc />
 		protected override void Up(MigrationBuilder migrationBuilder)
@@ -285,6 +285,18 @@ namespace Cloud.Migrations
 					Id = table.Column<Guid>(type: "uuid", nullable: false),
 					UserId = table.Column<string>(type: "text", nullable: false),
 					StripeCustomerId = table.Column<string>(type: "text", nullable: false),
+					IsVerified = table.Column<bool>(type: "boolean", nullable: false),
+					DefaultPaymentMethodId = table.Column<string>(type: "text", nullable: true),
+					DefaultSourceId = table.Column<string>(type: "text", nullable: true),
+					Balance = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+					Currency = table.Column<string>(type: "text", nullable: true),
+					Delinquent = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+					Created = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+					InvoicePrefix = table.Column<string>(type: "text", nullable: true),
+					InvoiceSequence = table.Column<int>(type: "integer", nullable: true),
+					BusinessVatId = table.Column<string>(type: "text", nullable: true),
+					AccountType = table.Column<string>(type: "text", nullable: true),
+					Metadata = table.Column<string>(type: "text", nullable: true),
 					CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
 					UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
 					IsDeleted = table.Column<bool>(type: "boolean", nullable: false),

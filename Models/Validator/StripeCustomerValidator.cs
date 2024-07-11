@@ -38,7 +38,7 @@ namespace Cloud.Models.Validator
 	{
 		public void Validate(StripeCustomerModel stripeCustomer)
 		{
-			if (string.IsNullOrWhiteSpace(stripeCustomer.StripeCustomerId))
+			if (string.IsNullOrWhiteSpace(stripeCustomer.StripeCustomerId.ToString()))
 			{
 				throw new ArgumentException("Stripe Customer ID cannot be empty.", nameof(stripeCustomer.StripeCustomerId));
 			}
