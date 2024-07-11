@@ -118,10 +118,11 @@ builder.Services.AddScoped<PropertyFactory>();
 builder.Services.AddScoped<LeaseFactory>();
 builder.Services.AddScoped<UserFactory>();
 builder.Services.AddScoped<ListingFactory>();
-builder.Services.AddScoped<RentPaymentFactory>();
 builder.Services.AddScoped<RentalApplicationFactory>();
 builder.Services.AddScoped<MaintenanceFactory>();
 builder.Services.AddScoped<OwnerPaymentFactory>();
+
+builder.Services.AddScoped<IRentPaymentFactory, RentPaymentFactory>();
 
 builder.Services.AddScoped<ListingValidator>();
 builder.Services.AddScoped<LeaseValidator>();
