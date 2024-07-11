@@ -48,6 +48,37 @@ namespace Cloud.Controllers
 			}
 		}
 
+		[HttpGet("owned-property")]
+		public async Task<ActionResult<IEnumerable<PropertyModel>>> GetOwnedRentProperty()
+		{
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (userId == null)
+			{
+				return Unauthorized("User not authenticated");
+			}
+
+			var user = await _context.Users.Include(u => u.Owner).FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+			if (user == null)
+			{
+				return NotFound($"User with ID {userId} not found");
+			}
+
+			if (user.Owner == null)
+			{
+				return BadRequest("User is not an owner");
+			}
+
+			try
+			{
+				var ownedProperty = await _userService.GetOwnedProperty(user.Owner.Id.ToString());
+				return Ok(ownedProperty);
+			}
+			catch (NotFoundException ex)
+			{
+				return NotFound(ex.Message);
+			}
+		}
+
 		[HttpGet("payment-history")]
 		public async Task<ActionResult<IEnumerable<RentPaymentModel>>> GetPaymentHistory()
 		{
