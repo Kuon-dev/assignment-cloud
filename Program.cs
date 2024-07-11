@@ -103,30 +103,30 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
 	options.Events = new CookieAuthenticationEvents
 	{
-		OnRedirectToLogin = ctx =>
-		{
-			if (ctx.Request.Path.StartsWithSegments("/api") && ctx.Response.StatusCode == 200)
-			{
-				ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-			}
-			else
-			{
-				ctx.Response.Redirect(ctx.RedirectUri);
-			}
-			return Task.CompletedTask;
-		},
-		OnRedirectToAccessDenied = ctx =>
-		{
-			if (ctx.Request.Path.StartsWithSegments("/api") && ctx.Response.StatusCode == 200)
-			{
-				ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
-			}
-			else
-			{
-				ctx.Response.Redirect(ctx.RedirectUri);
-			}
-			return Task.CompletedTask;
-		}
+		/*OnRedirectToLogin = ctx =>*/
+		/*{*/
+		/*	if (ctx.Request.Path.StartsWithSegments("/api") && ctx.Response.StatusCode == 200)*/
+		/*	{*/
+		/*		ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;*/
+		/*	}*/
+		/*	else*/
+		/*	{*/
+		/*		ctx.Response.Redirect(ctx.RedirectUri);*/
+		/*	}*/
+		/*	return Task.CompletedTask;*/
+		/*},*/
+		/*OnRedirectToAccessDenied = ctx =>*/
+		/*{*/
+		/*	if (ctx.Request.Path.StartsWithSegments("/api") && ctx.Response.StatusCode == 200)*/
+		/*	{*/
+		/*		ctx.Response.StatusCode = StatusCodes.Status403Forbidden;*/
+		/*	}*/
+		/*	else*/
+		/*	{*/
+		/*		ctx.Response.Redirect(ctx.RedirectUri);*/
+		/*	}*/
+		/*	return Task.CompletedTask;*/
+		/*}*/
 	};
 });
 
@@ -154,7 +154,6 @@ builder.Services.AddScoped<UserFactory>();
 builder.Services.AddScoped<ListingFactory>();
 builder.Services.AddScoped<RentalApplicationFactory>();
 builder.Services.AddScoped<MaintenanceFactory>();
-builder.Services.AddScoped<OwnerPaymentFactory>();
 
 builder.Services.AddScoped<IRentPaymentFactory, RentPaymentFactory>();
 
@@ -164,12 +163,15 @@ builder.Services.AddScoped<RentPaymentValidator>();
 builder.Services.AddScoped<RentalApplicationValidator>();
 builder.Services.AddScoped<MaintenanceTaskValidator>();
 builder.Services.AddScoped<MaintenanceRequestValidator>();
-builder.Services.AddScoped<OwnerPaymentValidator>();
 builder.Services.AddScoped<StripeCustomerValidator>();
 builder.Services.AddScoped<CreateMediaDtoValidator>();
 builder.Services.AddScoped<UserValidator>();
 
+builder.Services.AddScoped<IPayoutService, Cloud.Services.PayoutService>();
+builder.Services.AddScoped<IOwnerProfileService, OwnerProfileService>();
+
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IStripeService, StripeService>();
 builder.Services.AddScoped<IS3Service, S3Service>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IListingService, ListingService>();
@@ -177,8 +179,6 @@ builder.Services.AddScoped<IRentalApplicationService, RentalApplicationService>(
 builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<ILeaseService, LeaseService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddScoped<IOwnerPaymentService, OwnerPaymentService>();
-builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
 builder.Services.AddScoped<IStripeCustomerService, StripeCustomerService>();
 builder.Services.AddScoped<IMediaService, MediaService>();

@@ -113,7 +113,7 @@ namespace Cloud.Controllers
 				if (property == null)
 					return NotFound();
 
-				if (!User.IsInRole("Admin") && property.OwnerId != Guid.Parse(userId))
+				if (!User.IsInRole("Admin") || property.OwnerId != Guid.Parse(userId))
 					return Forbid();
 
 				var updatedProperty = await _propertyService.UpdatePropertyAsync(id, updatePropertyDto);
@@ -159,7 +159,7 @@ namespace Cloud.Controllers
 				if (property == null)
 					return NotFound();
 
-				if (!User.IsInRole("Admin") && property.OwnerId != Guid.Parse(userId))
+				if (!User.IsInRole("Admin") || property.OwnerId != Guid.Parse(userId))
 					return Forbid();
 
 				var result = await _propertyService.DeletePropertyAsync(id);
