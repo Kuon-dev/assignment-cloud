@@ -217,7 +217,12 @@ public class UserFactory
 		var customerStripe = new StripeCustomerModel
 		{
 			UserId = user.Id,
-			StripeCustomerId = (stripeCustomerId)
+			StripeCustomerId = stripeCustomerId,
+			IsVerified = false,
+			Balance = 0,
+			Currency = "myr", // Default currency, change if needed
+			Created = DateTime.UtcNow,
+			AccountType = "individual" // Default account type, change if needed
 		};
 
 		_stripeCustomerValidator.AddStrategy(new UserIdValidationStrategy());
