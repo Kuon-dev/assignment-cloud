@@ -45,7 +45,7 @@ namespace Cloud.Services
 				throw new InvalidOperationException("Stripe customer not found");
 
 			if (!string.IsNullOrEmpty(stripeCustomerDto.StripeCustomerId))
-				stripeCustomer.StripeCustomerId = Guid.Parse(stripeCustomerDto.StripeCustomerId);
+				stripeCustomer.StripeCustomerId = (stripeCustomerDto.StripeCustomerId);
 
 			stripeCustomer.UpdateModifiedProperties(DateTime.UtcNow);
 			await _context.SaveChangesAsync();

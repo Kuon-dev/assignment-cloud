@@ -217,7 +217,7 @@ public class UserFactory
 		var customerStripe = new StripeCustomerModel
 		{
 			UserId = user.Id,
-			StripeCustomerId = Guid.Parse(stripeCustomerId)
+			StripeCustomerId = (stripeCustomerId)
 		};
 
 		_stripeCustomerValidator.AddStrategy(new UserIdValidationStrategy());

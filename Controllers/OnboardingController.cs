@@ -54,7 +54,7 @@ namespace Cloud.Controllers
 				var stripeAccount = await _stripeService.CreateConnectedAccountAsync(user.Id);
 				var onboardingLink = await _stripeService.CreateOnboardingLinkAsync(stripeAccount.Id.ToString());
 
-				user.StripeCustomer.StripeCustomerId = stripeAccount.Id;
+				user.StripeCustomer.StripeCustomerId = stripeAccount.Id.ToString();
 				await _context.SaveChangesAsync();
 
 				return Ok(new { onboardingUrl = onboardingLink });

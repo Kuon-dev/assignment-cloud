@@ -14,7 +14,7 @@ namespace Cloud.Models
 		public UserModel? User { get; set; }
 
 		[Required]
-		public Guid StripeCustomerId { get; set; } = Guid.Empty;
+		public string StripeCustomerId { get; set; } = string.Empty;
 
 		[Required]
 		public bool IsVerified { get; set; } = false;

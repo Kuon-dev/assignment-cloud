@@ -57,7 +57,7 @@ namespace Cloud.Services
 			var stripeCustomer = new StripeCustomerModel
 			{
 				UserId = userId,
-				StripeCustomerId = Guid.Parse(account.Id),
+				StripeCustomerId = (account.Id),
 				IsVerified = false
 			};
 
