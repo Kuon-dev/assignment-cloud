@@ -109,11 +109,22 @@ namespace Cloud.Controllers
 				if (userId == null)
 					return Unauthorized();
 
+				var user = await _context.Users.Include(u => u.Owner).FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+				if (user == null)
+				{
+					return NotFound($"User with ID {userId} not found");
+				}
+
+				if (user.Owner == null)
+				{
+					return BadRequest("User is not an owner");
+				}
+
 				var property = await _propertyService.GetPropertyByIdAsync(id);
 				if (property == null)
 					return NotFound();
 
-				if (!User.IsInRole("Admin") && property.OwnerId != Guid.Parse(userId))
+				if (!User.IsInRole("Admin") && user.Owner != null && property.OwnerId != user.Owner.Id)
 					return Forbid();
 
 				var updatedProperty = await _propertyService.UpdatePropertyAsync(id, updatePropertyDto);
@@ -155,11 +166,22 @@ namespace Cloud.Controllers
 				if (userId == null)
 					return Unauthorized();
 
+				var user = await _context.Users.Include(u => u.Owner).FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+				if (user == null)
+				{
+					return NotFound($"User with ID {userId} not found");
+				}
+
+				if (user.Owner == null)
+				{
+					return BadRequest("User is not an owner");
+				}
+
 				var property = await _propertyService.GetPropertyByIdAsync(id);
 				if (property == null)
 					return NotFound();
 
-				if (!User.IsInRole("Admin") && property.OwnerId != Guid.Parse(userId))
+				if (!User.IsInRole("Admin") && user.Owner != null && property.OwnerId != user.Owner.Id)
 					return Forbid();
 
 				var result = await _propertyService.DeletePropertyAsync(id);

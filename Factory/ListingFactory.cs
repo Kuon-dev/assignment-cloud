@@ -1,3 +1,4 @@
+using Amazon.S3.Model;
 using Bogus;
 using Cloud.Models;
 using Cloud.Models.DTO;
@@ -77,7 +78,9 @@ namespace Cloud.Factories
 				Price = createListingDto.Price,
 				PropertyId = createListingDto.PropertyId,
 				IsActive = createListingDto.IsActive,
-				Views = 0
+				Views = 0,
+				StartDate = createListingDto.StartDate,
+				EndDate = createListingDto.EndDate,
 			};
 
 			listing.UpdateCreationProperties(DateTime.UtcNow);

@@ -424,6 +424,7 @@ namespace Cloud.Controllers
 					Bedrooms = l.Property!.Bedrooms,
 					Bathrooms = l.Property!.Bathrooms,
 					PropertyId = l.Property!.Id,
+					IsActive = l.IsActive,
 				})
 				.ToListAsync();
 
