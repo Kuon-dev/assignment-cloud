@@ -136,10 +136,34 @@ namespace Cloud.Controllers
 				return Unauthorized("User not authenticated");
 			}
 
+			var user = await _context.Users.Include(u => u.Owner).FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+			if (user == null)
+			{
+				return NotFound($"User with ID {userId} not found");
+			}
+
 			try
 			{
-				var applications = await _userService.GetApplicationsAsync(userId);
-				return Ok(applications);
+				if (user.Owner != null)
+				{
+					var ownerApplications = await _userService.GetOwnerApplicationsAsync(user.Owner.Id.ToString());
+					if (ownerApplications == null || !ownerApplications.Any())
+					{
+						return NotFound($"No application found for owner with ID {user.Owner.Id}");
+					}
+					return Ok(ownerApplications);
+				}
+
+				if (user.Tenant != null)
+				{
+					var applications = await _userService.GetApplicationsAsync(userId);
+					if (applications == null || !applications.Any())
+					{
+						return NotFound($"No application found for tenant with ID {userId}");
+					}
+					return Ok(applications);
+				}
+				return NotFound($"No application found for user with ID {userId}");
 			}
 			catch (BadRequestException ex)
 			{
@@ -400,6 +424,7 @@ namespace Cloud.Controllers
 					Bedrooms = l.Property!.Bedrooms,
 					Bathrooms = l.Property!.Bathrooms,
 					PropertyId = l.Property!.Id,
+					IsActive = l.IsActive,
 				})
 				.ToListAsync();
 

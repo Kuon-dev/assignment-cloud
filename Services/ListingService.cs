@@ -123,7 +123,7 @@ namespace Cloud.Services
 				throw new InvalidOperationException($"Property with ID {listingDto.PropertyId} not found for this owner.");
 			}
 
-			var listing = await _listingFactory.CreateListingAsync(listingDto, userId);
+			var listing = await _listingFactory.CreateListingAsync(listingDto, ownerId.ToString());
 			return listing;
 		}
 
@@ -143,15 +143,28 @@ namespace Cloud.Services
 				throw new NotFoundException($"Listing with ID {id} not found.");
 			}
 
-			if (listing.Property.OwnerId.ToString() != userId)
+			var user = await _context.Users.Include(u => u.Owner).FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+			if (user == null)
+			{
+				throw new NotFoundException($"User with ID {userId} not found");
+			}
+
+			if (user.Owner == null)
+			{
+				throw new NotFoundException("User is not an owner");
+			}
+
+			if (listing.Property.OwnerId != user.Owner.Id)
 			{
 				return false;
 			}
-
+			Console.WriteLine(listingDto.Description);
+			Console.WriteLine(listingDto.IsActive);
 			// Update properties
 			listing.Title = listingDto.Title ?? listing.Title;
 			listing.Description = listingDto.Description ?? listing.Description;
 			listing.Price = listingDto.Price ?? listing.Price;
+			listing.IsActive = listingDto.IsActive ?? listing.IsActive;
 			listing.UpdateModifiedProperties(DateTime.UtcNow);
 
 			await _context.SaveChangesAsync();
@@ -168,7 +181,19 @@ namespace Cloud.Services
 			{
 				throw new NotFoundException($"Listing with ID {id} not found.");
 			}
-			if (listing.Property.OwnerId.ToString() != userId)
+
+			var user = await _context.Users.Include(u => u.Owner).FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+			if (user == null)
+			{
+				throw new NotFoundException($"User with ID {userId} not found");
+			}
+
+			if (user.Owner == null)
+			{
+				throw new NotFoundException("User is not an owner");
+			}
+
+			if (listing.Property.OwnerId != user.Owner.Id)
 			{
 				throw new UnauthorizedAccessException("User is not authorized to delete this listing.");
 			}

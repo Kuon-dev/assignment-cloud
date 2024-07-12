@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Cloud.Models
@@ -12,15 +12,16 @@ namespace Cloud.Models
 		public DbSet<PropertyModel> Properties { get; set; } = null!;
 		public DbSet<LeaseModel> Leases { get; set; } = null!;
 		public DbSet<RentPaymentModel> RentPayments { get; set; } = null!;
-		public DbSet<OwnerPaymentModel> OwnerPayments { get; set; } = null!;
 		public DbSet<StripeCustomerModel> StripeCustomers { get; set; } = null!;
 		public DbSet<MaintenanceRequestModel> MaintenanceRequests { get; set; } = null!;
 		public DbSet<MaintenanceTaskModel> MaintenanceTasks { get; set; } = null!;
 		public DbSet<ApplicationDocumentModel> ApplicationDocuments { get; set; } = null!;
-		public DbSet<ActivityLogModel> ActivityLogs { get; set; } = null!;
 		public DbSet<ListingModel> Listings { get; set; } = null!;
 		public DbSet<MediaModel> Medias { get; set; } = null!;
 		public DbSet<RentalApplicationModel> RentalApplications { get; set; } = null!;
+		public DbSet<PayoutPeriod> PayoutPeriods { get; set; } = null!;
+		public DbSet<OwnerPayout> OwnerPayouts { get; set; } = null!;
+		public DbSet<PayoutSettings> PayoutSettings { get; set; } = null!;
 
 		public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
 		{
@@ -28,9 +29,10 @@ namespace Cloud.Models
 		}
 
 		[MemberNotNull(nameof(Tenants), nameof(Owners), nameof(Admins), nameof(Properties),
-					   nameof(Leases), nameof(RentPayments), nameof(OwnerPayments), nameof(StripeCustomers),
+					   nameof(Leases), nameof(RentPayments), nameof(StripeCustomers),
 					   nameof(MaintenanceRequests), nameof(MaintenanceTasks), nameof(ApplicationDocuments),
-					   nameof(ActivityLogs), nameof(Listings), nameof(RentalApplications), nameof(Medias))]
+					   nameof(Listings), nameof(RentalApplications), nameof(Medias),
+					   nameof(PayoutPeriods), nameof(OwnerPayouts), nameof(PayoutSettings))]
 		private void EnsureDbSetsAreNotNull()
 		{
 			Tenants = Set<TenantModel>();
@@ -39,15 +41,16 @@ namespace Cloud.Models
 			Properties = Set<PropertyModel>();
 			Leases = Set<LeaseModel>();
 			RentPayments = Set<RentPaymentModel>();
-			OwnerPayments = Set<OwnerPaymentModel>();
 			StripeCustomers = Set<StripeCustomerModel>();
 			MaintenanceRequests = Set<MaintenanceRequestModel>();
 			MaintenanceTasks = Set<MaintenanceTaskModel>();
 			ApplicationDocuments = Set<ApplicationDocumentModel>();
-			ActivityLogs = Set<ActivityLogModel>();
 			Listings = Set<ListingModel>();
 			RentalApplications = Set<RentalApplicationModel>();
 			Medias = Set<MediaModel>();
+			PayoutPeriods = Set<PayoutPeriod>();
+			OwnerPayouts = Set<OwnerPayout>();
+			PayoutSettings = Set<PayoutSettings>();
 		}
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -85,6 +88,18 @@ namespace Cloud.Models
 			modelBuilder.Entity<ListingModel>()
 				.HasOne(l => l.Property)
 				.WithMany()
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<OwnerPayout>()
+				.HasOne(p => p.Owner)
+				.WithMany()
+				.HasForeignKey(p => p.OwnerId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<OwnerPayout>()
+				.HasOne(p => p.PayoutPeriod)
+				.WithMany()
+				.HasForeignKey(p => p.PayoutPeriodId)
 				.OnDelete(DeleteBehavior.Restrict);
 		}
 	}

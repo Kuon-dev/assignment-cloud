@@ -31,7 +31,6 @@ namespace Cloud.Services
 		Task<CustomPaginatedResult<PropertyModel>> GetPropertiesAsync(PaginationParams paginationParams);
 		Task<bool> UpdateMaintenanceRequestAndTaskAsync(Guid id, UpdateMaintenanceRequestAndTaskDto updateDto);
 		Task<bool> UpdatePropertyStatusAsync(Guid id, bool status);
-		Task<CustomPaginatedResult<ActivityLogModel>> GetActivityLogsAsync(PaginationParams paginationParams);
 	}
 }
 
@@ -397,30 +396,6 @@ namespace Cloud.Services
 			_context.Properties.Update(property);
 			await _context.SaveChangesAsync();
 			return true;
-		}
-
-		public async Task<CustomPaginatedResult<ActivityLogModel>> GetActivityLogsAsync(PaginationParams paginationParams)
-		{
-			if (paginationParams == null)
-			{
-				throw new ArgumentNullException(nameof(paginationParams));
-			}
-
-			var query = _context.ActivityLogs.AsNoTracking().Where(o => !o.IsDeleted);
-			var totalCount = await query.CountAsync();
-
-			var items = await query
-				.Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
-				.Take(paginationParams.PageSize)
-				.ToListAsync();
-
-			return new CustomPaginatedResult<ActivityLogModel>
-			{
-				Items = items,
-				TotalCount = totalCount,
-				PageNumber = paginationParams.PageNumber,
-				PageSize = paginationParams.PageSize
-			};
 		}
 	}
 

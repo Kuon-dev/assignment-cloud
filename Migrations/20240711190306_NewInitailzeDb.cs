@@ -8,30 +8,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cloud.Migrations
 {
 	/// <inheritdoc />
-	public partial class Initial : Migration
+	public partial class NewInitailzeDb : Migration
 	{
 		/// <inheritdoc />
 		protected override void Up(MigrationBuilder migrationBuilder)
 		{
-			migrationBuilder.CreateTable(
-				name: "ActivityLogs",
-				columns: table => new
-				{
-					Id = table.Column<Guid>(type: "uuid", nullable: false),
-					UserId = table.Column<Guid>(type: "uuid", nullable: false),
-					Action = table.Column<string>(type: "text", nullable: false),
-					Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-					Details = table.Column<string>(type: "text", nullable: false),
-					CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-					UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-					IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-					DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_ActivityLogs", x => x.Id);
-				});
-
 			migrationBuilder.CreateTable(
 				name: "ApplicationDocuments",
 				columns: table => new
@@ -99,6 +80,43 @@ namespace Cloud.Migrations
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "PayoutPeriods",
+				columns: table => new
+				{
+					Id = table.Column<Guid>(type: "uuid", nullable: false),
+					StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+					EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+					Status = table.Column<int>(type: "integer", nullable: false),
+					CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+					UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+					IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+					DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_PayoutPeriods", x => x.Id);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "PayoutSettings",
+				columns: table => new
+				{
+					Id = table.Column<Guid>(type: "uuid", nullable: false),
+					PayoutCutoffDay = table.Column<int>(type: "integer", nullable: false),
+					ProcessingDay = table.Column<int>(type: "integer", nullable: false),
+					DefaultCurrency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
+					MinimumPayoutAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+					CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+					UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+					IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+					DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_PayoutSettings", x => x.Id);
 				});
 
 			migrationBuilder.CreateTable(
@@ -262,6 +280,17 @@ namespace Cloud.Migrations
 				{
 					Id = table.Column<Guid>(type: "uuid", nullable: false),
 					UserId = table.Column<string>(type: "text", nullable: false),
+					BusinessName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+					BusinessAddress = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+					BusinessPhone = table.Column<string>(type: "text", nullable: false),
+					BusinessEmail = table.Column<string>(type: "text", nullable: false),
+					IdentityDocumentPath = table.Column<string>(type: "text", nullable: true),
+					VerificationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+					VerificationStatus = table.Column<int>(type: "integer", nullable: false),
+					BankAccountNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+					BankAccountName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+					SwiftBicCode = table.Column<string>(type: "character varying(11)", maxLength: 11, nullable: false),
+					BankName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
 					CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
 					UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
 					IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
@@ -311,6 +340,41 @@ namespace Cloud.Migrations
 						principalTable: "AspNetUsers",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Cascade);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "OwnerPayouts",
+				columns: table => new
+				{
+					Id = table.Column<Guid>(type: "uuid", nullable: false),
+					OwnerId = table.Column<Guid>(type: "uuid", nullable: false),
+					PayoutPeriodId = table.Column<Guid>(type: "uuid", nullable: false),
+					Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+					Currency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
+					Status = table.Column<int>(type: "integer", nullable: false),
+					CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+					ProcessedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+					TransactionReference = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+					Notes = table.Column<string>(type: "text", nullable: true),
+					UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+					IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+					DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_OwnerPayouts", x => x.Id);
+					table.ForeignKey(
+						name: "FK_OwnerPayouts_Owners_OwnerId",
+						column: x => x.OwnerId,
+						principalTable: "Owners",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
+					table.ForeignKey(
+						name: "FK_OwnerPayouts_PayoutPeriods_PayoutPeriodId",
+						column: x => x.PayoutPeriodId,
+						principalTable: "PayoutPeriods",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
 				});
 
 			migrationBuilder.CreateTable(
@@ -381,42 +445,6 @@ namespace Cloud.Migrations
 						column: x => x.PropertyModelId,
 						principalTable: "Properties",
 						principalColumn: "Id");
-				});
-
-			migrationBuilder.CreateTable(
-				name: "OwnerPayments",
-				columns: table => new
-				{
-					Id = table.Column<Guid>(type: "uuid", nullable: false),
-					OwnerId = table.Column<Guid>(type: "uuid", nullable: false),
-					PropertyId = table.Column<Guid>(type: "uuid", nullable: false),
-					Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-					PaymentDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-					AdminFee = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-					UtilityFees = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-					MaintenanceCost = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-					StripePaymentIntentId = table.Column<string>(type: "text", nullable: false),
-					Status = table.Column<int>(type: "integer", nullable: false),
-					CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-					UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-					IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-					DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_OwnerPayments", x => x.Id);
-					table.ForeignKey(
-						name: "FK_OwnerPayments_Owners_OwnerId",
-						column: x => x.OwnerId,
-						principalTable: "Owners",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Cascade);
-					table.ForeignKey(
-						name: "FK_OwnerPayments_Properties_PropertyId",
-						column: x => x.PropertyId,
-						principalTable: "Properties",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Cascade);
 				});
 
 			migrationBuilder.CreateTable(
@@ -691,14 +719,14 @@ namespace Cloud.Migrations
 				column: "UserId");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_OwnerPayments_OwnerId",
-				table: "OwnerPayments",
+				name: "IX_OwnerPayouts_OwnerId",
+				table: "OwnerPayouts",
 				column: "OwnerId");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_OwnerPayments_PropertyId",
-				table: "OwnerPayments",
-				column: "PropertyId");
+				name: "IX_OwnerPayouts_PayoutPeriodId",
+				table: "OwnerPayouts",
+				column: "PayoutPeriodId");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_Owners_UserId",
@@ -754,9 +782,6 @@ namespace Cloud.Migrations
 		protected override void Down(MigrationBuilder migrationBuilder)
 		{
 			migrationBuilder.DropTable(
-				name: "ActivityLogs");
-
-			migrationBuilder.DropTable(
 				name: "Admins");
 
 			migrationBuilder.DropTable(
@@ -787,7 +812,10 @@ namespace Cloud.Migrations
 				name: "Medias");
 
 			migrationBuilder.DropTable(
-				name: "OwnerPayments");
+				name: "OwnerPayouts");
+
+			migrationBuilder.DropTable(
+				name: "PayoutSettings");
 
 			migrationBuilder.DropTable(
 				name: "RentalApplications");
@@ -803,6 +831,9 @@ namespace Cloud.Migrations
 
 			migrationBuilder.DropTable(
 				name: "MaintenanceRequests");
+
+			migrationBuilder.DropTable(
+				name: "PayoutPeriods");
 
 			migrationBuilder.DropTable(
 				name: "Listings");

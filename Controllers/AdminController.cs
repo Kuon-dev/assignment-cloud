@@ -269,15 +269,5 @@ namespace Cloud.Controllers
 
 			return NoContent();
 		}
-
-		// GET: api/admin/activity-logs
-		[HttpGet("activity-logs")]
-		[Authorize(Roles = "Admin")]
-		public async Task<ActionResult<CustomPaginatedResult<ActivityLogModel>>> GetActivityLogs([FromQuery] Cloud.Models.DTO.PaginationParams paginationParams)
-		{
-			_logger.LogInformation("Getting properties with pagination parameters: {@PaginationParams}", paginationParams);
-			var requests = await _adminService.GetActivityLogsAsync(paginationParams);
-			return Ok(requests);
-		}
 	}
 }
