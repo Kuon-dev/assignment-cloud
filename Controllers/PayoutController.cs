@@ -254,5 +254,57 @@ namespace Cloud.Controllers
 				return StatusCode(500, "An error occurred while updating payout settings");
 			}
 		}
+
+
+		/// <summary>
+		/// Retrieves all owners with their payout status for a specific payout period.
+		/// </summary>
+		/// <param name="payoutPeriodId">The unique identifier of the payout period.</param>
+		/// <returns>A list of owners with their payout status for the specified period.</returns>
+		[HttpGet("periods/{payoutPeriodId}/owners")]
+		public async Task<ActionResult<IEnumerable<OwnerPayoutStatusDto>>> GetOwnersPayoutStatus(Guid payoutPeriodId)
+		{
+			try
+			{
+				var ownersStatus = await _payoutService.GetOwnersPayoutStatusAsync(payoutPeriodId);
+				return Ok(ownersStatus);
+			}
+			catch (ArgumentException ex)
+			{
+				return NotFound(ex.Message);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error retrieving owners payout status");
+				return StatusCode(500, "An error occurred while retrieving owners payout status");
+			}
+		}
+
+		/// <summary>
+		/// Retrieves all payments for a specific owner within a payout period.
+		/// </summary>
+		/// <param name="payoutPeriodId">The unique identifier of the payout period.</param>
+		/// <param name="ownerId">The unique identifier of the owner.</param>
+		/// <returns>A list of payments for the specified owner within the given period.</returns>
+		[HttpGet("periods/{payoutPeriodId}/owners/{ownerId}/payments")]
+		public async Task<ActionResult<IEnumerable<PaymentDto>>> GetOwnerPayments(Guid payoutPeriodId, Guid ownerId)
+		{
+			try
+			{
+				var payments = await _payoutService.GetOwnerPaymentsAsync(payoutPeriodId, ownerId);
+				return Ok(payments);
+			}
+			catch (ArgumentException ex)
+			{
+				return NotFound(ex.Message);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error retrieving owner payments");
+				return StatusCode(500, "An error occurred while retrieving owner payments");
+			}
+		}
 	}
+
+
 }
