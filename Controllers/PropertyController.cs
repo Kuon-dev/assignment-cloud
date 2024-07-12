@@ -124,14 +124,15 @@ namespace Cloud.Controllers
 				if (property == null)
 					return NotFound();
 
-				if (!User.IsInRole("Admin") && user.Owner != null && property.OwnerId != user.Owner.Id)
-					return Forbid();
+				if (User.IsInRole("Admin") || (User.IsInRole("Owner") && property.OwnerId == user.Owner.Id))
+				{
+					var updatedProperty = await _propertyService.UpdatePropertyAsync(id, updatePropertyDto);
+					if (updatedProperty == null)
+						return NotFound();
 
-				var updatedProperty = await _propertyService.UpdatePropertyAsync(id, updatePropertyDto);
-				if (updatedProperty == null)
-					return NotFound();
-
-				return Ok(updatedProperty);
+					return Ok(updatedProperty);
+				}
+				return Forbid();
 			}
 			catch (Exception ex)
 			{
@@ -181,14 +182,15 @@ namespace Cloud.Controllers
 				if (property == null)
 					return NotFound();
 
-				if (!User.IsInRole("Admin") && user.Owner != null && property.OwnerId != user.Owner.Id)
-					return Forbid();
+				if (User.IsInRole("Admin") || (User.IsInRole("Owner") && property.OwnerId == user.Owner.Id))
+				{
+					var result = await _propertyService.DeletePropertyAsync(id);
+					if (!result)
+						return NotFound();
 
-				var result = await _propertyService.DeletePropertyAsync(id);
-				if (!result)
-					return NotFound();
-
-				return NoContent();
+					return NoContent();
+				}
+				return Forbid();
 			}
 			catch (Exception ex)
 			{
