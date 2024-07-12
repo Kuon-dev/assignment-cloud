@@ -9,6 +9,13 @@ namespace Cloud.Models.DTO
 		public string Status { get; set; } = null!;
 	}
 
+	public class OwnerPayoutStatusDto
+	{
+		public Guid OwnerId { get; set; }
+		public string OwnerName { get; set; } = string.Empty;
+		public bool HasReceivedPayout { get; set; }
+	}
+
 	public class OwnerPayoutDto
 	{
 		public Guid Id { get; set; }
@@ -51,5 +58,17 @@ namespace Cloud.Models.DTO
 		public int ProcessingDay { get; set; }
 		public string DefaultCurrency { get; set; } = null!;
 		public decimal MinimumPayoutAmount { get; set; }
+	}
+
+
+	public class PaymentDto
+	{
+		public Guid Id { get; set; }
+		public decimal Amount { get; set; }
+		public string Currency { get; set; } = string.Empty;
+		public string Status { get; set; } = string.Empty;
+		public DateTime CreatedAt { get; set; }
+		public Guid PropertyId { get; set; }
+		public string TenantName { get; set; } = string.Empty;
 	}
 }

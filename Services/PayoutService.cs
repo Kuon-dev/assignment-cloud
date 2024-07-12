@@ -16,6 +16,8 @@ namespace Cloud.Services
 		Task<OwnerPayoutDto> ProcessOwnerPayoutAsync(Guid payoutId);
 		Task<PayoutSettingsDto> GetPayoutSettingsAsync();
 		Task<PayoutSettingsDto> UpdatePayoutSettingsAsync(UpdatePayoutSettingsDto dto);
+		Task<IEnumerable<OwnerPayoutStatusDto>> GetOwnersPayoutStatusAsync(Guid payoutPeriodId);
+		Task<IEnumerable<PaymentDto>> GetOwnerPaymentsAsync(Guid payoutPeriodId, Guid ownerId);
 	}
 
 	public class PayoutService : IPayoutService
@@ -27,6 +29,56 @@ namespace Cloud.Services
 		{
 			_context = context ?? throw new ArgumentNullException(nameof(context));
 			_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+		}
+
+		public async Task<IEnumerable<OwnerPayoutStatusDto>> GetOwnersPayoutStatusAsync(Guid payoutPeriodId)
+		{
+			var payoutPeriod = await _context.PayoutPeriods.FindAsync(payoutPeriodId);
+			if (payoutPeriod == null)
+				throw new ArgumentException("Payout period not found", nameof(payoutPeriodId));
+
+			var owners = await _context.Owners.ToListAsync();
+			var payouts = await _context.OwnerPayouts
+				.Where(op => op.PayoutPeriodId == payoutPeriodId)
+				.ToListAsync();
+
+			return owners.Select(owner => new OwnerPayoutStatusDto
+			{
+				OwnerId = owner.Id,
+				OwnerName = $"{owner.User?.FirstName} {owner.User?.LastName}",
+				HasReceivedPayout = payouts.Any(p => p.OwnerId == owner.Id)
+			});
+		}
+
+		public async Task<IEnumerable<PaymentDto>> GetOwnerPaymentsAsync(Guid payoutPeriodId, Guid ownerId)
+		{
+			var payoutPeriod = await _context.PayoutPeriods.FindAsync(payoutPeriodId);
+			if (payoutPeriod == null)
+				throw new ArgumentException("Payout period not found", nameof(payoutPeriodId));
+
+			var owner = await _context.Owners.FindAsync(ownerId);
+			if (owner == null)
+				throw new ArgumentException("Owner not found", nameof(ownerId));
+
+			var payments = await _context.RentPayments
+				.Include(rp => rp.Tenant)
+				.ThenInclude(t => t!.CurrentProperty)
+				.Where(rp => rp.Tenant!.CurrentProperty!.OwnerId == ownerId &&
+							 rp.CreatedAt >= payoutPeriod.StartDate &&
+							 rp.CreatedAt <= payoutPeriod.EndDate &&
+							 rp.Status == PaymentStatus.Succeeded)
+				.ToListAsync();
+
+			return payments.Select(p => new PaymentDto
+			{
+				Id = p.Id,
+				Amount = p.Amount,
+				Currency = p.Currency,
+				Status = p.Status.ToString(),
+				CreatedAt = p.CreatedAt,
+				PropertyId = p.Tenant!.CurrentPropertyId ?? Guid.Empty,
+				TenantName = $"{p.Tenant!.User?.FirstName} {p.Tenant.User?.LastName}"
+			});
 		}
 
 		public async Task<PayoutPeriodDto> CreatePayoutPeriodAsync(CreatePayoutPeriodDto dto)
@@ -170,6 +222,8 @@ namespace Cloud.Services
 			return MapToPayoutSettingsDto(settings);
 		}
 
+
+
 		private static PayoutPeriodDto MapToPayoutPeriodDto(PayoutPeriod period)
 		{
 			return new PayoutPeriodDto
@@ -209,5 +263,6 @@ namespace Cloud.Services
 				MinimumPayoutAmount = settings.MinimumPayoutAmount
 			};
 		}
+
 	}
 }
