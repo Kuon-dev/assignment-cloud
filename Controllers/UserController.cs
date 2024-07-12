@@ -136,7 +136,10 @@ namespace Cloud.Controllers
 				return Unauthorized("User not authenticated");
 			}
 
-			var user = await _context.Users.Include(u => u.Owner).FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+			var user = await _context.Users
+				.Include(u => u.Owner)
+				.Include(u => u.Tenant)
+				.FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
 			if (user == null)
 			{
 				return NotFound($"User with ID {userId} not found");
