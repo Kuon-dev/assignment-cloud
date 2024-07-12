@@ -67,6 +67,7 @@ public class DataSeeder
 		await SeedRentalApplicationsAsync();
 		await SeedLeasesAsync();
 		await SeedMaintenanceRequestsAndTasksAsync(); // Add call to seed maintenance requests and tasks
+		await SeedPayoutsAsync();
 	}
 
 	private async Task SeedRolesAsync()

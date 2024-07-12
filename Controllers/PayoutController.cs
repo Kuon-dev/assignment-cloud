@@ -13,7 +13,6 @@ namespace Cloud.Controllers
 	[ApiController]
 	[Route("api/[controller]")]
 	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-	[Authorize(Roles = "Admin")]
 	public class PayoutController : ControllerBase
 	{
 		private readonly IPayoutService _payoutService;
