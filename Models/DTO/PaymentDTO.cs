@@ -7,6 +7,7 @@ namespace Cloud.Models.DTO
 		[Required]
 		[Range(1, float.MaxValue, ErrorMessage = "Amount must be greater than 0")]
 		public float Amount { get; set; }
+		public string PropertyId { get; set; } = string.Empty;
 	}
 
 	public class CreatePaymentIntentResponseDto

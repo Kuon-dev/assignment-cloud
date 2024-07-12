@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cloud.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240711190306_NewInitailzeDb")]
+    [Migration("20240712124604_NewInitailzeDb")]
     partial class NewInitailzeDb
     {
         /// <inheritdoc />
@@ -627,6 +627,9 @@ namespace Cloud.Migrations
                     b.Property<string>("PaymentMethodId")
                         .HasColumnType("text");
 
+                    b.Property<Guid>("PropertyId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -637,6 +640,8 @@ namespace Cloud.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PropertyId");
 
                     b.HasIndex("TenantId");
 
@@ -1051,15 +1056,15 @@ namespace Cloud.Migrations
             modelBuilder.Entity("Cloud.Models.LeaseModel", b =>
                 {
                     b.HasOne("Cloud.Models.PropertyModel", "PropertyModel")
-                        .WithMany()
+                        .WithMany("Leases")
                         .HasForeignKey("PropertyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Cloud.Models.TenantModel", "Tenant")
                         .WithMany("Leases")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("PropertyModel");
@@ -1158,7 +1163,7 @@ namespace Cloud.Migrations
                     b.HasOne("Cloud.Models.OwnerModel", "Owner")
                         .WithMany("Properties")
                         .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Owner");
@@ -1166,11 +1171,19 @@ namespace Cloud.Migrations
 
             modelBuilder.Entity("Cloud.Models.RentPaymentModel", b =>
                 {
+                    b.HasOne("Cloud.Models.PropertyModel", "Property")
+                        .WithMany()
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Cloud.Models.TenantModel", "Tenant")
                         .WithMany("RentPayments")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Property");
 
                     b.Navigation("Tenant");
                 });
@@ -1290,6 +1303,8 @@ namespace Cloud.Migrations
 
             modelBuilder.Entity("Cloud.Models.PropertyModel", b =>
                 {
+                    b.Navigation("Leases");
+
                     b.Navigation("Listings");
 
                     b.Navigation("MaintenanceRequests");

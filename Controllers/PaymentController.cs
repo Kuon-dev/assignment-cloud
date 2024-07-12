@@ -45,10 +45,16 @@ namespace Cloud.Controllers
 
 			var userId = (User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException());
 			var tenantId = _context.Tenants.FirstOrDefault(t => t.User != null && t.User.Id == userId)?.Id ?? throw new NotFoundException("Tenant not found");
+			var propertyId = Guid.Parse(createPaymentDto.PropertyId);
+
+			if (!_context.Properties.Any(p => p.Id == propertyId))
+			{
+				return NotFound("Property not found");
+			}
 
 			try
 			{
-				var clientSecret = await _paymentService.CreatePaymentIntentAsync(tenantId, createPaymentDto.Amount);
+				var clientSecret = await _paymentService.CreatePaymentIntentAsync(tenantId, propertyId, createPaymentDto.Amount);
 				return Ok(new CreatePaymentIntentResponseDto { ClientSecret = clientSecret });
 			}
 			catch (ArgumentException ex)
