@@ -1,6 +1,7 @@
 using Cloud.Models;
 using Cloud.Models.DTO;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Cloud.Models.DTO
 {
@@ -25,9 +26,10 @@ namespace Cloud.Services
 		Task<bool> SoftDeleteUserAsync(string id);
 		Task<PerformanceAnalytics> GetPerformanceAnalyticsAsync();
 		Task<IEnumerable<ListingAnalytics>> GetListingAnalyticsAsync();
-		Task<CustomPaginatedResult<MaintenanceRequestModel>> GetMaintenanceRequestAsync(PaginationParams paginationParams);
+		Task<CustomPaginatedResult<MaintenanceRequestWithTasksDto>> GetMaintenanceRequestAsync(PaginationParams paginationParams);
+		Task DeleteMaintenanceRequestAndTasksAsync(Guid maintenanceRequestId);
 		Task<CustomPaginatedResult<PropertyModel>> GetPropertiesAsync(PaginationParams paginationParams);
-		Task<bool> UpdateMaintenanceRequestStatusAsync(Guid id, string action);
+		Task<bool> UpdateMaintenanceRequestAndTaskAsync(Guid id, UpdateMaintenanceRequestAndTaskDto updateDto);
 		Task<bool> UpdatePropertyStatusAsync(Guid id, bool status);
 		Task<CustomPaginatedResult<ActivityLogModel>> GetActivityLogsAsync(PaginationParams paginationParams);
 	}
@@ -225,22 +227,56 @@ namespace Cloud.Services
 				.ToListAsync();
 		}
 
-		public async Task<CustomPaginatedResult<MaintenanceRequestModel>> GetMaintenanceRequestAsync(PaginationParams paginationParams)
+		public async Task<CustomPaginatedResult<MaintenanceRequestWithTasksDto>> GetMaintenanceRequestAsync(PaginationParams paginationParams)
 		{
 			if (paginationParams == null)
 			{
 				throw new ArgumentNullException(nameof(paginationParams));
 			}
 
-			var query = _context.MaintenanceRequests.AsNoTracking().Where(o => !o.IsDeleted);
+			var query = _context.MaintenanceRequests
+				.Include(m => m.Property)
+				.Include(m => m.Tenant)
+				.ThenInclude(t => t.User)
+				.Include(m => m.MaintenanceTasks) // Include the MaintenanceTasks
+				.AsNoTracking()
+				.Where(o => !o.IsDeleted)
+				.OrderByDescending(m => m.CreatedAt);
+
 			var totalCount = await query.CountAsync();
 
 			var items = await query
 				.Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
 				.Take(paginationParams.PageSize)
+				.Select(m => new MaintenanceRequestWithTasksDto
+				{
+					MaintenanceRequest = new MaintenanceRequestResponseDto
+					{
+						Id = m.Id,
+						Description = m.Description,
+						Status = m.Status,
+						CreatedAt = m.CreatedAt,
+						PropertyId = m.Property != null ? m.Property.Id : (Guid?)null,
+						PropertyAddress = m.Property != null ? m.Property.Address : null,
+						TenantFirstName = m.Tenant != null ? m.Tenant.User!.FirstName : "",
+						TenantLastName = m.Tenant != null ? m.Tenant.User!.LastName : "",
+						TenantEmail = m.Tenant != null ? m.Tenant.User!.Email : ""
+					},
+					Tasks = m.MaintenanceTasks.Select(t => new MaintenanceTaskDto
+					{
+						Id = t.Id,
+						RequestId = t.RequestId,
+						Description = t.Description,
+						EstimatedCost = t.EstimatedCost,
+						ActualCost = t.ActualCost,
+						StartDate = t.StartDate,
+						CompletionDate = t.CompletionDate,
+						Status = t.Status
+					}).ToList()
+				})
 				.ToListAsync();
 
-			return new CustomPaginatedResult<MaintenanceRequestModel>
+			return new CustomPaginatedResult<MaintenanceRequestWithTasksDto>
 			{
 				Items = items,
 				TotalCount = totalCount,
@@ -249,30 +285,80 @@ namespace Cloud.Services
 			};
 		}
 
-		public async Task<bool> UpdateMaintenanceRequestStatusAsync(Guid id, string action)
+
+
+		public async Task<bool> UpdateMaintenanceRequestAndTaskAsync(Guid id, UpdateMaintenanceRequestAndTaskDto updateDto)
 		{
-			var request = await _context.MaintenanceRequests.FindAsync(id);
+			var request = await _context.MaintenanceRequests.Include(r => r.MaintenanceTasks).FirstOrDefaultAsync(r => r.Id == id);
 			if (request == null)
 			{
 				return false;
 			}
 
-			if (action.Equals("approve", StringComparison.OrdinalIgnoreCase))
+			using (var transaction = await _context.Database.BeginTransactionAsync())
 			{
-				request.Status = MaintenanceStatus.Completed;
-			}
-			else if (action.Equals("reject", StringComparison.OrdinalIgnoreCase))
-			{
-				request.Status = MaintenanceStatus.Cancelled;
-			}
-			else
-			{
-				throw new ArgumentException("Invalid action. Must be 'approve' or 'reject'.");
+				try
+				{
+					// Update request
+					request.Description = updateDto.MaintenanceRequest.Description ?? request.Description;
+					request.Status = updateDto.MaintenanceRequest.Status ?? request.Status;
+
+					// Update task
+					var task = request.MaintenanceTasks.FirstOrDefault();
+					if (task != null)
+					{
+						task.Description = updateDto.MaintenanceTask.Description ?? task.Description;
+						task.EstimatedCost = updateDto.MaintenanceTask.EstimatedCost ?? task.EstimatedCost;
+						task.ActualCost = updateDto.MaintenanceTask.ActualCost ?? task.ActualCost;
+						task.StartDate = updateDto.MaintenanceTask.StartDate ?? task.StartDate;
+						task.CompletionDate = updateDto.MaintenanceTask.CompletionDate ?? task.CompletionDate;
+						task.Status = updateDto.MaintenanceTask.Status;
+					}
+
+					_context.MaintenanceRequests.Update(request);
+					await _context.SaveChangesAsync();
+					await transaction.CommitAsync();
+				}
+				catch
+				{
+					await transaction.RollbackAsync();
+					throw;
+				}
 			}
 
-			_context.MaintenanceRequests.Update(request);
-			await _context.SaveChangesAsync();
 			return true;
+		}
+
+
+		public async Task DeleteMaintenanceRequestAndTasksAsync(Guid maintenanceRequestId)
+		{
+			using (IDbContextTransaction transaction = _context.Database.BeginTransaction())
+			{
+				try
+				{
+					var request = await _context.MaintenanceRequests
+						.Include(r => r.MaintenanceTasks)
+						.FirstOrDefaultAsync(r => r.Id == maintenanceRequestId);
+
+					if (request == null)
+					{
+						throw new NotFoundException("Maintenance request not found.");
+					}
+
+					_context.MaintenanceTasks.RemoveRange(request.MaintenanceTasks);
+
+					_context.MaintenanceRequests.Remove(request);
+
+					await _context.SaveChangesAsync();
+
+					await transaction.CommitAsync();
+				}
+				catch (Exception ex)
+				{
+					await transaction.RollbackAsync();
+					throw new ApplicationException("Error deleting maintenance request and tasks.", ex);
+				}
+			}
 		}
 
 		public async Task<CustomPaginatedResult<PropertyModel>> GetPropertiesAsync(PaginationParams paginationParams)
@@ -337,4 +423,18 @@ namespace Cloud.Services
 			};
 		}
 	}
+
+	public class MaintenanceRequestWithTasksDto
+	{
+		public MaintenanceRequestResponseDto MaintenanceRequest { get; set; } = new MaintenanceRequestResponseDto();
+		public List<MaintenanceTaskDto> Tasks { get; set; } = new List<MaintenanceTaskDto>();
+	}
+
+	public class UpdateMaintenanceRequestAndTaskDto
+	{
+		public UpdateMaintenanceRequestDto MaintenanceRequest { get; set; } = new UpdateMaintenanceRequestDto();
+		public UpdateMaintenanceTaskDto MaintenanceTask { get; set; } = new UpdateMaintenanceTaskDto();
+	}
+
+
 }
