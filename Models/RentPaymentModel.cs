@@ -19,6 +19,12 @@ namespace Cloud.Models
 		[Required]
 		public string Currency { get; set; } = "usd";
 
+		[ForeignKey("PropertyId")]
+		public PropertyModel? Property { get; set; }
+
+		[Required]
+		public Guid PropertyId { get; set; }
+
 		[Required]
 		public string PaymentIntentId { get; set; } = string.Empty;
 

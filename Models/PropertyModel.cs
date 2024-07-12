@@ -49,6 +49,7 @@ namespace Cloud.Models
 
 		// Navigation properties
 		public ICollection<ListingModel>? Listings { get; set; }
+		public ICollection<LeaseModel>? Leases { get; set; }
 		public ICollection<MaintenanceRequestModel>? MaintenanceRequests { get; set; }
 	}
 

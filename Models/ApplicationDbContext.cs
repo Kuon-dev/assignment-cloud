@@ -96,6 +96,30 @@ namespace Cloud.Models
 				.HasForeignKey(p => p.OwnerId)
 				.OnDelete(DeleteBehavior.Restrict);
 
+			modelBuilder.Entity<TenantModel>()
+				.HasMany(t => t.Leases)
+				.WithOne(l => l.Tenant)
+				.HasForeignKey(l => l.TenantId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<LeaseModel>()
+				.HasOne(l => l.PropertyModel)
+				.WithMany(p => p.Leases)
+				.HasForeignKey(l => l.PropertyId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<RentPaymentModel>()
+				.HasOne(rp => rp.Tenant)
+				.WithMany(t => t.RentPayments)
+				.HasForeignKey(rp => rp.TenantId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<PropertyModel>()
+				.HasOne(p => p.Owner)
+				.WithMany(o => o.Properties)
+				.HasForeignKey(p => p.OwnerId)
+				.OnDelete(DeleteBehavior.Restrict);
+
 			modelBuilder.Entity<OwnerPayout>()
 				.HasOne(p => p.PayoutPeriod)
 				.WithMany()

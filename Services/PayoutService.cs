@@ -37,7 +37,7 @@ namespace Cloud.Services
 			if (payoutPeriod == null)
 				throw new ArgumentException("Payout period not found", nameof(payoutPeriodId));
 
-			var owners = await _context.Owners.ToListAsync();
+			var owners = await _context.Owners.Include(o => o.User).ToListAsync();
 			var payouts = await _context.OwnerPayouts
 				.Where(op => op.PayoutPeriodId == payoutPeriodId)
 				.ToListAsync();
@@ -62,8 +62,11 @@ namespace Cloud.Services
 
 			var payments = await _context.RentPayments
 				.Include(rp => rp.Tenant)
-				.ThenInclude(t => t!.CurrentProperty)
-				.Where(rp => rp.Tenant!.CurrentProperty!.OwnerId == ownerId &&
+				.Include(rp => rp.Property)
+				/*.ThenInclude(t => t!.Leases)*/
+				/*.ThenInclude(l => l!.PropertyModel)*/
+				.Where(rp => rp.Tenant != null &&
+							 rp.Property!.OwnerId == owner.Id &&
 							 rp.CreatedAt >= payoutPeriod.StartDate &&
 							 rp.CreatedAt <= payoutPeriod.EndDate &&
 							 rp.Status == PaymentStatus.Succeeded)
@@ -76,7 +79,7 @@ namespace Cloud.Services
 				Currency = p.Currency,
 				Status = p.Status.ToString(),
 				CreatedAt = p.CreatedAt,
-				PropertyId = p.Tenant!.CurrentPropertyId ?? Guid.Empty,
+				PropertyId = p.Property!.Id,
 				TenantName = $"{p.Tenant!.User?.FirstName} {p.Tenant.User?.LastName}"
 			});
 		}

@@ -20,6 +20,7 @@ public class DataSeeder
 	private readonly IMediaService _mediaService;
 	private readonly string _testImagePath = Path.Combine(".", "test", "temp");
 	private readonly PayoutFactory _payoutSeeder;
+	private readonly IRentPaymentFactory _rentPaymentFactory;
 
 	public DataSeeder(
 		IServiceProvider serviceProvider,
@@ -33,7 +34,8 @@ public class DataSeeder
 		LeaseFactory leaseFactory,
 		MaintenanceFactory maintenanceFactory,
 		IMediaService mediaService,
-		PayoutFactory payoutSeeder
+		PayoutFactory payoutSeeder,
+		IRentPaymentFactory rentPaymentFactory
 		)
 	{
 		_serviceProvider = serviceProvider;
@@ -48,6 +50,7 @@ public class DataSeeder
 		_maintenanceFactory = maintenanceFactory;
 		_mediaService = mediaService;
 		_payoutSeeder = payoutSeeder;
+		_rentPaymentFactory = rentPaymentFactory;
 	}
 
 	public async Task SeedAsync()
@@ -68,6 +71,7 @@ public class DataSeeder
 		await SeedLeasesAsync();
 		await SeedMaintenanceRequestsAndTasksAsync(); // Add call to seed maintenance requests and tasks
 		await SeedPayoutsAsync();
+
 	}
 
 	private async Task SeedRolesAsync()
@@ -264,6 +268,7 @@ public class DataSeeder
 			try
 			{
 				await _payoutSeeder.SeedPayoutsAsync(12, 5); // Seed 12 payout periods with 5 owner payouts each
+				await _rentPaymentFactory.SeedRentPaymentsAsync(10000);
 				Console.WriteLine("Successfully seeded payouts.");
 			}
 			catch (Exception ex)
@@ -271,6 +276,7 @@ public class DataSeeder
 				Console.WriteLine($"Error seeding payouts: {ex.Message}");
 				Console.WriteLine($"Stack trace: {ex.StackTrace}");
 			}
+
 		}
 		else
 		{

@@ -409,7 +409,7 @@ namespace Cloud.Migrations
 						column: x => x.OwnerId,
 						principalTable: "Owners",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Cascade);
+						onDelete: ReferentialAction.Restrict);
 				});
 
 			migrationBuilder.CreateTable(
@@ -500,13 +500,13 @@ namespace Cloud.Migrations
 						column: x => x.PropertyId,
 						principalTable: "Properties",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Cascade);
+						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
 						name: "FK_Leases_Tenants_TenantId",
 						column: x => x.TenantId,
 						principalTable: "Tenants",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Cascade);
+						onDelete: ReferentialAction.Restrict);
 				});
 
 			migrationBuilder.CreateTable(
@@ -582,6 +582,7 @@ namespace Cloud.Migrations
 					TenantId = table.Column<Guid>(type: "uuid", nullable: false),
 					Amount = table.Column<int>(type: "integer", nullable: false),
 					Currency = table.Column<string>(type: "text", nullable: false),
+					PropertyId = table.Column<Guid>(type: "uuid", nullable: false),
 					PaymentIntentId = table.Column<string>(type: "text", nullable: false),
 					PaymentMethodId = table.Column<string>(type: "text", nullable: true),
 					Status = table.Column<int>(type: "integer", nullable: false),
@@ -594,11 +595,17 @@ namespace Cloud.Migrations
 				{
 					table.PrimaryKey("PK_RentPayments", x => x.Id);
 					table.ForeignKey(
+						name: "FK_RentPayments_Properties_PropertyId",
+						column: x => x.PropertyId,
+						principalTable: "Properties",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
 						name: "FK_RentPayments_Tenants_TenantId",
 						column: x => x.TenantId,
 						principalTable: "Tenants",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Cascade);
+						onDelete: ReferentialAction.Restrict);
 				});
 
 			migrationBuilder.CreateTable(
@@ -748,6 +755,11 @@ namespace Cloud.Migrations
 				name: "IX_RentalApplications_TenantId",
 				table: "RentalApplications",
 				column: "TenantId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_RentPayments_PropertyId",
+				table: "RentPayments",
+				column: "PropertyId");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_RentPayments_TenantId",
