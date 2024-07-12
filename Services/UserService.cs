@@ -12,6 +12,7 @@ namespace Cloud.Services
 		Task<IEnumerable<RentPaymentResponseDto>> GetPaymentHistoryAsync(string userId);
 		Task<IEnumerable<MaintenanceRequestResponseDto>> GetMaintenanceRequestsAsync(string userId);
 		Task<IEnumerable<RentalApplicationDto>> GetApplicationsAsync(string userId);
+		Task<IEnumerable<RentalApplicationDto>> GetOwnerApplicationsAsync(string ownerId);
 		Task<IdentityResult> UpdateUserAsync(UserModel user, UpdateUserDto updateUserDto);
 	}
 
@@ -82,7 +83,7 @@ namespace Cloud.Services
 		public async Task<IEnumerable<PropertyDto>> GetOwnedProperty(string ownerId)
 		{
 			var properties = await _context.Properties
-				.Where(p => p.Owner != null && p.Owner.Id.ToString() == ownerId)
+				.Where(p => p.Owner != null && !p.IsDeleted && p.Owner.Id.ToString() == ownerId)
 				.Select(p => new PropertyDto
 				{
 					Id = p.Id,
@@ -193,6 +194,40 @@ namespace Cloud.Services
 			if (!applications.Any())
 			{
 				throw new NotFoundException($"No rental applications found for user with ID {userId}");
+			}
+
+			return applications;
+		}
+
+		public async Task<IEnumerable<RentalApplicationDto>> GetOwnerApplicationsAsync(string ownerId)
+		{
+			var applications = await _context.RentalApplications
+				.Include(a => a.Tenant)
+				.ThenInclude(t => t!.User)
+				.Include(a => a.Listing)
+				.ThenInclude(l => l!.Property)
+				.Where(a => a.Listing != null && a.Listing.Property != null && a.Listing.Property.OwnerId == Guid.Parse(ownerId))
+				.OrderByDescending(a => a.ApplicationDate)
+				.Select(a => new RentalApplicationDto
+				{
+					Id = a.Id,
+					ApplicationDate = a.ApplicationDate,
+					Status = a.Status,
+					EmploymentInfo = a.EmploymentInfo,
+					References = a.References,
+					AdditionalNotes = a.AdditionalNotes,
+					TenantId = a.TenantId,
+					TenantFirstName = a.Tenant!.User!.FirstName,
+					TenantLastName = a.Tenant.User.LastName,
+					TenantEmail = a.Tenant.User.Email!,
+					ListingAddress = a.Listing != null && a.Listing.Property != null && a.Listing.Property.Address != null ? a.Listing.Property.Address : "",
+					PropertyId = a.Listing != null && a.Listing.Property != null ? a.Listing.Property.Id : Guid.Empty,
+				})
+				.ToListAsync();
+
+			if (!applications.Any())
+			{
+				throw new NotFoundException($"No rental applications found for owner with ID {ownerId}");
 			}
 
 			return applications;
