@@ -22,7 +22,7 @@ namespace Cloud.Services
 		{
 			_configuration = configuration;
 			_context = context;
-			StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
+			StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY");
 		}
 
 		public async Task<StripeCustomerModel> CreateConnectedAccountAsync(string userId)
