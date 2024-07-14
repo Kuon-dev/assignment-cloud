@@ -220,7 +220,7 @@ namespace Cloud.Services
 				{
 					ListingId = l.Id,
 					Views = l.Views,
-					Applications = l.Applications.Count,
+					Applications = l.Applications != null ? l.Applications.Count : 0,
 					LastUpdated = l.UpdatedAt ?? DateTime.MinValue
 				})
 				.ToListAsync();
@@ -236,8 +236,8 @@ namespace Cloud.Services
 			var query = _context.MaintenanceRequests
 				.Include(m => m.Property)
 				.Include(m => m.Tenant)
-				.ThenInclude(t => t.User)
-				.Include(m => m.MaintenanceTasks) // Include the MaintenanceTasks
+				.ThenInclude(t => t!.User)
+				.Include(m => m.MaintenanceTasks)
 				.AsNoTracking()
 				.Where(o => !o.IsDeleted)
 				.OrderByDescending(m => m.CreatedAt);
@@ -261,7 +261,7 @@ namespace Cloud.Services
 						TenantLastName = m.Tenant != null ? m.Tenant.User!.LastName : "",
 						TenantEmail = m.Tenant != null ? m.Tenant.User!.Email : ""
 					},
-					Tasks = m.MaintenanceTasks.Select(t => new MaintenanceTaskDto
+					Tasks = m.MaintenanceTasks != null ? m.MaintenanceTasks.Select(t => new MaintenanceTaskDto
 					{
 						Id = t.Id,
 						RequestId = t.RequestId,
@@ -271,7 +271,7 @@ namespace Cloud.Services
 						StartDate = t.StartDate,
 						CompletionDate = t.CompletionDate,
 						Status = t.Status
-					}).ToList()
+					}).ToList() : new List<MaintenanceTaskDto>()
 				})
 				.ToListAsync();
 
@@ -283,8 +283,6 @@ namespace Cloud.Services
 				PageSize = paginationParams.PageSize
 			};
 		}
-
-
 
 		public async Task<bool> UpdateMaintenanceRequestAndTaskAsync(Guid id, UpdateMaintenanceRequestAndTaskDto updateDto)
 		{
@@ -303,7 +301,7 @@ namespace Cloud.Services
 					request.Status = updateDto.MaintenanceRequest.Status ?? request.Status;
 
 					// Update task
-					var task = request.MaintenanceTasks.FirstOrDefault();
+					var task = request.MaintenanceTasks?.FirstOrDefault();
 					if (task != null)
 					{
 						task.Description = updateDto.MaintenanceTask.Description ?? task.Description;
@@ -344,7 +342,10 @@ namespace Cloud.Services
 						throw new NotFoundException("Maintenance request not found.");
 					}
 
-					_context.MaintenanceTasks.RemoveRange(request.MaintenanceTasks);
+					if (request.MaintenanceTasks != null && request.MaintenanceTasks.Any())
+					{
+						_context.MaintenanceTasks.RemoveRange(request.MaintenanceTasks);
+					}
 
 					_context.MaintenanceRequests.Remove(request);
 

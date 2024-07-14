@@ -8,7 +8,7 @@ namespace Cloud.Services
 	public interface IPayoutService
 	{
 		Task<PayoutPeriodDto> CreatePayoutPeriodAsync(CreatePayoutPeriodDto dto);
-		Task<IEnumerable<PayoutPeriodDto>> GetPayoutPeriodsAsync();
+		Task<CustomPaginatedResult<PayoutPeriodDto>> GetPayoutPeriodsAsync(PaginationParams paginationParams);
 		Task<PayoutPeriodDto?> GetPayoutPeriodAsync(Guid id);
 		Task<OwnerPayoutDto> CreateOwnerPayoutAsync(CreateOwnerPayoutDto dto);
 		Task<IEnumerable<OwnerPayoutDto>> GetOwnerPayoutsAsync(Guid ownerId);
@@ -98,10 +98,35 @@ namespace Cloud.Services
 			return MapToPayoutPeriodDto(payoutPeriod);
 		}
 
-		public async Task<IEnumerable<PayoutPeriodDto>> GetPayoutPeriodsAsync()
+		public async Task<CustomPaginatedResult<PayoutPeriodDto>> GetPayoutPeriodsAsync(PaginationParams paginationParams)
 		{
-			var payoutPeriods = await _context.PayoutPeriods.ToListAsync();
-			return payoutPeriods.Select(MapToPayoutPeriodDto);
+			if (paginationParams == null)
+			{
+				throw new ArgumentNullException(nameof(paginationParams));
+			}
+
+			var query = _context.PayoutPeriods.AsNoTracking();
+			var totalCount = await query.CountAsync();
+
+			var items = await query
+				.Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
+				.Take(paginationParams.PageSize)
+				.Select(payoutPeriod => new PayoutPeriodDto
+				{
+					Id = payoutPeriod.Id,
+					StartDate = payoutPeriod.StartDate,
+					EndDate = payoutPeriod.EndDate,
+					Status = payoutPeriod.Status.ToString()
+				})
+				.ToListAsync();
+
+			return new CustomPaginatedResult<PayoutPeriodDto>
+			{
+				Items = items,
+				TotalCount = totalCount,
+				PageNumber = paginationParams.PageNumber,
+				PageSize = paginationParams.PageSize
+			};
 		}
 
 		public async Task<PayoutPeriodDto?> GetPayoutPeriodAsync(Guid id)
