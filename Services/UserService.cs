@@ -2,6 +2,7 @@ using Cloud.Models;
 using Cloud.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using System;
 
 namespace Cloud.Services
 {
@@ -10,7 +11,7 @@ namespace Cloud.Services
 		Task<PropertyModel> GetRentedPropertyAsync(string userId);
 		Task<IEnumerable<PropertyDto>> GetOwnedProperty(string ownerId);
 		Task<IEnumerable<RentPaymentResponseDto>> GetPaymentHistoryAsync(string userId);
-		Task<IEnumerable<MaintenanceRequestResponseDto>> GetMaintenanceRequestsAsync(string userId);
+		Task<IEnumerable<MaintenanceRequestWithTasksDto>> GetMaintenanceRequestsAsync(string userId);
 		Task<IEnumerable<RentalApplicationDto>> GetApplicationsAsync(string userId);
 		Task<IEnumerable<RentalApplicationDto>> GetOwnerApplicationsAsync(string ownerId);
 		Task<IdentityResult> UpdateUserAsync(UserModel user, UpdateUserDto updateUserDto);
@@ -136,34 +137,108 @@ namespace Cloud.Services
 
 			return payments;
 		}
-
-		public async Task<IEnumerable<MaintenanceRequestResponseDto>> GetMaintenanceRequestsAsync(string userId)
+		public async Task<IEnumerable<MaintenanceRequestWithTasksDto>> GetMaintenanceRequestsAsync(string userId)
 		{
-			var requests = await _context.MaintenanceRequests
-				.Include(m => m.Property)
-				.Where(m => m.Tenant != null && m.Tenant.UserId == userId)
-				.OrderByDescending(m => m.CreatedAt)
-				.Select(m => new MaintenanceRequestResponseDto
-				{
-					Id = m.Id,
-					Description = m.Description,
-					Status = m.Status,
-					CreatedAt = m.CreatedAt,
-					PropertyId = m.Property != null ? m.Property.Id : null,
-					PropertyAddress = m.Property != null ? m.Property.Address : null,
-					TenantFirstName = m.Tenant != null ? m.Tenant.User!.FirstName : "",
-					TenantLastName = m.Tenant != null ? m.Tenant.User!.LastName : "",
-					TenantEmail = m.Tenant != null ? m.Tenant.User!.Email : ""
-				})
-				.ToListAsync();
+			var user = await _context.Users
+				.Include(u => u.Owner)
+				.FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
 
-			if (!requests.Any())
+			if (user == null)
 			{
-				throw new NotFoundException($"No maintenance requests found for user with ID {userId}");
+				throw new NotFoundException($"User with ID {userId} not found");
 			}
 
-			return requests;
+			if (user.Owner != null) // Owner
+			{
+				// Fetch maintenance requests where the properties are owned by the owner
+				var requests = await _context.MaintenanceRequests
+					.Include(m => m.Property)
+					.Include(m => m.MaintenanceTasks)
+					.Where(m => m.Property != null && m.Property.OwnerId == user.Owner.Id)
+					.OrderByDescending(m => m.CreatedAt)
+					.ToListAsync();
+
+				if (!requests.Any())
+				{
+					throw new NotFoundException($"No maintenance requests found for owner with ID {userId}");
+				}
+
+				var result = requests.Select(m => new MaintenanceRequestWithTasksDto
+				{
+					MaintenanceRequest = new MaintenanceRequestResponseDto
+					{
+						Id = m.Id,
+						Description = m.Description,
+						Status = m.Status,
+						CreatedAt = m.CreatedAt,
+						PropertyId = m.Property != null ? m.Property.Id : (Guid?)null,
+						PropertyAddress = m.Property != null ? m.Property.Address : null,
+						TenantFirstName = m.Tenant != null ? m.Tenant.User!.FirstName : "",
+						TenantLastName = m.Tenant != null ? m.Tenant.User!.LastName : "",
+						TenantEmail = m.Tenant != null ? m.Tenant.User!.Email : ""
+					},
+					Tasks = m.MaintenanceTasks?.Select(t => new MaintenanceTaskDto
+					{
+						Id = t.Id,
+						RequestId = t.RequestId,
+						Description = t.Description,
+						EstimatedCost = t.EstimatedCost,
+						ActualCost = t.ActualCost,
+						StartDate = t.StartDate,
+						CompletionDate = t.CompletionDate,
+						Status = t.Status
+					}).ToList() ?? new List<MaintenanceTaskDto>()
+				});
+
+				return result;
+			}
+			else // Tenant
+			{
+				// Fetch maintenance requests for tenant
+				var requests = await _context.MaintenanceRequests
+					.Include(m => m.Property)
+					.Include(m => m.MaintenanceTasks)
+					.Where(m => m.Tenant != null && m.Tenant.UserId == userId)
+					.OrderByDescending(m => m.CreatedAt)
+					.ToListAsync();
+
+				if (!requests.Any())
+				{
+					throw new NotFoundException($"No maintenance requests found for tenant with ID {userId}");
+				}
+
+				var result = requests.Select(m => new MaintenanceRequestWithTasksDto
+				{
+					MaintenanceRequest = new MaintenanceRequestResponseDto
+					{
+						Id = m.Id,
+						Description = m.Description,
+						Status = m.Status,
+						CreatedAt = m.CreatedAt,
+						PropertyId = m.Property != null ? m.Property.Id : (Guid?)null,
+						PropertyAddress = m.Property != null ? m.Property.Address : null,
+						TenantFirstName = m.Tenant != null ? m.Tenant.User!.FirstName : "",
+						TenantLastName = m.Tenant != null ? m.Tenant.User!.LastName : "",
+						TenantEmail = m.Tenant != null ? m.Tenant.User!.Email : ""
+					},
+					Tasks = m.MaintenanceTasks?.Select(t => new MaintenanceTaskDto
+					{
+						Id = t.Id,
+						RequestId = t.RequestId,
+						Description = t.Description,
+						EstimatedCost = t.EstimatedCost,
+						ActualCost = t.ActualCost,
+						StartDate = t.StartDate,
+						CompletionDate = t.CompletionDate,
+						Status = t.Status
+					}).ToList() ?? new List<MaintenanceTaskDto>()
+				});
+
+				return result;
+			}
 		}
+
+
 
 		public async Task<IEnumerable<RentalApplicationDto>> GetApplicationsAsync(string userId)
 		{
@@ -263,6 +338,8 @@ namespace Cloud.Services
 
 			return result;
 		}
+
+
 	}
 
 	public class RentPaymentResponseDto
@@ -298,5 +375,12 @@ namespace Cloud.Services
 		public decimal SecurityDeposit { get; set; }
 		public bool IsActive { get; set; }
 		public string PropertyAddress { get; set; } = string.Empty;
+	}
+
+	public class UpdateMaintenanceStatusRequest
+	{
+		public required string OwnerId { get; set; }
+		public Guid MaintenanceRequestId { get; set; }
+		public bool Approve { get; set; }
 	}
 }

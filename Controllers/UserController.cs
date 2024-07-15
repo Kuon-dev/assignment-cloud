@@ -434,6 +434,58 @@ namespace Cloud.Controllers
 			return listings;
 		}
 
+		[HttpPut("owner/update-status")]
+		[Authorize(Roles = "Owner")]
+		public async Task<IActionResult> UpdateMaintenanceStatus(
+			[FromBody] UpdateMaintenanceStatusRequest request)
+		{
+			var owner = await _context.Users
+				.Include(u => u.Owner)
+				.FirstOrDefaultAsync(u => u.Id == request.OwnerId && u.Role == UserRole.Owner);
+
+			if (owner == null)
+			{
+				return Unauthorized("You do not have permission to perform this action.");
+			}
+
+			var maintenanceRequest = await _context.MaintenanceRequests
+				.Include(m => m.MaintenanceTasks)
+				.FirstOrDefaultAsync(m => m.Id == request.MaintenanceRequestId);
+
+			if (maintenanceRequest == null)
+			{
+				return NotFound("Maintenance request not found.");
+			}
+
+			if (request.Approve)
+			{
+				maintenanceRequest.Status = MaintenanceStatus.InProgress;
+				if (maintenanceRequest.MaintenanceTasks != null)
+				{
+					foreach (var task in maintenanceRequest.MaintenanceTasks)
+					{
+						task.Status = Cloud.Models.TaskStatus.InProgress;
+					}
+				}
+			}
+			else
+			{
+				maintenanceRequest.Status = MaintenanceStatus.Cancelled;
+				if (maintenanceRequest.MaintenanceTasks != null)
+				{
+					foreach (var task in maintenanceRequest.MaintenanceTasks)
+					{
+						task.Status = Cloud.Models.TaskStatus.Cancelled;
+					}
+				}
+			}
+
+			_context.MaintenanceRequests.Update(maintenanceRequest);
+			await _context.SaveChangesAsync();
+
+			return Ok("Maintenance status updated successfully.");
+		}
+
 		private bool UserExists(string id)
 		{
 			return _context.Users.Any(e => e.Id == id && !e.IsDeleted);
