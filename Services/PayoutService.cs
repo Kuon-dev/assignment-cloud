@@ -74,12 +74,6 @@ namespace Cloud.Services
 							 rp.Status == PaymentStatus.Succeeded)
 				.ToListAsync();
 
-			if (payments.Any())
-			{
-				var firstPayment = payments.First();
-				_logger.LogInformation($"First payment details: Property={firstPayment.Property.Address} , Id={firstPayment.Id}, Amount={firstPayment.Amount}, Tenant={firstPayment.Tenant?.Id} {firstPayment.Tenant?.User?.Id}");
-			}
-
 			return payments.Select(p => new PaymentDto
 			{
 				Id = p.Id,
