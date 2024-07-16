@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 /*using Microsoft.Extensions.Logging;*/
 using Cloud.Models;
 using Cloud.Models.DTO;
+using Stripe;
 
 namespace Cloud.Services
 {
@@ -62,6 +63,7 @@ namespace Cloud.Services
 
 			var payments = await _context.RentPayments
 				.Include(rp => rp.Tenant)
+					.ThenInclude(t => t!.User)
 				.Include(rp => rp.Property)
 				/*.ThenInclude(t => t!.Leases)*/
 				/*.ThenInclude(l => l!.PropertyModel)*/
@@ -72,6 +74,12 @@ namespace Cloud.Services
 							 rp.Status == PaymentStatus.Succeeded)
 				.ToListAsync();
 
+			if (payments.Any())
+			{
+				var firstPayment = payments.First();
+				_logger.LogInformation($"First payment details: Property={firstPayment.Property.Address} , Id={firstPayment.Id}, Amount={firstPayment.Amount}, Tenant={firstPayment.Tenant?.Id} {firstPayment.Tenant?.User?.Id}");
+			}
+
 			return payments.Select(p => new PaymentDto
 			{
 				Id = p.Id,
@@ -80,6 +88,7 @@ namespace Cloud.Services
 				Status = p.Status.ToString(),
 				CreatedAt = p.CreatedAt,
 				PropertyId = p.Property!.Id,
+				PropertyAddress = p.Property!.Address,
 				TenantName = $"{p.Tenant!.User?.FirstName} {p.Tenant.User?.LastName}"
 			});
 		}

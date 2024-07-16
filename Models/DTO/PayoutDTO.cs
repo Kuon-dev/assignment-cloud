@@ -69,6 +69,7 @@ namespace Cloud.Models.DTO
 		public string Status { get; set; } = string.Empty;
 		public DateTime CreatedAt { get; set; }
 		public Guid PropertyId { get; set; }
+		public string PropertyAddress { get; set; }
 		public string TenantName { get; set; } = string.Empty;
 	}
 }
