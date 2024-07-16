@@ -182,35 +182,59 @@ namespace Cloud.Controllers
 		// GET: api/admin/maintenance-requests
 		[HttpGet("maintenance-requests")]
 		[Authorize(Roles = "Admin")]
-		public async Task<ActionResult<CustomPaginatedResult<MaintenanceRequestModel>>> GetMaintenanceRequests([FromQuery] Cloud.Models.DTO.PaginationParams paginationParams)
+		public async Task<ActionResult<CustomPaginatedResult<MaintenanceRequestWithTasksDto>>> GetMaintenanceRequests([FromQuery] Cloud.Models.DTO.PaginationParams paginationParams)
 		{
 			_logger.LogInformation("Getting maintenance requests with pagination parameters: {@PaginationParams}", paginationParams);
 			var requests = await _adminService.GetMaintenanceRequestAsync(paginationParams);
 			return Ok(requests);
 		}
 
-		// PUT: api/admin/maintenance-requests/{id}?action=approve
-		// PUT: api/admin/maintenance-requests/{id}?action=reject
+		// PUT: api/admin/maintenance-requests/{id}
 		[HttpPut("maintenance-requests/{id}")]
 		[Authorize(Roles = "Admin")]
-		public async Task<IActionResult> UpdateMaintenanceRequestStatus(Guid id, [FromQuery] string action)
+		public async Task<IActionResult> UpdateMaintenanceRequestAndTask(Guid id, [FromBody] UpdateMaintenanceRequestAndTaskDto updateDto)
 		{
-			_logger.LogInformation("Updating maintenance request with ID {Id} to action {Action}", id, action);
+			_logger.LogInformation("Updating maintenance request with ID {Id}", id);
 
 			try
 			{
-				var success = await _adminService.UpdateMaintenanceRequestStatusAsync(id, action);
-				if (!success)
-				{
-					return NotFound($"Maintenance request with ID {id} not found.");
-				}
-			}
-			catch (ArgumentException ex)
-			{
-				return BadRequest(ex.Message);
-			}
+				var success = await _adminService.UpdateMaintenanceRequestAndTaskAsync(id, updateDto);
+				return Ok(success);
 
-			return NoContent();
+			}
+			catch (KeyNotFoundException)
+			{
+				return NotFound("Maintenance request not found");
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error occurred while updating maintenance request");
+				return StatusCode(500, "An error occurred while processing your request.");
+			}
+		}
+
+		private IActionResult OK(bool success)
+		{
+			throw new NotImplementedException();
+		}
+
+		[HttpDelete("maintenance-requests/{id}")]
+		[Authorize(Roles = "Admin")]
+		public async Task<IActionResult> DeleteMaintenanceRequest(Guid id)
+		{
+			try
+			{
+				await _adminService.DeleteMaintenanceRequestAndTasksAsync(id);
+				return NoContent();
+			}
+			catch (NotFoundException ex)
+			{
+				return NotFound(ex.Message);
+			}
+			catch (ApplicationException ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
 		}
 
 		// GET: api/admin/properties

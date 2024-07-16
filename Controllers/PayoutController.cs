@@ -57,11 +57,13 @@ namespace Cloud.Controllers
 		/// </remarks>
 		/// <returns>A list of all payout periods.</returns>
 		[HttpGet("periods")]
-		public async Task<ActionResult<IEnumerable<PayoutPeriodDto>>> GetPayoutPeriods()
+		public async Task<ActionResult<CustomPaginatedResult<PayoutPeriodDto>>> GetPayoutPeriods([FromQuery] Cloud.Models.DTO.PaginationParams paginationParams)
 		{
 			try
 			{
-				var periods = await _payoutService.GetPayoutPeriodsAsync();
+
+				_logger.LogInformation("Getting admin with pagination parameters: {@PaginationParams}", paginationParams);
+				var periods = await _payoutService.GetPayoutPeriodsAsync(paginationParams);
 				return Ok(periods);
 			}
 			catch (Exception ex)

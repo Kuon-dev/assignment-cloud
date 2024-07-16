@@ -13,6 +13,7 @@ namespace Cloud.Services
 		Task<LeaseDto?> UpdateLeaseAsync(Guid id, LeaseDto leaseDto);
 		Task<bool> DeleteLeaseAsync(Guid id);
 		Task<IEnumerable<LeaseDto>> GetActiveLeasesAsync();
+		Task<IEnumerable<LeaseWithTenantNameDto>> GetActiveLeasesWithTenantNamesAsync();
 		Task<IEnumerable<LeaseDto>> GetExpiredLeasesAsync();
 	}
 
@@ -161,6 +162,38 @@ namespace Cloud.Services
 				.Select(l => MapToDto(l))
 				.ToListAsync();
 		}
+
+		public async Task<IEnumerable<LeaseWithTenantNameDto>> GetActiveLeasesWithTenantNamesAsync()
+		{
+			if (_context.Leases == null)
+			{
+				throw new InvalidOperationException("Lease DbSet is not initialized.");
+			}
+
+			return await _context.Leases
+				.Where(l => l.IsActive && l.EndDate >= DateTime.UtcNow)
+				.Select(l => new LeaseWithTenantNameDto
+				{
+					TenantId = l.TenantId,
+					PropertyId = l.PropertyId,
+					Property = l.PropertyModel != null ? new PropertyDto
+					{
+						Id = l.PropertyModel.Id,
+						OwnerId = l.PropertyModel.OwnerId,
+						RentAmount = l.PropertyModel.RentAmount,
+					} : null,
+					StartDate = l.StartDate,
+					EndDate = l.EndDate,
+					RentAmount = l.RentAmount,
+					SecurityDeposit = l.SecurityDeposit,
+					IsActive = l.IsActive,
+					TenantFirstName = l.Tenant!.User!.FirstName,
+					TenantLastName = l.Tenant.User.LastName,
+					TenantEmail = l.Tenant.User.Email!,
+				})
+				.ToListAsync();
+		}
+
 
 		/// <inheritdoc />
 		public async Task<IEnumerable<LeaseDto>> GetExpiredLeasesAsync()
