@@ -13,8 +13,8 @@ namespace Cloud.Services
 	{
 		// Maintenance Request methods
 		Task<(IEnumerable<MaintenanceRequestModel> Requests, int TotalCount)> GetAllMaintenanceRequestsAsync(int page, int size);
-		Task<MaintenanceRequestModel?> GetMaintenanceRequestByIdAsync(Guid id, string userId);
-		Task<MaintenanceRequestModel> CreateMaintenanceRequestAsync(CreateMaintenanceRequestDto dto, string userId);
+		Task<MaintenanceRequestDto?> GetMaintenanceRequestByIdAsync(Guid id, string userId);
+		Task<MaintenanceRequestDto> CreateMaintenanceRequestAsync(CreateMaintenanceRequestDto dto, string userId);
 		Task UpdateMaintenanceRequestAsync(Guid id, UpdateMaintenanceRequestDto dto, string userId);
 		Task DeleteMaintenanceRequestAsync(Guid id);
 		Task<(IEnumerable<MaintenanceRequestModel> Requests, int TotalCount)> GetMaintenanceRequestsByStatusAsync(MaintenanceStatus status, int page, int size);
@@ -71,7 +71,7 @@ namespace Cloud.Services
 		}
 
 		/// <inheritdoc/>
-		public async Task<MaintenanceRequestModel?> GetMaintenanceRequestByIdAsync(Guid id, string userId)
+		public async Task<MaintenanceRequestDto?> GetMaintenanceRequestByIdAsync(Guid id, string userId)
 		{
 			var request = await _dbContext.MaintenanceRequests
 				.Include(r => r.Tenant)
@@ -93,11 +93,17 @@ namespace Cloud.Services
 				throw new UnauthorizedAccessException("You do not have permission to view this maintenance request.");
 			}
 
-			return request;
+			return new MaintenanceRequestDto
+			{
+				Id = request.Id,
+				PropertyId = request.PropertyId,
+				Description = request.Description,
+				Status = request.Status,
+			};
 		}
 
 		/// <inheritdoc/>
-		public async Task<MaintenanceRequestModel> CreateMaintenanceRequestAsync(CreateMaintenanceRequestDto dto, string userId)
+		public async Task<MaintenanceRequestDto> CreateMaintenanceRequestAsync(CreateMaintenanceRequestDto dto, string userId)
 		{
 			var tenant = await _dbContext.Tenants.FirstOrDefaultAsync(t => t.UserId == userId);
 			if (tenant == null)
@@ -116,7 +122,13 @@ namespace Cloud.Services
 			_requestValidator.ValidateRequest(request);
 			_taskValidator.ValidateTask(task);
 
-			return request;
+			return new MaintenanceRequestDto
+			{
+				Id = request.Id,
+				PropertyId = request.PropertyId,
+				Description = request.Description,
+				Status = request.Status
+			};
 		}
 
 		/// <inheritdoc/>
