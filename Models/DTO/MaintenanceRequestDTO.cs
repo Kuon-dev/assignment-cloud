@@ -37,4 +37,12 @@ namespace Cloud.Models.DTO
 		/// </summary>
 		public MaintenanceStatus? Status { get; set; }
 	}
+
+	public class MaintenanceRequestDto
+	{
+		public Guid Id { get; set; }
+		public Guid PropertyId { get; set; }
+		public string? Description { get; set; }
+		public MaintenanceStatus Status { get; set; }
+	}
 }
