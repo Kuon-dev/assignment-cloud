@@ -14,6 +14,10 @@ using Stripe;
 using Cloud.Models.Validator;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Authentication.Cookies;
+
+using Amazon.XRay.Recorder.Core;
+using Amazon.XRay.Recorder.Handlers.AspNetCore;
+using Amazon.XRay.Recorder.Handlers.AwsSdk;
 /*using System.Text.Json;*/
 /*using System.Text.Json.Serialization;*/
 /*using Microsoft.Extensions.Logging;*/
@@ -193,6 +197,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 	options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 });
 
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -212,7 +217,13 @@ if (app.Environment.IsDevelopment())
 		}
 	}
 }
+app.UseXRay("MyApp");
+AWSXRayRecorder.InitializeInstance();
 
+Environment.SetEnvironmentVariable("AWS_XRAY_DAEMON_ADDRESS", "127.0.0.1:2000");
+AWSSDKHandler.RegisterXRayForAllServices();
+
+/*AWSXRayRecorder.InitializeInstance(configuration);*/
 // Configure the HTTP request pipeline.
 /*if (app.Environment.IsDevelopment()) {*/
 app.UseUserStatusMiddleware();
